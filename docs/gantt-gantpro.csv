@@ -1,0 +1,31 @@
+All dates are correct and internally consistent. The complete CSV has been written to `/Users/tomzion/Projects/org-platform-guardian/docs/gantt-gantpro.csv`.
+
+Here is a summary of every change made:
+
+**Platform Guardian track — changes:**
+
+- SC-1 renamed to "SC-1: Plan org vs project settings (Resolved)" with updated notes reflecting the three-layer model decision. Standing Checks group duration adjusted to 2 days (SC-1 + SC-2 only).
+- M1 group extended from 20 to 23 working days to absorb M1.9.
+- M1.8 end date corrected to 2026-08-10 (Aug 7 is Friday; 2 working days = Aug 7-10).
+- M1.9 added: guardian_check_design_currency, 4 days, 2026-08-11 to 2026-08-14.
+- M2 group shifted to start 2026-08-17 (after M1.9). All M2.1-M2.6 dates shift accordingly (M2.1: Aug 17-19, M2.2: Aug 20-21, M2.3: Aug 24-25, M2.4: Aug 26-28, M2.5: Aug 31-Sep 1, M2.6: Sep 2-4).
+- M2.7 added: guardian_run_design_audit, 6 days, 2026-09-07 to 2026-09-14.
+- M3, M4, M5 all shifted: M3 Sep 15-21, M4 Sep 22-Oct 8, M5 Oct 9-12.
+- Project end date updated to 2026-10-12.
+
+**Marketplace Plugins track — changes:**
+
+- MGA-4 kept but notes corrected (no standards delivered on branch — branch adds pipeline stages only).
+- Quick fixes added as standalone tasks at project start (MGA-14, MGA-50, MGA-53 on Jul 8; MGA-65 on Jul 9).
+- MGA-5/6/8 replaced by grouped items MGA-17+23+20 (iOS/Boris), MGA-18+24+21 (Android/Guy), MGA-19+25+22 (React/magen) — each with Plan + 3 Execute parts spanning Jul 13-Aug 3.
+- MGA-26 expanded into a Plan/Execute group (Jul 13-14) focused on merge coordination and pipeline stage map versioning.
+- MGA-7/Opium kept as MGA-41 with Plan/Execute structure (Jul 29-Aug 11).
+- Added: MGA-33+44+60 (handoff template fix, Aug 3), MGA-34 (CLAUDE_PLUGIN_ROOT, Aug 4), MGA-35+36 (inspector agent tool gap, Aug 4-6), MGA-37 (TypeScript runtime, Aug 7-10), MGA-29 (accessibility gaps, Aug 17-18), MGA-12 (version pinning, Aug 17-18), MGA-51 (formal evaluations, Aug 17-20), MGA-13 (CI pipeline, Aug 19-21), MGA-52 (docx skill, Aug 25-26), MGA-54 (lld-figma-spec scope, Aug 27-28), MGA-55+56 (commands+templates, Sep 1-3), MGA-42 (QA integration point, Sep 2-4), MGA-62+63 (schema deps, Sep 7-8).
+- MGA-9 kept (spec-team-toolkit evaluations, Aug 10-14), MGA-43 added (QA standards, Aug 12-14).
+- MGA-10 renamed MGA-11 (correct gap ID) as milestone on Sep 2.
+
+**TV Platform Coverage track — new project:**
+
+- MTV-1: Decide TV plugin strategy (Tom/magen, 2 days, Jul 15-16).
+- MTV-2 group: Scoping + plugin structure setup (4 days, Jul 17-22, owner TBD pending MTV-1).
+- MTV-3 group: Apple TV standards + skills + agents (10 days, Jul 23-Aug 5, owner TBD TV lead).

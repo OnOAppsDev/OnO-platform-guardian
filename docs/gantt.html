@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platform Guardian — Project Timeline</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  background: #f2f2f7;
+  color: #1c1c1e;
+  padding: 40px 28px;
+  min-height: 100vh;
+}
+
+.container { max-width: 1380px; margin: 0 auto; }
+
+/* ── PAGE HEADER ── */
+.page-header { margin-bottom: 22px; }
+.page-header h1 { font-size: 23px; font-weight: 700; letter-spacing: -0.4px; }
+.page-header .meta {
+  margin-top: 5px;
+  font-size: 12px; color: #8e8e93;
+  display: flex; flex-wrap: wrap; gap: 4px 18px;
+}
+.meta-dot { color: #c7c7cc; }
+
+/* ── LEGEND ── */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 6px 20px;
+  padding: 11px 16px;
+  background: white; border-radius: 10px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.li { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #3a3a3c; }
+.lsw { width: 22px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.lsw-pending {
+  background: repeating-linear-gradient(45deg, #c7c7cc, #c7c7cc 3px, #f2f2f7 3px, #f2f2f7 6px);
+  border: 1px dashed #8e8e93;
+}
+.today-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #ff453a; flex-shrink: 0;
+}
+
+/* ── GANTT CARD ── */
+.gantt-wrap {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* ── TABLE ── */
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+col.lc { width: 235px; }
+
+/* ── HEADER ── */
+.month-row th {
+  background: #f5f5fa;
+  padding: 7px 0;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: #6d6d72;
+  border-bottom: 1px solid #e5e5ea;
+}
+.month-row th:first-child { text-align: left; padding-left: 16px; border-right: 1px solid #e5e5ea; }
+.month-row th:not(:first-child) { text-align: center; border-right: 1px solid #e5e5ea; }
+
+.week-row th {
+  background: #f9f9fb;
+  padding: 5px 1px 6px;
+  text-align: center;
+  border-bottom: 2px solid #d8d8dd;
+}
+.week-row th:first-child {
+  text-align: left; padding-left: 16px;
+  font-size: 10px; font-weight: 600; color: #8e8e93;
+  border-right: 1px solid #e5e5ea;
+}
+.week-row th:not(:first-child) { border-right: 1px solid #ebebf0; }
+.week-row th.today-wk { background: #fff5f5; }
+.wn { display: block; font-weight: 700; font-size: 10px; color: #3a3a3c; }
+.wd { display: block; font-size: 8.5px; color: #aeaeb2; margin-top: 1px; }
+
+/* ── SECTION ROW ── */
+.sec td {
+  background: #f0f0f7;
+  padding: 6px 16px;
+  font-size: 9px; font-weight: 900;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: #6d6d72;
+  border-bottom: 1px solid #e0e0ea;
+}
+
+/* ── DATA ROWS ── */
+tr.dr { border-bottom: 1px solid #f0f0f5; }
+tr.dr:last-child { border-bottom: none; }
+tr.dr:hover td { background: #fafaff; }
+
+td.lbl {
+  padding: 0 14px;
+  border-right: 1px solid #e5e5ea;
+  height: 52px; vertical-align: middle;
+}
+.rn { font-size: 12.5px; font-weight: 500; color: #1c1c1e; }
+.rd { font-size: 10px; color: #aeaeb2; margin-top: 2px; line-height: 1.4; }
+
+td.tl {
+  position: relative;
+  vertical-align: middle;
+  height: 52px;
+}
+
+/* week grid lines */
+td.tl::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0, transparent calc(8.3333% - 1px),
+    #ebebf0 calc(8.3333% - 1px), #ebebf0 8.3333%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* today highlight band (W1 = 0%–8.333%) */
+td.tl::after {
+  content: '';
+  position: absolute; top: 0; bottom: 0;
+  left: 0; width: 8.3333%;
+  background: rgba(255, 69, 58, 0.05);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── BARS ── */
+.bar {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  height: 23px;
+  border-radius: 5px;
+  display: flex; align-items: center;
+  padding: 0 9px;
+  font-size: 10.5px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  z-index: 2;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.14);
+}
+.bar-d { background: #32d74b; color: #fff; }
+.bar-t { background: #0a84ff; color: #fff; }
+.bar-c { background: #ff9f0a; color: #fff; }
+.bar-s { background: #ffd60a; color: #2c2c2e; }
+.bar-p { background: #bf5af2; color: #fff; }
+.bar-x {
+  background: repeating-linear-gradient(45deg, #d1d1d6, #d1d1d6 4px, #f5f5f7 4px, #f5f5f7 8px);
+  color: #6d6d72;
+  border: 1.5px dashed #8e8e93;
+  box-shadow: none;
+  font-style: italic;
+}
+
+/* today line */
+.tdl {
+  position: absolute; top: 0; bottom: 0;
+  left: 0; width: 2px;
+  background: #ff453a;
+  z-index: 3;
+}
+.tdl::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 50%;
+  transform: translateX(-50%);
+  width: 7px; height: 7px;
+  background: #ff453a;
+  border-radius: 50%;
+}
+
+/* ── FOOTER SUMMARY ── */
+.foot {
+  padding: 14px 20px;
+  background: #f9f9fb;
+  border-top: 1px solid #e5e5ea;
+  display: flex; align-items: center; gap: 30px; flex-wrap: wrap;
+}
+.fi { text-align: center; }
+.fv { font-size: 20px; font-weight: 700; color: #1c1c1e; display: block; }
+.fl { font-size: 9.5px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.05em; }
+.today-badge {
+  margin-left: auto;
+  padding: 5px 12px;
+  background: #fff2f2; border: 1px solid #ff453a; border-radius: 6px;
+  font-size: 11px; color: #ff453a; font-weight: 600;
+}
+
+/* ── NOTES ── */
+.notes {
+  margin-top: 18px;
+  background: white; border-radius: 10px;
+  padding: 14px 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.nt { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: #3a3a3c; margin-bottom: 10px; }
+.note { display: flex; gap: 9px; align-items: flex-start; margin-bottom: 5px; font-size: 11.5px; color: #6d6d72; line-height: 1.65; }
+.nd { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; margin-top: 3px; }
+.note-sep { border: none; border-top: 1px solid #e5e5ea; margin: 10px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <h1>Platform Guardian — Project Timeline</h1>
+    <div class="meta">
+      <span>iOS Mobile Pilot</span>
+      <span class="meta-dot">·</span>
+      <span>12-week outlook</span>
+      <span class="meta-dot">·</span>
+      <span>~32 sessions to pilot</span>
+      <span class="meta-dot">·</span>
+      <span>Generated 2026-07-08</span>
+      <span class="meta-dot">·</span>
+      <span>Full detail → docs/backlog.md</span>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="li"><div class="lsw" style="background:#32d74b"></div>Decisions</div>
+    <div class="li"><div class="lsw" style="background:#0a84ff"></div>Technical — MCP Plugin</div>
+    <div class="li"><div class="lsw" style="background:#ff9f0a"></div>Content — Marketplace / Org Knowledge</div>
+    <div class="li"><div class="lsw" style="background:#ffd60a"></div>Stakeholder</div>
+    <div class="li"><div class="lsw" style="background:#bf5af2"></div>Integration &amp; Pilot</div>
+    <div class="li"><div class="lsw lsw-pending"></div>Pending access / TBD after audit</div>
+    <div class="li" style="margin-left:auto"><div class="today-dot"></div>Today (W1)</div>
+  </div>
+
+  <!-- Gantt -->
+  <div class="gantt-wrap">
+    <table>
+      <colgroup>
+        <col class="lc">
+        <col><col><col><col><col><col><col><col><col><col><col><col>
+      </colgroup>
+      <thead>
+        <tr class="month-row">
+          <th>Timeline</th>
+          <th colspan="4">July 2026</th>
+          <th colspan="4">August 2026</th>
+          <th colspan="4">September 2026</th>
+        </tr>
+        <tr class="week-row">
+          <th>Milestone / Track</th>
+          <th class="today-wk"><span class="wn">W1</span><span class="wd">Jul 8</span></th>
+          <th><span class="wn">W2</span><span class="wd">Jul 15</span></th>
+          <th><span class="wn">W3</span><span class="wd">Jul 22</span></th>
+          <th><span class="wn">W4</span><span class="wd">Jul 29</span></th>
+          <th><span class="wn">W5</span><span class="wd">Aug 5</span></th>
+          <th><span class="wn">W6</span><span class="wd">Aug 12</span></th>
+          <th><span class="wn">W7</span><span class="wd">Aug 19</span></th>
+          <th><span class="wn">W8</span><span class="wd">Aug 26</span></th>
+          <th><span class="wn">W9</span><span class="wd">Sep 2</span></th>
+          <th><span class="wn">W10</span><span class="wd">Sep 9</span></th>
+          <th><span class="wn">W11</span><span class="wd">Sep 16</span></th>
+          <th><span class="wn">W12</span><span class="wd">Sep 23</span></th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- ═══ KICKOFF ═══ -->
+        <tr class="sec"><td colspan="13">Kickoff</td></tr>
+
+        <tr class="dr">
+          <td class="lbl">
+            <div class="rn">Standing Checks</div>
+            <div class="rd">SC-1: Org settings · SC-2: Auto-review agent</div>
+          </td>
+          <td class="tl" colspan="12">
+            <div class="tdl"></div>
+            <div class="bar bar-d" style="left:0.4%;width:15.9%">SC-1 · SC-2</div>
+          </td>
+        </tr>
+
+        <tr class="dr">
+          <td class="lbl">
+            <div class="rn">Foundation (M0)</div>
+            <div class="rd">Git init · TypeScript scaffold</div>
+          </td>
+          <td class="tl" colspan="12">
+            <div class="bar bar-t" style="left:0.4%;width:15.9%">M0 · 2 sessions</div>
+          </td>
+        </tr>
+
+        <tr class="dr">
+          <td class="lbl">
+            <div class="rn">Governance Q&amp;A (OQ-1–4)</div>
+            <div class="rd">Write access · version policy · escalation · notifications</div>
+          </td>
+          <td class="tl" colspan="12">
+            <div class="bar bar-s" style="left:0.4%;width:32.5%">Stakeholder decisions — resolve by W4</div>
+          </td>
+        </tr>
+
+        <!-- ═══ MARKETPLACE ═══ -->
+        <tr class="sec"><td colspan="13">Marketplace / Org Knowledge (Repo B)</td></tr>
+
+        <tr class="dr">
+          <td class="lbl">
+            <div class="rn">Marketplace Gap Audit</div>
+            <div class="rd">Initial review — structure, content, empty plugins</div>
+          </td>
+          <td class="tl" colspan="12">
+            <div class="bar bar-x" style="left:8.7%;width:15.9%">⏳ Pending repo access</div>
+          </td>
+        </tr>
+
+        <tr class="dr">
+          <td class="lbl">
+            <div class="rn">Fill Empty Plugins</div>
+            <div class="rd">Scope and owners TBD after audit</div>
+          </td>
+          <td class="tl" colspan="12">
+            <div class="bar bar-x" style="left:25.4%;width:40.8%">TBD — scope set after audit findings</div>
+          </td>
+        </tr>
+
+        <tr class="dr">
+          <td class="lbl">
+            <div class="rn">Org Knowledge Gap Fill (M4)</div>
+            <div class="rd">12 domains · PM + Design Lead + Architects</div>
+          </td>
+          <td class="tl" colspan="12">
+            <div class="bar bar-c" style="left:8.7%;width:65.9%">M4 · 6+ sessions · parallel to technical track</div>
+          </td>
+        </tr>
+
+        <!-- ═══ PLUGIN ═══ -->
+        <tr class="sec"><td colspan="13">Plugin Implementation (Technical Track)</td></tr>
+
+        <tr class="dr">
+          <td class="lbl">
+            <div class="rn">MCP Server MVP (M1)</div>
+            <div class="rd">Phase engine · knowledge connector · 5 core tools</div>
+          </td>
+          <td class="tl" colspan="12">
+            <div class="bar bar-t" style="left:17.1%;width:32.5%">M1 · 8 sessions</div>
+          </td>
+        </tr>
+
+        <tr class="dr">
+          <td class="lbl">
+            <div class="rn">Audit Engine (M2)</div>
+            <div class="rd">Phase 2 audit · architecture analyzer · reporter</div>
+          </td>
+          <td class="tl" colspan="12">
+            <div class="bar bar-t" style="left:33.8%;width:24.5%">M2 · 6 sessions</div>
+          </td>
+        </tr>
+
+        <tr class="dr">
+          <td class="lbl">
+            <div class="rn">CLI + Developer Experience (M3)</div>
+            <div class="rd">guardian init · emergency bypass · docs</div>
+          </td>
+          <td class="tl" colspan="12">
+            <div class="bar bar-t" style="left:50.4%;width:15.9%">M3 · 3 sessions</div>
+          </td>
+        </tr>
+
+        <!-- ═══ PILOT ═══ -->
+        <tr class="sec"><td colspan="13">Integration &amp; iOS Mobile Pilot</td></tr>
+
+        <tr class="dr">
+          <td class="lbl">
+            <div class="rn">Integration &amp; Pilot — iOS Mobile (M5)</div>
+            <div class="rd">Phases 0–5 end-to-end · retrospective · rollout plan</div>
+          </td>
+          <td class="tl" colspan="12">
+            <div class="bar bar-p" style="left:75.4%;width:24.2%">M5 · 5 sessions · iOS Mobile</div>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="foot">
+      <div class="fi"><span class="fv">~32</span><span class="fl">Sessions total</span></div>
+      <div class="fi"><span class="fv">12 wk</span><span class="fl">To iOS pilot</span></div>
+      <div class="fi"><span class="fv">7</span><span class="fl">Platforms</span></div>
+      <div class="fi"><span class="fv">2</span><span class="fl">Parallel tracks</span></div>
+      <div class="fi"><span class="fv">+6</span><span class="fl">Platforms post-pilot</span></div>
+      <div class="today-badge">▶ Today: W1 · Jul 8, 2026</div>
+    </div>
+  </div><!-- /gantt-wrap -->
+
+  <!-- Notes -->
+  <div class="notes">
+    <div class="nt">Notes &amp; Key Dependencies</div>
+
+    <div class="note">
+      <div class="nd" style="background:#32d74b"></div>
+      <span><strong>SC-1</strong> (org-level vs. project-level settings) must complete before M1 reaches CLAUDE.md generation (~W5–W6). <strong>SC-2</strong> (auto-review agent decision) is independent — can be done any time W1–W2.</span>
+    </div>
+
+    <div class="note">
+      <div class="nd" style="background:#ffd60a"></div>
+      <span><strong>Governance Q&amp;A (OQ-1–4)</strong> are stakeholder decisions: who has write access to Repo B, version upgrade policy, escalation path, notification channel for emergency bypasses. Must be resolved before M5 pilot. Schedule these meetings early — they don't block plugin code but block going live.</span>
+    </div>
+
+    <div class="note">
+      <div class="nd" style="background:#ff9f0a"></div>
+      <span><strong>Org Knowledge / Marketplace track is stakeholder-owned</strong> and runs in parallel with the technical track. PM, Design Lead, and Architects must contribute. Delays here push M5, not M1–M3.</span>
+    </div>
+
+    <div class="note">
+      <div class="nd" style="background:#c7c7cc;border:1px solid #8e8e93;border-radius:50%"></div>
+      <span><strong>Marketplace Gap Audit</strong> is blocked until repo access is granted. Once done, its findings will revise M4 scope — the current 6-session estimate is a floor. Empty plugin effort is shown as TBD and will be sized after the audit.</span>
+    </div>
+
+    <div class="note">
+      <div class="nd" style="background:#0a84ff"></div>
+      <span><strong>M2 (Audit Engine)</strong> can begin as soon as M1's knowledge connector is complete (approximately mid-W5). The 1-week overlap shown between M1 and M2 is intentional and safe.</span>
+    </div>
+
+    <div class="note">
+      <div class="nd" style="background:#bf5af2"></div>
+      <span><strong>M5 pilot requires both tracks to converge:</strong> plugin complete (M1–M3) + org knowledge substantially populated (M4). If M4 slips, M5 slips. The technical track is not the bottleneck.</span>
+    </div>
+
+    <hr class="note-sep">
+
+    <div class="note">
+      <div class="nd" style="background:#ff453a;border-radius:50%"></div>
+      <span><strong>Rollout to remaining 6 platforms</strong> begins after iOS Mobile pilot retrospective is complete. Not shown — this is a separate 12-week planning window after the pilot.</span>
+    </div>
+  </div>
+
+</div><!-- /container -->
+</body>
+</html>

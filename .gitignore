@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+.env.local
+.platform-guardian/cache/
+*.js.map
+.DS_Store

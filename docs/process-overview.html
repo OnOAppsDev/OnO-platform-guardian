@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform Guardian — Multi-Platform Governance System</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0e17;
+  --bg2: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2128;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text2: #c9d1d9;
+  --dim: #8b949e;
+  --accent: #4493f8;
+  --green: #3fb950;
+  --orange: #f0883e;
+  --purple: #c084fc;
+  --red: #f85149;
+  --yellow: #d29922;
+  --teal: #39c5cf;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text2);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* HEADER */
+.header {
+  background: linear-gradient(160deg, #0d1117 0%, #131720 50%, #0d1117 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 48px 32px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(ellipse at center, rgba(68, 147, 248, 0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+.header h1 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #4493f8 0%, #c084fc 50%, #3fb950 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+}
+.header p {
+  color: var(--dim);
+  font-size: 1rem;
+  max-width: 650px;
+  margin: 0 auto 20px;
+}
+.badge-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 0.72rem;
+  color: var(--dim);
+  letter-spacing: 0.3px;
+}
+.badge.blue { border-color: rgba(68,147,248,0.5); color: var(--accent); }
+.badge.green { border-color: rgba(63,185,80,0.5); color: var(--green); }
+.badge.purple { border-color: rgba(192,132,252,0.5); color: var(--purple); }
+.badge.orange { border-color: rgba(240,136,62,0.5); color: var(--orange); }
+
+/* TABS */
+.tabs-nav {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  padding: 0 24px;
+  gap: 2px;
+}
+.tabs-nav::-webkit-scrollbar { height: 3px; }
+.tabs-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 16px 22px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.tab-btn:hover { color: var(--text2); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* CONTENT */
+.tab-pane { display: none; padding: 40px 32px; max-width: 1120px; margin: 0 auto; }
+.tab-pane.active { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+h2 { font-size: 1.45rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.section-desc { color: var(--dim); margin-bottom: 28px; max-width: 720px; font-size: 0.9rem; }
+
+/* STATS */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+  margin: 28px 0;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+.stat-num {
+  font-size: 2.4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+.stat-label { color: var(--dim); font-size: 0.75rem; margin-top: 6px; }
+
+/* ARCH DIAGRAM */
+.arch-diagram {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 36px;
+  margin: 24px 0;
+}
+.arch-center { display: flex; flex-direction: column; align-items: center; }
+.arch-node {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 28px;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: default;
+}
+.arch-node:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.arch-node .n-icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+.arch-node .n-title { font-weight: 600; color: var(--text); font-size: 0.9rem; margin-bottom: 4px; }
+.arch-node .n-sub { color: var(--dim); font-size: 0.75rem; }
+.arch-node.blue { border-color: rgba(68,147,248,0.5); }
+.arch-node.green { border-color: rgba(63,185,80,0.5); }
+.arch-node.purple { border-color: rgba(192,132,252,0.5); }
+.arch-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 10px 0;
+}
+.arch-connector .c-arrow { color: var(--border); font-size: 1.4rem; }
+.arch-connector .c-label { font-size: 0.68rem; color: var(--dim); background: var(--bg2); border: 1px solid var(--border); padding: 2px 8px; border-radius: 10px; }
+.arch-row { display: flex; gap: 20px; justify-content: center; align-items: stretch; flex-wrap: wrap; }
+
+/* PHASE TIMELINE */
+.phases-wrap { position: relative; padding-left: 52px; }
+.phases-wrap::before {
+  content: '';
+  position: absolute;
+  left: 15px; top: 24px; bottom: 24px;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent), var(--purple), var(--green), var(--orange));
+  opacity: 0.25;
+}
+.phase-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  overflow: hidden;
+  position: relative;
+}
+.phase-card:hover { border-color: var(--accent); transform: translateX(3px); }
+.phase-card.open { border-color: var(--accent); }
+.phase-dot {
+  position: absolute;
+  left: -44px;
+  top: 24px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  z-index: 1;
+}
+.phase-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+}
+.phase-emoji { font-size: 1.3rem; flex-shrink: 0; }
+.phase-title-wrap { flex: 1; }
+.phase-title { font-weight: 600; color: var(--text); font-size: 0.92rem; }
+.phase-short { color: var(--dim); font-size: 0.78rem; margin-top: 2px; }
+.phase-chevron { color: var(--dim); transition: transform 0.2s; font-size: 0.85rem; }
+.phase-card.open .phase-chevron { transform: rotate(180deg); }
+.phase-body { display: none; padding: 0 22px 20px; border-top: 1px solid var(--border); }
+.phase-card.open .phase-body { display: block; }
+.phase-section { margin-top: 14px; }
+.phase-section-title {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--dim);
+  margin-bottom: 8px;
+}
+.phase-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  margin-bottom: 5px;
+  color: var(--text2);
+}
+.phase-item .bullet { flex-shrink: 0; margin-top: 1px; }
+.callout {
+  border-left: 3px solid var(--accent);
+  background: rgba(68,147,248,0.07);
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+  margin-top: 12px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.callout.danger { border-color: var(--red); background: rgba(248,81,73,0.07); }
+.callout.warning { border-color: var(--yellow); background: rgba(210,153,34,0.07); }
+.callout.success { border-color: var(--green); background: rgba(63,185,80,0.07); }
+
+/* DOMAINS */
+.domain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+.domain-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  transition: all 0.2s;
+  cursor: default;
+}
+.domain-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.25); border-color: var(--accent); }
+.d-icon { font-size: 1.8rem; margin-bottom: 10px; display: block; }
+.d-title { font-weight: 700; color: var(--text); font-size: 0.88rem; margin-bottom: 6px; }
+.d-desc { color: var(--dim); font-size: 0.78rem; line-height: 1.5; }
+.d-tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px; }
+.d-tag { background: var(--surface2); border-radius: 4px; padding: 2px 7px; font-size: 0.68rem; color: var(--dim); }
+.d-warn {
+  color: var(--orange);
+  font-size: 0.72rem;
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: rgba(240,136,62,0.1);
+  border-radius: 4px;
+}
+
+/* PLATFORMS */
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+.platform-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 14px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.platform-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.platform-card.planned { border-style: dashed; opacity: 0.7; }
+.p-icon { font-size: 2.2rem; margin-bottom: 8px; display: block; }
+.p-name { font-weight: 600; color: var(--text); font-size: 0.82rem; margin-bottom: 3px; }
+.p-type { color: var(--dim); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.4px; }
+.p-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+.p-active { background: rgba(63,185,80,0.15); color: var(--green); }
+.p-planned { background: rgba(68,147,248,0.15); color: var(--accent); }
+
+/* MATRIX TABLE */
+.matrix-wrap { overflow-x: auto; margin-top: 20px; border-radius: 10px; border: 1px solid var(--border); }
+.matrix-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.matrix-table th {
+  background: var(--surface);
+  padding: 10px 12px;
+  text-align: center;
+  color: var(--dim);
+  font-weight: 600;
+  font-size: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.matrix-table th:first-child { text-align: left; }
+.matrix-table td {
+  padding: 10px 12px;
+  text-align: center;
+  border-bottom: 1px solid rgba(48,54,61,0.5);
+}
+.matrix-table td:first-child { text-align: left; color: var(--text2); font-size: 0.82rem; }
+.matrix-table tr:last-child td { border-bottom: none; }
+.matrix-table tr:hover td { background: rgba(255,255,255,0.02); }
+.legend-row { display: flex; gap: 16px; margin-top: 12px; font-size: 0.75rem; color: var(--dim); }
+
+/* RULES */
+.rule-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.rule-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.rule-label { flex: 1; }
+.rule-scenario { font-weight: 600; color: var(--text); font-size: 0.88rem; }
+.rule-trigger { color: var(--dim); font-size: 0.76rem; margin-top: 3px; font-style: italic; }
+.rule-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.rule-col { padding: 14px 20px; font-size: 0.8rem; }
+.rule-col + .rule-col { border-left: 1px solid var(--border); }
+.r-head { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.r-head.blue { color: var(--accent); }
+.r-head.red { color: var(--red); }
+.r-head.green { color: var(--green); }
+.rule-msg {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+.rule-msg.blocked { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.25); color: var(--red); }
+.rule-msg.allowed { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.25); color: var(--green); }
+.r-resolve { color: var(--dim); font-size: 0.74rem; margin-top: 8px; }
+
+/* REPO TREE */
+.repos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+.repo-box {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 22px;
+  overflow: hidden;
+}
+.repo-box.blue { border: 1px solid rgba(68,147,248,0.4); }
+.repo-box.green { border: 1px solid rgba(63,185,80,0.4); }
+.repo-box.purple { border: 1px solid rgba(192,132,252,0.4); }
+.repo-name { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.repo-sub { color: var(--dim); font-size: 0.75rem; margin-bottom: 16px; }
+.tree { font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 0.78rem; line-height: 1.9; }
+.tree .folder { color: var(--accent); }
+.tree .file { color: var(--dim); }
+.tree .comment { color: var(--green); }
+
+/* STEP CARDS */
+.steps-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 20px; }
+.step-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.step-num { font-size: 1.1rem; margin-bottom: 8px; }
+.step-title { font-weight: 600; color: var(--text); font-size: 0.85rem; margin-bottom: 4px; }
+.step-desc { color: var(--dim); font-size: 0.76rem; line-height: 1.45; }
+
+/* UTILITY */
+.sep { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+.mt16 { margin-top: 16px; }
+.mt24 { margin-top: 24px; }
+.mt32 { margin-top: 32px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.dot-green { background: var(--green); }
+.dot-red { background: var(--red); }
+.dot-yellow { background: var(--yellow); }
+
+@media (max-width: 768px) {
+  .header h1 { font-size: 2rem; }
+  .tab-pane { padding: 24px 16px; }
+  .rule-cols { grid-template-columns: 1fr; }
+  .repos-grid { grid-template-columns: 1fr; }
+  .phases-wrap { padding-left: 16px; }
+  .phases-wrap::before { display: none; }
+  .phase-dot { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🛡️ Platform Guardian</h1>
+  <p>Multi-Platform Development Governance System — Enforcing consistency across 7+ platforms through gated workflows and shared organizational knowledge.</p>
+  <div class="badge-row">
+    <span class="badge blue">Claude Code MCP Plugin</span>
+    <span class="badge green">7 Active Platforms</span>
+    <span class="badge purple">13 Knowledge Domains</span>
+    <span class="badge orange">7 Workflow Phases</span>
+    <span class="badge">v1.0 — Planning</span>
+  </div>
+</div>
+
+<nav class="tabs-nav">
+  <button class="tab-btn active" onclick="showTab('overview', this)">Overview</button>
+  <button class="tab-btn" onclick="showTab('workflow', this)">Workflow Phases</button>
+  <button class="tab-btn" onclick="showTab('domains', this)">Knowledge Domains</button>
+  <button class="tab-btn" onclick="showTab('platforms', this)">Platforms</button>
+  <button class="tab-btn" onclick="showTab('rules', this)">Rules Engine</button>
+  <button class="tab-btn" onclick="showTab('repo', this)">Repo Structure</button>
+  <button class="tab-btn" onclick="showTab('governance', this)">Governance</button>
+  <button class="tab-btn" onclick="showTab('diagram', this)">How It Works</button>
+</nav>
+
+<!-- ===== OVERVIEW ===== -->
+<div id="overview" class="tab-pane active">
+  <h2>System Architecture</h2>
+  <p class="section-desc">Platform Guardian connects the org-level knowledge repository to every developer's Claude Code instance. The plugin enforces sequential, gated workflow phases — no developer can skip a step or build without the required knowledge existing first.</p>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num">7+</div><div class="stat-label">Target Platforms</div></div>
+    <div class="stat-card"><div class="stat-num">13</div><div class="stat-label">Knowledge Domains</div></div>
+    <div class="stat-card"><div class="stat-num">7</div><div class="stat-label">Workflow Phases</div></div>
+    <div class="stat-card"><div class="stat-num">1+</div><div class="stat-label">Plugin + Marketplace</div></div>
+  </div>
+
+  <div class="arch-diagram">
+    <div class="arch-center">
+      <div class="arch-node green" style="min-width: 320px; max-width: 400px;">
+        <span class="n-icon">📚</span>
+        <div class="n-title">Company Marketplace</div>
+        <div class="n-sub">Internal API — Skills, Specs, Constraints, Guidelines, AI Rules, Platform Capabilities</div>
+      </div>
+
+      <div class="arch-connector">
+        <span class="c-arrow">↕</span>
+        <span class="c-label">Skills · Rules · Specs · Platform constraints · Approved libraries</span>
+      </div>
+
+      <div class="arch-node blue" style="min-width: 320px; max-width: 400px;">
+        <span class="n-icon">🛡️</span>
+        <div class="n-title">Platform Guardian Plugin</div>
+        <div class="n-sub">MCP Server — Workflow enforcement · Gap analysis · Rules generation · Blocking engine</div>
+      </div>
+
+      <div class="arch-connector">
+        <span class="c-arrow">↕</span>
+        <span class="c-label">Commands · Audits · Generated CLAUDE.md · Phase state</span>
+      </div>
+
+      <div class="arch-row">
+        <div class="arch-node" style="min-width: 160px;">
+          <span class="n-icon">👨‍💻</span>
+          <div class="n-title">Developer</div>
+          <div class="n-sub">Claude Code CLI<br>with Plugin installed</div>
+        </div>
+        <div class="arch-node purple" style="min-width: 160px;">
+          <span class="n-icon">📁</span>
+          <div class="n-title">Project Repo</div>
+          <div class="n-sub">CLAUDE.md · .platform-guardian/ · Phase state</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Core principle:</strong> The plugin is a gatekeeper between intention and action. It reads org knowledge from the Marketplace, enforces sequential workflow gates, and writes project-specific rules into each project repo. Developers cannot proceed to any phase without completing the previous one.
+  </div>
+  <div class="callout success mt16">
+    <strong>Governance decisions resolved:</strong>
+    <div style="margin-top:8px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div><span style="color:var(--green);">✓</span> <strong>Repo A (plugin):</strong> Owner approval + minimum 1 reviewer per PR</div>
+      <div><span style="color:var(--green);">✓</span> <strong>Marketplace:</strong> Domain owner must approve each publish. Min 1 reviewer.</div>
+      <div><span style="color:var(--green);">✓</span> <strong>Marketplace version changes:</strong> Plugin detects at every session start — tiered response: Major → blocks dev, Minor → warns + targeted re-check, Patch → notifies only</div>
+      <div><span style="color:var(--green);">✓</span> <strong>Versioning:</strong> Semantic versioning on the Marketplace. Domain-level change diffing shown to developer before work begins.</div>
+    </div>
+  </div>
+
+  <hr class="sep">
+  <h3>Developer Onboarding Flow</h3>
+  <div class="steps-row">
+    <div class="step-card"><div class="step-num">1️⃣</div><div class="step-title">Install Plugin</div><div class="step-desc">Add Platform Guardian MCP server to Claude Code settings</div></div>
+    <div class="step-card"><div class="step-num">2️⃣</div><div class="step-title">Register Project</div><div class="step-desc">Define platform type, connect to Marketplace</div></div>
+    <div class="step-card"><div class="step-num">3️⃣</div><div class="step-title">Run Full Audit</div><div class="step-desc">Plugin analyzes codebase vs all org specs, generates gap report</div></div>
+    <div class="step-card"><div class="step-num">4️⃣</div><div class="step-title">Architecture Map</div><div class="step-desc">Map current tech stack, identify deviations from org arch</div></div>
+    <div class="step-card"><div class="step-num">5️⃣</div><div class="step-title">Generate Rules</div><div class="step-desc">Co-create CLAUDE.md with PM/Tech Lead approval required</div></div>
+    <div class="step-card"><div class="step-num">6️⃣</div><div class="step-title">Develop</div><div class="step-desc">Full development with guardrails actively enforced per session</div></div>
+  </div>
+</div>
+
+<!-- ===== WORKFLOW ===== -->
+<div id="workflow" class="tab-pane">
+  <h2>Workflow Phases</h2>
+  <p class="section-desc">Seven sequential phases. Each has explicit gate conditions checked by the plugin before proceeding. Click any phase to expand details. The plugin enforces this order — no skipping, no shortcuts.</p>
+  <div class="phases-wrap" id="phases-container"></div>
+</div>
+
+<!-- ===== DOMAINS ===== -->
+<div id="domains" class="tab-pane">
+  <h2>Knowledge Domains</h2>
+  <p class="section-desc">Thirteen domains define what must live in the Company Marketplace. Every domain is required — without content in a domain, the plugin cannot audit or enforce that area and will surface it as a gap during Phase 2.</p>
+  <div class="domain-grid" id="domains-container"></div>
+</div>
+
+<!-- ===== PLATFORMS ===== -->
+<div id="platforms" class="tab-pane">
+  <h2>Supported Platforms</h2>
+  <p class="section-desc">Seven active platforms, architecture extensible to any future platform. The plugin validates platform type against this list — registering an unlisted platform is blocked until PM adds it to the Marketplace.</p>
+  <div class="platform-grid" id="platforms-container"></div>
+
+  <hr class="sep">
+  <h3>Platform Capability Matrix</h3>
+  <p class="section-desc" style="margin-top:6px;">This matrix lives in the Marketplace and is read by the plugin to prevent developers from implementing unsupported features per platform. Values shown are illustrative — your team fills the real data.</p>
+  <div class="matrix-wrap">
+    <table class="matrix-table">
+      <thead id="matrix-head"></thead>
+      <tbody id="matrix-body"></tbody>
+    </table>
+  </div>
+  <div class="legend-row">
+    <span>✅ Supported</span>
+    <span>⚠️ Partial / Conditional</span>
+    <span>❌ Not Supported</span>
+    <span style="color: var(--accent);">— Fill real values in the Marketplace</span>
+  </div>
+</div>
+
+<!-- ===== RULES ===== -->
+<div id="rules" class="tab-pane">
+  <h2>Rules Engine & Blocking Scenarios</h2>
+  <p class="section-desc">How the plugin enforces workflow order and blocks non-compliant actions. These are concrete examples showing the system's expected behavior across different failure modes.</p>
+  <div id="rules-container"></div>
+</div>
+
+<!-- ===== REPO STRUCTURE ===== -->
+<div id="repo" class="tab-pane">
+  <h2>Repository Structures</h2>
+  <p class="section-desc">The plugin (Repo A) is what developers install. The Marketplace is the internal API that serves all org knowledge — developers never interact with it directly, the plugin queries it automatically at every session start.</p>
+
+  <div class="repos-grid">
+    <div class="repo-box blue">
+      <div class="repo-name">📦 Repo A — Platform Guardian Plugin</div>
+      <div class="repo-sub">Installed per-developer via Claude Code MCP settings. Connects to the Marketplace.</div>
+      <div class="tree">
+<span class="folder">org-platform-guardian/</span>
+├── <span class="folder">plugin/</span>
+│   └── <span class="folder">src/</span>
+│       ├── <span class="file">server.ts</span>         <span class="comment"># MCP entry</span>
+│       ├── <span class="folder">workflow/</span>
+│       │   ├── <span class="file">engine.ts</span>     <span class="comment"># Phase enforcement</span>
+│       │   └── <span class="file">gates.ts</span>      <span class="comment"># Gate conditions</span>
+│       ├── <span class="folder">knowledge/</span>
+│       │   ├── <span class="file">connector.ts</span>  <span class="comment"># Marketplace API client</span>
+│       │   └── <span class="file">cache.ts</span>      <span class="comment"># Local cache (offline/speed)</span>
+│       ├── <span class="folder">analysis/</span>
+│       │   ├── <span class="file">auditor.ts</span>    <span class="comment"># Code vs spec</span>
+│       │   └── <span class="file">reporter.ts</span>   <span class="comment"># Gap reports</span>
+│       └── <span class="folder">tools/</span>         <span class="comment"># MCP tool defs</span>
+├── <span class="folder">workflows/</span>
+│   ├── <span class="file">phases.yaml</span>
+│   └── <span class="file">gates.yaml</span>
+├── <span class="folder">templates/</span>
+│   ├── <span class="file">CLAUDE.md.template</span>
+│   └── <span class="file">project-config.yaml</span>
+└── <span class="folder">docs/</span>
+    └── <span class="file">process-overview.html</span>
+      </div>
+    </div>
+
+    <div class="repo-box green">
+      <div class="repo-name">🏪 Company Marketplace</div>
+      <div class="repo-sub">Internal API. Published by PM, Architects, Design Lead. Plugin queries it — developers never touch it directly.</div>
+      <div class="tree">
+<span class="folder">marketplace://</span>  <span class="comment"># Served via internal API</span>
+├── <span class="folder">design-system/</span>      <span class="comment"># Tokens, components, themes</span>
+├── <span class="folder">product-spec/</span>       <span class="comment"># Features, flows, requirements</span>
+├── <span class="folder">architecture/</span>       <span class="comment"># ADRs, patterns, tech decisions</span>
+├── <span class="folder">dev-guidelines/</span>     <span class="comment"># Coding standards, naming</span>
+├── <span class="folder">ai-rules/</span>           <span class="comment"># Claude allowed/forbidden ops</span>
+├── <span class="folder">platforms/</span>
+│   ├── <span class="folder">android-mobile/</span>
+│   ├── <span class="folder">ios-mobile/</span>
+│   ├── <span class="folder">apple-tv/</span>
+│   ├── <span class="folder">android-tv/</span>
+│   ├── <span class="folder">tizen/</span>
+│   ├── <span class="folder">webos/</span>
+│   └── <span class="folder">vidaa/</span>
+├── <span class="folder">qa-process/</span>         <span class="comment"># Test standards, coverage</span>
+├── <span class="folder">release-process/</span>    <span class="comment"># CI/CD, coordination</span>
+├── <span class="folder">security/</span>           <span class="comment"># Auth, data, compliance</span>
+├── <span class="folder">performance/</span>        <span class="comment"># Budgets per platform</span>
+├── <span class="folder">localization/</span>       <span class="comment"># i18n, RTL, markets</span>
+├── <span class="folder">monitoring/</span>         <span class="comment"># Analytics, error tracking</span>
+└── <span class="folder">api-contracts/</span>      <span class="comment"># Backend API specs, versioning</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="sep">
+  <h3>Per-Project Output (written by plugin into each project repo)</h3>
+  <div class="repo-box purple mt16">
+    <div class="repo-name">📁 Project Repo (e.g. iOS Mobile / Tizen)</div>
+    <div class="repo-sub">Generated and maintained by the plugin. Developer should not edit manually.</div>
+    <div class="tree">
+<span class="folder">.platform-guardian/</span>
+├── <span class="file">project-config.yaml</span>   <span class="comment"># Platform, org repo URL, phase state</span>
+├── <span class="file">audit-report.md</span>        <span class="comment"># Gap analysis from Phase 2</span>
+├── <span class="file">architecture-map.md</span>    <span class="comment"># Tech stack map from Phase 3</span>
+└── <span class="file">phase-state.json</span>       <span class="comment"># Completed phases + approvals</span>
+<span class="file">CLAUDE.md</span>                  <span class="comment"># Generated rules: allowed/forbidden for THIS project</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const phases = [
+  {
+    id: 'p0', num: '0', emoji: '⚙️',
+    title: 'Environment Setup',
+    short: 'Verify plugin, org repo access, Claude Code version',
+    desc: 'Verify that the developer\'s environment is correctly configured before any project work begins.',
+    gates: ['Claude Code is installed and current', 'Platform Guardian MCP server is running and connected', 'Access to Marketplacesitory is verified (read permission)'],
+    actions: ['Check Claude Code version compatibility', 'Verify MCP server connection and health', 'Test read access to Marketplace via git', 'Sync and cache org knowledge locally'],
+    outputs: ['Environment validation report', 'Org Knowledge local cache (read-only)'],
+    blocking: 'Cannot proceed if Marketplace is unreachable or MCP server is not connected. Developer must fix environment before any project registration.',
+    color: 'p0'
+  },
+  {
+    id: 'p1', num: '1', emoji: '📋',
+    title: 'Project Registration',
+    short: 'Define platform type, link to org knowledge system',
+    desc: 'Register the project with its platform type and create the initial project configuration. This establishes which platform constraints and rules apply.',
+    gates: ['Phase 0 completed', 'Platform type must be one of the registered platforms in Org Repo', 'Project repository is accessible'],
+    actions: ['Define project name, platform type, and team', 'Validate platform exists in marketplace://platforms/', 'Load platform-specific constraints', 'Create .platform-guardian/project-config.yaml'],
+    outputs: ['.platform-guardian/project-config.yaml', 'Platform constraints loaded for this project'],
+    blocking: 'Cannot proceed if the platform type is not published in the Marketplace. Developer must contact PM to register new platforms — this is an explicit gate to prevent ad-hoc platform additions.',
+    color: 'p1'
+  },
+  {
+    id: 'p2', num: '2', emoji: '🔍',
+    title: 'Initial Audit',
+    short: 'Compare existing codebase against all org specs → gap report',
+    desc: 'Systematically compare the entire existing codebase against organizational specifications across all domains. This is the most critical phase — it surfaces every deviation and creates the baseline for the project.',
+    gates: ['Phase 1 completed', 'Codebase is accessible (not empty)', 'Org specs for this platform are loaded'],
+    actions: [
+      'Compare UI components against design system tokens and components',
+      'Check architectural patterns against org architecture decisions',
+      'Verify coding conventions against dev guidelines',
+      'Audit previous AI-generated code against AI rules',
+      'Validate test coverage against QA requirements',
+      'Check security patterns against security guidelines',
+      'Verify analytics events against monitoring standards',
+      'Check performance against budgets for this platform'
+    ],
+    outputs: ['.platform-guardian/audit-report.md', 'Critical blockers list (must fix before feature dev)', 'Warnings list (should fix)', 'Informational items list'],
+    blocking: 'Critical blockers in the audit report must be explicitly acknowledged by developer AND PM before proceeding. Plugin lists each blocker and who is responsible. Acknowledgement is stored in phase-state.json.',
+    color: 'p2'
+  },
+  {
+    id: 'p3', num: '3', emoji: '🏗️',
+    title: 'Architecture Analysis',
+    short: 'Map tech stack, identify deviations, document tech debt',
+    desc: 'Deep-dive into the current technology stack, patterns, and library choices. Map everything against organizational architecture decisions and create a clear picture of what exists vs what should exist.',
+    gates: ['Phase 2 completed', 'Audit report has been acknowledged (not necessarily all items fixed)', 'Critical blockers are documented with owner and timeline'],
+    actions: [
+      'Map all frameworks, libraries, and SDKs in use',
+      'Document state management approach and patterns',
+      'Map routing and navigation implementation',
+      'Document network layer and data fetching approach',
+      'Identify data persistence strategy',
+      'Map build tooling and CI configuration',
+      'Compare all findings to org architecture standards',
+      'Flag explicit deviations for documentation'
+    ],
+    outputs: ['.platform-guardian/architecture-map.md', 'Deviation list with documented justifications', 'Forbidden patterns identified for CLAUDE.md'],
+    blocking: 'Deviations from org architecture cannot be silently accepted. Developer must document WHY each deviation exists. Deviations without documented reasons block Phase 4.',
+    color: 'p3'
+  },
+  {
+    id: 'p4', num: '4', emoji: '📜',
+    title: 'Rules Definition',
+    short: 'Generate CLAUDE.md — requires PM + Tech Lead approval',
+    desc: 'Generate the CLAUDE.md file for this specific project. This is the definitive document controlling Claude\'s behavior in this codebase. It is generated from org templates, customized by the audit and architecture findings, and must be approved by a human authority before Phase 5 can begin.',
+    gates: ['Phase 3 completed', 'Architecture map reviewed and deviations documented', 'PM or Tech Lead approval is explicitly required (human gate — cannot be automated)'],
+    actions: [
+      'Generate base CLAUDE.md from org template',
+      'Add project-specific allowed patterns (from architecture map)',
+      'Add project-specific forbidden patterns (from audit + deviations)',
+      'Add platform-specific constraints from marketplace://platforms/',
+      'Add approved dependency list',
+      'Add required testing patterns',
+      'Review jointly with PM and Tech Lead',
+      'Store approval in phase-state.json with approver ID and timestamp'
+    ],
+    outputs: ['CLAUDE.md (project-level rules)', '.platform-guardian/phase-state.json updated with approval'],
+    blocking: 'This phase cannot be completed without a human PM/Tech Lead reviewing and approving the generated CLAUDE.md. This is a synchronous human gate. There is no automated bypass. This is intentional.',
+    color: 'p4'
+  },
+  {
+    id: 'p5', num: '5', emoji: '🚀',
+    title: 'Development Mode',
+    short: 'Active development with enforced guardrails per feature',
+    desc: 'Active feature development. Every Claude action is validated against CLAUDE.md and the Marketplace in real-time. New features require specs to exist in Marketplace before implementation begins.',
+    gates: ['Phase 4 completed', 'CLAUDE.md exists and has been approved', 'Feature being developed has a spec in Marketplace (per-feature gate)'],
+    actions: [
+      'Check feature spec exists in product-spec/ before starting any feature',
+      'Check design assets exist before building UI components',
+      'Validate all actions against CLAUDE.md allowed/forbidden list',
+      'Enforce approved dependency list (block unapproved imports)',
+      'Enforce test coverage requirements (block commits below threshold)',
+      'Enforce naming conventions from dev guidelines',
+      'Log all Claude actions in audit trail'
+    ],
+    outputs: ['Feature code with full test coverage', 'Updated audit trail', 'Any new approved patterns added to CLAUDE.md'],
+    blocking: 'Missing feature spec → blocked, contact PM. Missing design assets → blocked, contact Design Lead. Unapproved library → blocked, contact Tech Lead. No bypass path for any of these.',
+    color: 'p5'
+  },
+  {
+    id: 'p6', num: '6', emoji: '🎯',
+    title: 'Release Preparation',
+    short: 'Cross-platform coordination, QA sign-off, compliance report',
+    desc: 'Coordinate release across all in-scope platforms. Verify feature parity, run cross-platform consistency checks, and ensure all QA requirements are satisfied before any platform ships.',
+    gates: ['Phase 5 completed for all release-scope features', 'QA sign-off obtained per platform', 'No open critical blockers across any platform'],
+    actions: [
+      'Verify all features work consistently across in-scope platforms',
+      'Check feature parity against platform capability matrix',
+      'Generate cross-platform consistency report',
+      'Validate release checklist from marketplace://release-process/',
+      'Coordinate release timing with other platform teams',
+      'Generate release notes draft from feature specs'
+    ],
+    outputs: ['Release compliance report', 'Cross-platform consistency check', 'Release notes draft', 'Updated phase-state.json marking release complete'],
+    blocking: 'Cannot release if any QA blocker exists. Cannot release if feature parity issues exist across platforms and have not been explicitly documented and accepted by PM.',
+    color: 'p6'
+  }
+];
+
+const phaseColors = {
+  p0: 'rgba(68,147,248,0.8)',
+  p1: 'rgba(192,132,252,0.8)',
+  p2: 'rgba(63,185,80,0.8)',
+  p3: 'rgba(240,136,62,0.8)',
+  p4: 'rgba(57,197,207,0.8)',
+  p5: 'rgba(68,147,248,0.8)',
+  p6: 'rgba(192,132,252,0.8)'
+};
+
+const domains = [
+  { icon: '🎨', title: 'Design System', desc: 'UI tokens, component library, themes, spacing, typography, and platform-specific adaptations. Single source of truth for all visual decisions.', tags: ['Tokens', 'Components', 'Themes', 'Accessibility', 'Dark mode'], added: false },
+  { icon: '📋', title: 'Product Specifications', desc: 'Feature definitions, user flows, acceptance criteria, and per-platform requirements. Claude cannot implement features not defined here.', tags: ['Features', 'User flows', 'Acceptance criteria', 'Platform variants'], added: false },
+  { icon: '🏗️', title: 'Architecture Decisions', desc: 'Technology choices, architectural patterns, ADRs, approved library list, and forbidden anti-patterns. Defines all technical boundaries.', tags: ['ADRs', 'Approved libs', 'Patterns', 'Forbidden patterns'], added: false },
+  { icon: '📏', title: 'Development Guidelines', desc: 'Coding standards, naming conventions, folder structure, code review requirements. What "good code" means in this organization.', tags: ['Code style', 'Naming', 'Structure', 'Review checklist'], added: false },
+  { icon: '🤖', title: 'AI Work Rules', desc: 'What Claude is allowed to do, forbidden operations, required human verification steps, and prompting guidelines specific to your organization.', tags: ['Allowed ops', 'Forbidden ops', 'Human gates', 'Prompt patterns'], added: false },
+  { icon: '📱', title: 'Platform Constraints', desc: 'Per-platform capabilities, hardware limitations, feature support matrix, and navigation paradigms. Critical for TV and smart TV platforms with strict memory limits.', tags: ['Capabilities', 'Memory limits', 'Navigation', 'Feature matrix'], added: false },
+  { icon: '🧪', title: 'QA & Testing Standards', desc: 'Testing requirements, minimum coverage thresholds, test types (unit/integration/e2e), and QA sign-off criteria. Enforced per commit and per release.', tags: ['Unit tests', 'E2E', 'Coverage %', 'QA checklist'], added: false },
+  { icon: '🚀', title: 'Release & CI/CD', desc: 'Build process, deployment pipelines, environment definitions, and cross-platform release coordination process.', tags: ['Build process', 'Deploy', 'Environments', 'Coordination'], added: false },
+  { icon: '🔐', title: 'Security & Privacy', desc: 'Auth token handling, data storage rules, API security requirements, and compliance standards. Defines how every platform handles credentials, sessions, PII, and regulatory requirements.', tags: ['Auth patterns', 'Data storage', 'API security', 'Compliance'] },
+  { icon: '⚡', title: 'Performance Budgets', desc: 'Concrete performance targets per platform. TV platforms (Tizen, WebOS, Vidaa) have hard memory limits under 1GB — without defined budgets, developers over-build and cause crashes on real hardware.', tags: ['Memory limits', 'Load time', 'FPS targets', 'Bundle size'] },
+  { icon: '🌍', title: 'Localization & i18n', desc: 'Language coverage, RTL support, date/number formatting standards, string key conventions, and market-specific content rules across all platforms.', tags: ['Languages', 'RTL', 'Formatting', 'Markets'] },
+  { icon: '📊', title: 'Monitoring & Analytics', desc: 'Event taxonomy, error tracking standards, and logging levels. Without a shared event taxonomy, developers on different platforms name the same user action differently — making cross-platform analysis impossible.', tags: ['Event taxonomy', 'Error tracking', 'Logging', 'Dashboards'] },
+  { icon: '🔌', title: 'API & Backend Contracts', desc: 'The shared interface definitions between all platform clients and the backend. Versioning strategy for API changes, how breaking changes are communicated to all 7 platform teams simultaneously, and contract validation requirements.', tags: ['API specs', 'Versioning', 'Breaking changes', 'Contracts'] }
+];
+
+const platforms = [
+  { icon: '🤖', name: 'Android Mobile', type: 'Mobile', status: 'active' },
+  { icon: '🍎', name: 'iOS Mobile', type: 'Mobile', status: 'active' },
+  { icon: '📺', name: 'Apple TV', type: 'TV / Streaming', status: 'active' },
+  { icon: '📺', name: 'Android TV', type: 'TV / Streaming', status: 'active' },
+  { icon: '🖥️', name: 'Tizen', type: 'Smart TV OS', status: 'active' },
+  { icon: '🖥️', name: 'WebOS', type: 'Smart TV OS', status: 'active' },
+  { icon: '🖥️', name: 'Vidaa', type: 'Smart TV OS', status: 'active' },
+  { icon: '💻', name: 'PC / Desktop', type: 'Future Platform', status: 'planned' }
+];
+
+const matrixCols = ['Android Mobile', 'iOS', 'Apple TV', 'Android TV', 'Tizen', 'WebOS', 'Vidaa'];
+const matrixRows = [
+  { cap: 'Push Notifications', vals: ['✅','✅','⚠️','⚠️','❌','❌','❌'] },
+  { cap: 'Touch / Swipe Navigation', vals: ['✅','✅','❌','❌','❌','❌','❌'] },
+  { cap: 'D-Pad / Remote Navigation', vals: ['❌','❌','✅','✅','✅','✅','✅'] },
+  { cap: 'Offline / Downloads', vals: ['✅','✅','❌','❌','❌','❌','❌'] },
+  { cap: 'Deep Linking', vals: ['✅','✅','✅','✅','⚠️','⚠️','⚠️'] },
+  { cap: 'Voice Search', vals: ['✅','✅','✅','✅','⚠️','⚠️','❌'] },
+  { cap: 'In-App Purchase', vals: ['✅','✅','✅','✅','❌','❌','❌'] },
+  { cap: 'Background Playback', vals: ['✅','✅','✅','✅','✅','✅','⚠️'] },
+  { cap: 'DRM / Content Protection', vals: ['✅','✅','✅','✅','✅','✅','⚠️'] },
+  { cap: 'Low Memory Mode (<1GB)', vals: ['⚠️','❌','⚠️','⚠️','✅','✅','✅'] },
+  { cap: 'Accessibility (a11y)', vals: ['✅','✅','⚠️','⚠️','⚠️','⚠️','❌'] },
+];
+
+const rules = [
+  {
+    result: 'blocked',
+    scenario: 'Developer tries to build a UI component before Phase 4 is complete',
+    trigger: 'Build a new home screen layout',
+    condition: 'Phase 4 (Rules Definition) is not completed. CLAUDE.md does not exist in this project.',
+    message: '🚫 BLOCKED: This project does not have an approved CLAUDE.md. Complete Phase 4 first. Phase 4 requires PM and Tech Lead approval. No implementation work can begin without it.',
+    resolve: 'Contact PM to schedule Phase 4 review. Share the generated CLAUDE.md draft for approval.'
+  },
+  {
+    result: 'blocked',
+    scenario: 'Developer asks Claude to implement a feature not in the product spec',
+    trigger: 'Add social sharing functionality to the player screen',
+    condition: '"social sharing" is not defined in marketplace://product-spec/ for Apple TV platform.',
+    message: '🚫 BLOCKED: "social sharing" is not in the product specification for Apple TV. Contact the Product Manager to define this feature in the Marketplace before implementation can begin.',
+    resolve: 'PM must add feature spec to marketplace://product-spec/apple-tv/ with acceptance criteria.'
+  },
+  {
+    result: 'blocked',
+    scenario: 'Developer asks Claude to install an unapproved library',
+    trigger: 'Install react-query for server state management',
+    condition: '"react-query" is not in marketplace://architecture/approved-libraries.md. The org-approved alternative is SWR.',
+    message: '🚫 BLOCKED: react-query is not on the approved dependency list. Org-approved library for server state is SWR. To request approval for react-query, contact the Tech Lead.',
+    resolve: 'Use the approved alternative (SWR), or Tech Lead adds react-query to approved-libraries.md after review.'
+  },
+  {
+    result: 'blocked',
+    scenario: 'Developer adds touch/swipe gesture on a TV platform',
+    trigger: 'Add swipe gesture to navigate the content carousel',
+    condition: 'Platform is Tizen (Smart TV). Platform constraint: touch/swipe navigation is unsupported on Tizen.',
+    message: '🚫 BLOCKED: Swipe gesture is not supported on Tizen. This platform uses D-pad / remote navigation exclusively. See marketplace://platforms/tizen/navigation-patterns.md for the correct approach.',
+    resolve: 'Implement D-pad navigation following marketplace://platforms/tizen/navigation-patterns.md.'
+  },
+  {
+    result: 'blocked',
+    scenario: 'Developer builds UI without design assets in Org Repo',
+    trigger: 'Create the new Subscription upsell modal component',
+    condition: '"Subscription upsell modal" design assets are not present in marketplace://design-system/components/.',
+    message: '🚫 BLOCKED: No design assets found for "Subscription upsell modal" in the design system. Contact the Design Lead to add the design spec, tokens, and component definition before implementation.',
+    resolve: 'Design Lead adds component spec to marketplace://design-system/components/subscription-upsell.md.'
+  },
+  {
+    result: 'allowed',
+    scenario: 'Developer implements a fully spec\'d, designed feature',
+    trigger: 'Implement the Continue Watching row on the home screen',
+    condition: 'Feature is in product-spec, design assets exist, platform supports it, CLAUDE.md is approved, tests are required.',
+    message: '✅ ALLOWED: "Continue Watching" is fully specified. Proceeding with implementation. CLAUDE.md rules are active. Minimum 80% test coverage is required before this can be considered complete.',
+    resolve: null
+  }
+];
+
+// RENDER PHASES
+function renderPhases() {
+  document.getElementById('phases-container').innerHTML = phases.map(p => `
+    <div class="phase-card" id="phase-${p.id}" onclick="togglePhase('${p.id}')">
+      <div class="phase-dot" style="background: rgba(0,0,0,0.5); border: 2px solid ${phaseColors[p.color]}; color: ${phaseColors[p.color]};">${p.num}</div>
+      <div class="phase-head">
+        <span class="phase-emoji">${p.emoji}</span>
+        <div class="phase-title-wrap">
+          <div class="phase-title">Phase ${p.num}: ${p.title}</div>
+          <div class="phase-short">${p.short}</div>
+        </div>
+        <span class="phase-chevron">▼</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-section">
+          <div class="phase-section-title">Description</div>
+          <div style="font-size:0.82rem; color:var(--text2); line-height:1.55;">${p.desc}</div>
+        </div>
+        <div class="phase-section">
+          <div class="phase-section-title">Gate Conditions — must be true to start this phase</div>
+          ${p.gates.map(g => `<div class="phase-item"><span class="bullet dot dot-yellow"></span>${g}</div>`).join('')}
+        </div>
+        <div class="phase-section">
+          <div class="phase-section-title">Actions Performed</div>
+          ${p.actions.map(a => `<div class="phase-item"><span class="bullet" style="color:var(--accent);">›</span>${a}</div>`).join('')}
+        </div>
+        <div class="phase-section">
+          <div class="phase-section-title">Outputs</div>
+          ${p.outputs.map(o => `<div class="phase-item"><span class="bullet dot dot-green"></span>${o}</div>`).join('')}
+        </div>
+        <div class="callout danger" style="margin-top:14px;">
+          <strong>Blocking condition:</strong> ${p.blocking}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function togglePhase(id) {
+  const card = document.getElementById(`phase-${id}`);
+  const isOpen = card.classList.contains('open');
+  document.querySelectorAll('.phase-card').forEach(c => c.classList.remove('open'));
+  if (!isOpen) card.classList.add('open');
+}
+
+// RENDER DOMAINS
+function renderDomains() {
+  document.getElementById('domains-container').innerHTML = domains.map(d => `
+    <div class="domain-card${d.added ? ' added' : ''}">
+      <span class="d-icon">${d.icon}</span>
+      <div class="d-title">${d.title}</div>
+      <div class="d-desc">${d.desc}</div>
+      <div class="d-tags">${d.tags.map(t => `<span class="d-tag">${t}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+// RENDER PLATFORMS
+function renderPlatforms() {
+  document.getElementById('platforms-container').innerHTML = platforms.map(p => `
+    <div class="platform-card${p.status === 'planned' ? ' planned' : ''}">
+      <span class="p-icon">${p.icon}</span>
+      <div class="p-name">${p.name}</div>
+      <div class="p-type">${p.type}</div>
+      <span class="p-badge ${p.status === 'active' ? 'p-active' : 'p-planned'}">${p.status === 'active' ? '● Active' : '◎ Planned'}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('matrix-head').innerHTML = `<tr><th>Capability</th>${matrixCols.map(c => `<th>${c}</th>`).join('')}</tr>`;
+  document.getElementById('matrix-body').innerHTML = matrixRows.map(r =>
+    `<tr><td>${r.cap}</td>${r.vals.map(v => `<td>${v}</td>`).join('')}</tr>`
+  ).join('');
+}
+
+// RENDER RULES
+function renderRules() {
+  document.getElementById('rules-container').innerHTML = rules.map(r => `
+    <div class="rule-card">
+      <div class="rule-head">
+        <span style="font-size:1.3rem;">${r.result === 'blocked' ? '🚫' : '✅'}</span>
+        <div class="rule-label">
+          <div class="rule-scenario">${r.scenario}</div>
+          <div class="rule-trigger">Developer says: "${r.trigger}"</div>
+        </div>
+      </div>
+      <div class="rule-cols">
+        <div class="rule-col">
+          <div class="r-head blue">Condition Check</div>
+          <div style="font-size:0.8rem; color:var(--text2); line-height:1.5;">${r.condition}</div>
+        </div>
+        <div class="rule-col">
+          <div class="r-head ${r.result === 'blocked' ? 'red' : 'green'}">${r.result === 'blocked' ? 'Plugin Response — Blocked' : 'Plugin Response — Allowed'}</div>
+          <div class="rule-msg ${r.result}">${r.message}</div>
+          ${r.resolve ? `<div class="r-resolve"><strong>Resolution path:</strong> ${r.resolve}</div>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// TAB SWITCHING
+function showTab(tabId, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// INIT
+renderPhases();
+renderDomains();
+renderPlatforms();
+renderRules();
+</script>
+
+<!-- GOVERNANCE TAB -->
+<div id="governance" class="tab-pane">
+  <h2>Governance</h2>
+  <p class="section-desc">Decisions about who owns what, who approves what, and how Marketplace version changes propagate to all developer projects. These are resolved — not open questions.</p>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:24px;">
+    <div style="background:var(--surface); border:1px solid rgba(68,147,248,0.4); border-radius:10px; padding:22px;">
+      <div style="font-size:1rem; font-weight:600; color:var(--text); margin-bottom:4px;">📦 Repo A — Plugin</div>
+      <div style="color:var(--dim); font-size:0.78rem; margin-bottom:16px;">Change process for the plugin itself</div>
+      <div style="font-size:0.82rem; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="color:var(--green); flex-shrink:0;">✓</span><div><strong>Owner approval required</strong> on every PR</div></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="color:var(--green); flex-shrink:0;">✓</span><div><strong>Minimum 1 reviewer</strong> required (technical peer review)</div></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="color:var(--green); flex-shrink:0;">✓</span><div>No direct commits to main — all changes via PR</div></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="color:var(--orange); flex-shrink:0;">!</span><div>A broken gate condition affects all developers simultaneously — two-person review is a hard requirement, not a preference</div></div>
+      </div>
+    </div>
+    <div style="background:var(--surface); border:1px solid rgba(63,185,80,0.4); border-radius:10px; padding:22px;">
+      <div style="font-size:1rem; font-weight:600; color:var(--text); margin-bottom:4px;">🏪 Company Marketplace</div>
+      <div style="color:var(--dim); font-size:0.78rem; margin-bottom:16px;">Publish/approval process for org knowledge</div>
+      <div style="font-size:0.82rem; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="color:var(--green); flex-shrink:0;">✓</span><div><strong>Domain owner must approve</strong> any publish to their domain namespace</div></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="color:var(--green); flex-shrink:0;">✓</span><div>Minimum 1 reviewer required before publish goes live</div></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="color:var(--green); flex-shrink:0;">✓</span><div>Semantic versioning on every published release</div></div>
+        <div style="display:flex; gap:10px; align-items:flex-start;"><span style="color:var(--green); flex-shrink:0;">✓</span><div>Plugin queries version on every session start — no git required</div></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="sep">
+  <h3>Marketplace Change Propagation — Versioning Strategy</h3>
+  <p class="section-desc" style="margin-top:8px;">When Marketplace version changes, the plugin detects it at session start and applies a tiered response based on semantic version bump type. Developers see exactly which domains changed before any work begins.</p>
+
+  <div style="margin-top:20px; display:flex; flex-direction:column; gap:12px;">
+    <div style="background:var(--surface); border-left:3px solid var(--red); border-radius:0 10px 10px 0; padding:18px 20px;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+        <span style="background:rgba(248,81,73,0.15); color:var(--red); padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:600;">MAJOR v2.0.0</span>
+        <span style="color:var(--text); font-weight:600; font-size:0.9rem;">Breaking change — existing standard replaced or removed</span>
+      </div>
+      <div style="font-size:0.8rem; color:var(--text2); margin-bottom:8px;"><strong>Plugin behavior:</strong> BLOCKS all feature development until re-audit complete</div>
+      <div style="font-size:0.8rem; color:var(--text2); margin-bottom:8px;"><strong>Required action:</strong> Full Phase 2 re-audit for affected domains. PM acknowledgement required.</div>
+      <div style="font-size:0.8rem; color:var(--dim);"><strong>Deadline:</strong> 14 days. After deadline, emergency-bypass is required to continue.</div>
+    </div>
+    <div style="background:var(--surface); border-left:3px solid var(--yellow); border-radius:0 10px 10px 0; padding:18px 20px;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+        <span style="background:rgba(210,153,34,0.15); color:var(--yellow); padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:600;">MINOR v1.3.0</span>
+        <span style="color:var(--text); font-weight:600; font-size:0.9rem;">New standard added or existing one significantly updated</span>
+      </div>
+      <div style="font-size:0.8rem; color:var(--text2); margin-bottom:8px;"><strong>Plugin behavior:</strong> WARNS on session start. Shows domain-level diff of what changed.</div>
+      <div style="font-size:0.8rem; color:var(--text2); margin-bottom:8px;"><strong>Required action:</strong> Acknowledge changed domains. Targeted re-check (not full re-audit) of affected areas only.</div>
+      <div style="font-size:0.8rem; color:var(--dim);"><strong>Deadline:</strong> 7 days to acknowledge. Shown as reminder every session until resolved.</div>
+    </div>
+    <div style="background:var(--surface); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:18px 20px;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+        <span style="background:rgba(63,185,80,0.15); color:var(--green); padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:600;">PATCH v1.2.3</span>
+        <span style="color:var(--text); font-weight:600; font-size:0.9rem;">Clarification, typo fix, non-breaking addition</span>
+      </div>
+      <div style="font-size:0.8rem; color:var(--text2); margin-bottom:8px;"><strong>Plugin behavior:</strong> NOTIFIES once (non-blocking). Shown once at first session of the week.</div>
+      <div style="font-size:0.8rem; color:var(--text2); margin-bottom:8px;"><strong>Required action:</strong> Read and mark as seen. No re-audit required.</div>
+      <div style="font-size:0.8rem; color:var(--dim);"><strong>Deadline:</strong> None.</div>
+    </div>
+  </div>
+
+  <hr class="sep">
+  <h3>What a Change Alert Looks Like</h3>
+  <p class="section-desc" style="margin-top:8px;">What the developer sees at session start when the Marketplace has a new version.</p>
+  <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:16px; font-family:'SF Mono','Fira Code',Consolas,monospace; font-size:0.8rem; line-height:1.8; margin-top:16px;">
+    <div style="color:var(--yellow);">⚠️  Org Knowledge updated: v1.3.0 → v1.4.0 (minor)</div>
+    <div style="color:var(--dim); margin-top:8px;">Changed domains:</div>
+    <div style="color:var(--text2); margin-left:16px;">- architecture/approved-libraries.md  <span style="color:var(--green);">(2 new libraries added)</span></div>
+    <div style="color:var(--text2); margin-left:16px;">- design-system/tokens/colors.json    <span style="color:var(--yellow);">(4 token values updated)</span></div>
+    <div style="color:var(--dim); margin-top:12px;">Action required before starting work:</div>
+    <div style="color:var(--accent); margin-left:16px;">Acknowledge these changes. A targeted re-check of architecture</div>
+    <div style="color:var(--accent); margin-left:16px;">and design-system compliance will run. Deadline: 7 days.</div>
+    <div style="color:var(--dim); margin-top:12px;">[A] Acknowledge and continue  [V] View full diff  [S] Skip until tomorrow</div>
+  </div>
+</div>
+
+
+<style>
+/* DIAGRAM STYLES */
+.flow-section { margin-bottom: 48px; }
+.flow-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.flow-sub { color: var(--dim); font-size: 0.8rem; margin-bottom: 24px; }
+
+.flow-row { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+.flow-col { display: flex; flex-direction: column; align-items: center; gap: 0; }
+
+.fbox {
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.4;
+  min-width: 140px;
+}
+.fbox.start { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); border-radius: 20px; }
+.fbox.process { background: rgba(68,147,248,0.1); border: 1px solid rgba(68,147,248,0.4); color: var(--accent); }
+.fbox.decision { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.4); color: var(--yellow); border-radius: 4px; transform: none; min-width: 170px; }
+.fbox.block { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.4); color: var(--red); }
+.fbox.pass { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.4); color: var(--green); }
+.fbox.end { background: rgba(63,185,80,0.12); border: 2px solid rgba(63,185,80,0.5); color: var(--green); border-radius: 20px; font-weight: 700; }
+.fbox.warn { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.4); color: var(--yellow); }
+
+.farr { color: var(--border); font-size: 1rem; padding: 0 6px; flex-shrink: 0; }
+.farr-d { color: var(--border); font-size: 1rem; text-align: center; margin: 4px 0; }
+
+.fgate {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+.fgate-q {
+  background: rgba(210,153,34,0.08);
+  border-bottom: 1px solid rgba(210,153,34,0.25);
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--yellow);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fgate-branches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: none;
+}
+.fgate-yes {
+  padding: 10px 16px;
+  font-size: 0.78rem;
+  color: var(--green);
+  border-right: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
+}
+.fgate-no {
+  padding: 10px 16px;
+  font-size: 0.78rem;
+  color: var(--red);
+  display: flex; align-items: center; gap: 6px;
+}
+.fgate-no .contact { color: var(--dim); font-size: 0.72rem; margin-top: 2px; }
+
+.gates-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 600px;
+}
+.gate-connector {
+  display: flex;
+  align-items: center;
+  padding-left: 20px;
+  gap: 8px;
+}
+.gate-connector-line {
+  width: 2px;
+  height: 20px;
+  background: rgba(63,185,80,0.3);
+  margin-left: 11px;
+}
+
+.session-flow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.sf-step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  position: relative;
+}
+.sf-step .sf-icon { font-size: 1.5rem; margin-bottom: 6px; }
+.sf-step .sf-label { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+.sf-step .sf-sub { font-size: 0.7rem; color: var(--dim); margin-top: 4px; }
+
+.devloop {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.dl-item {
+  flex: 1;
+  min-width: 120px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 12px;
+  text-align: center;
+  position: relative;
+}
+.dl-num {
+  width: 22px; height: 22px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; color: #fff;
+  margin-bottom: 6px;
+}
+.dl-label { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+.dl-sub { font-size: 0.68rem; color: var(--dim); margin-top: 3px; }
+.dl-arrow { display: flex; align-items: center; color: var(--border); padding-top: 24px; font-size: 1rem; flex-shrink: 0; }
+
+.scenario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+.scenario {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 0.78rem;
+}
+.scenario.blocked { border-color: rgba(248,81,73,0.3); }
+.scenario.allowed { border-color: rgba(63,185,80,0.3); }
+.sc-header { font-weight: 600; color: var(--text); margin-bottom: 6px; font-size: 0.82rem; }
+.sc-input { color: var(--dim); font-style: italic; margin-bottom: 8px; padding: 4px 8px; background: var(--surface2); border-radius: 4px; }
+.sc-result { margin-top: 6px; }
+
+@media (max-width: 640px) {
+  .scenario-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<div id="diagram" class="tab-pane">
+  <h2>How It Works in Practice</h2>
+  <p class="section-desc">A developer's actual experience — from opening a session to shipping a feature — with the plugin running in the background.</p>
+
+  <!-- SESSION START -->
+  <div class="flow-section">
+    <div class="flow-title">1. Session Start — Every Morning</div>
+    <div class="flow-sub">Fires automatically when the developer opens Claude Code. Takes seconds. Invisible when all is well.</div>
+    <div class="session-flow">
+      <div class="sf-step" style="border-color:rgba(68,147,248,0.4);">
+        <div class="sf-icon">☀️</div>
+        <div class="sf-label">Dev opens Claude Code</div>
+        <div class="sf-sub">Plugin activates automatically via MCP</div>
+      </div>
+      <div class="sf-step">
+        <div class="sf-icon">🔄</div>
+        <div class="sf-label">Plugin: query Marketplace API</div>
+        <div class="sf-sub">Compare version vs last session</div>
+      </div>
+      <div class="sf-step" style="border-color:rgba(63,185,80,0.4);">
+        <div class="sf-icon">✅</div>
+        <div class="sf-label">No change (patch only)</div>
+        <div class="sf-sub">Load CLAUDE.md → Ready</div>
+      </div>
+      <div class="sf-step" style="border-color:rgba(210,153,34,0.4);">
+        <div class="sf-icon">⚠️</div>
+        <div class="sf-label">Minor version bump</div>
+        <div class="sf-sub">Show diff → Acknowledge → Continue</div>
+      </div>
+      <div class="sf-step" style="border-color:rgba(248,81,73,0.4);">
+        <div class="sf-icon">🚫</div>
+        <div class="sf-label">Major version bump</div>
+        <div class="sf-sub">BLOCK → Schedule re-audit with PM</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <!-- FEATURE REQUEST GATES -->
+  <div class="flow-section">
+    <div class="flow-title">2. Feature Request — The 4-Gate Sequence</div>
+    <div class="flow-sub">Every time a developer says "I want to build X", the plugin runs 4 checks in sequence before Claude writes a single line of code.</div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start;">
+      <div class="gates-flow">
+        <div class="fbox start" style="margin-bottom:8px; align-self:flex-start;">💬 "I want to build [Feature X]"</div>
+
+        <div class="gate-connector-line"></div>
+
+        <div class="fgate">
+          <div class="fgate-q">🔷 Gate 1 — Is this feature in the product spec?</div>
+          <div class="fgate-branches">
+            <div class="fgate-yes">✓ Yes → continue</div>
+            <div class="fgate-no">✗ No → 🚫 STOP<div class="contact">Contact PM to add spec to the Marketplace</div></div>
+          </div>
+        </div>
+
+        <div class="gate-connector-line"></div>
+
+        <div class="fgate">
+          <div class="fgate-q">🔷 Gate 2 — Are design assets in the design system? <span style="font-size:0.7rem; font-weight:400; color:var(--dim);">(UI only)</span></div>
+          <div class="fgate-branches">
+            <div class="fgate-yes">✓ Yes → continue</div>
+            <div class="fgate-no">✗ No → 🚫 STOP<div class="contact">Contact Design Lead to add assets</div></div>
+          </div>
+        </div>
+
+        <div class="gate-connector-line"></div>
+
+        <div class="fgate">
+          <div class="fgate-q">🔷 Gate 3 — Are all required libraries approved?</div>
+          <div class="fgate-branches">
+            <div class="fgate-yes">✓ Yes → continue</div>
+            <div class="fgate-no">✗ No → 🚫 STOP<div class="contact">Contact Tech Lead for approval</div></div>
+          </div>
+        </div>
+
+        <div class="gate-connector-line"></div>
+
+        <div class="fgate">
+          <div class="fgate-q">🔷 Gate 4 — Does this platform support the feature?</div>
+          <div class="fgate-branches">
+            <div class="fgate-yes">✓ Yes → continue</div>
+            <div class="fgate-no">✗ No → 🚫 STOP<div class="contact">See platform constraints in the Marketplace</div></div>
+          </div>
+        </div>
+
+        <div class="gate-connector-line"></div>
+        <div class="fbox end" style="align-self:flex-start; margin-top:4px;">✅ All gates pass → Claude builds</div>
+      </div>
+
+      <div>
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px; margin-bottom:12px;">
+          <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim); margin-bottom:10px;">While Claude Builds</div>
+          <div style="font-size:0.8rem; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span style="color:var(--accent);">›</span> Every action validated against <strong>CLAUDE.md</strong></div>
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span style="color:var(--accent);">›</span> Any import checked against <strong>approved library list</strong></div>
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span style="color:var(--accent);">›</span> Naming conventions enforced from <strong>dev guidelines</strong></div>
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span style="color:var(--accent);">›</span> Analytics events validated against <strong>event taxonomy</strong></div>
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span style="color:var(--accent);">›</span> Test coverage checked on every commit</div>
+          </div>
+        </div>
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px;">
+          <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim); margin-bottom:10px;">Human Gates (always manual)</div>
+          <div style="font-size:0.8rem; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span style="color:var(--yellow);">!</span> Phase 4 CLAUDE.md approval — <strong>PM + Tech Lead</strong></div>
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span style="color:var(--yellow);">!</span> New dependency approval — <strong>Tech Lead</strong></div>
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span style="color:var(--yellow);">!</span> Security code changes — <strong>Tech Lead review</strong></div>
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span style="color:var(--yellow);">!</span> Release sign-off — <strong>QA Lead + PM</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <!-- ONGOING DEV LOOP -->
+  <div class="flow-section">
+    <div class="flow-title">3. The Development Loop — Repeated for Every Feature</div>
+    <div class="flow-sub">Once Phase 4 is complete and CLAUDE.md is approved, the developer repeats this loop for every feature.</div>
+    <div class="devloop">
+      <div class="dl-item"><div class="dl-num">1</div><div class="dl-label">Check spec</div><div class="dl-sub">Feature in product-spec/?</div></div>
+      <div class="dl-arrow">→</div>
+      <div class="dl-item"><div class="dl-num">2</div><div class="dl-label">Check design</div><div class="dl-sub">Assets in design-system/?</div></div>
+      <div class="dl-arrow">→</div>
+      <div class="dl-item"><div class="dl-num">3</div><div class="dl-label">Build</div><div class="dl-sub">Claude follows CLAUDE.md</div></div>
+      <div class="dl-arrow">→</div>
+      <div class="dl-item"><div class="dl-num">4</div><div class="dl-label">Test</div><div class="dl-sub">Min coverage enforced</div></div>
+      <div class="dl-arrow">→</div>
+      <div class="dl-item"><div class="dl-num">5</div><div class="dl-label">Code review</div><div class="dl-sub">PR + at least 1 reviewer</div></div>
+      <div class="dl-arrow">→</div>
+      <div class="dl-item" style="border-color:rgba(63,185,80,0.4);"><div class="dl-num" style="background:var(--green);">✓</div><div class="dl-label">Merged</div><div class="dl-sub">Audit trail updated</div></div>
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <!-- EXAMPLE SCENARIOS -->
+  <div class="flow-section">
+    <div class="flow-title">4. Real Examples — Blocked vs Allowed</div>
+    <div class="flow-sub">What the developer actually sees in Claude Code when the plugin acts.</div>
+    <div class="scenario-grid">
+      <div class="scenario blocked">
+        <div class="sc-header">🚫 Developer on Tizen asks for swipe navigation</div>
+        <div class="sc-input">"Add swipe gesture to carousel"</div>
+        <div class="sc-result" style="color:var(--red); font-size:0.78rem;">Plugin: Swipe is not supported on Tizen. This platform uses D-pad navigation only. See marketplace://platforms/tizen/navigation-patterns.md.</div>
+      </div>
+      <div class="scenario blocked">
+        <div class="sc-header">🚫 Developer tries to install unapproved library</div>
+        <div class="sc-input">"Install react-query"</div>
+        <div class="sc-result" style="color:var(--red); font-size:0.78rem;">Plugin: react-query is not approved. Approved alternative: SWR. Request approval from Tech Lead before installing.</div>
+      </div>
+      <div class="scenario blocked">
+        <div class="sc-header">🚫 Feature not in spec</div>
+        <div class="sc-input">"Add social sharing to the player"</div>
+        <div class="sc-result" style="color:var(--red); font-size:0.78rem;">Plugin: "social sharing" has no spec for Apple TV. Contact PM to define this feature in marketplace://product-spec/apple-tv/ before implementation.</div>
+      </div>
+      <div class="scenario allowed">
+        <div class="sc-header">✅ Fully spec'd feature — proceeds immediately</div>
+        <div class="sc-input">"Implement the Continue Watching row"</div>
+        <div class="sc-result" style="color:var(--green); font-size:0.78rem;">Plugin: All gates pass. Spec ✓, design assets ✓, platform supported ✓. Proceeding with CLAUDE.md rules active. Min 80% test coverage required.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <!-- SYSTEM ACTORS -->
+  <div class="flow-section">
+    <div class="flow-title">5. Who Does What</div>
+    <div class="flow-sub">The three roles in the system and their responsibilities.</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:4px;">
+      <div style="background:var(--surface); border:1px solid rgba(68,147,248,0.4); border-radius:10px; padding:18px;">
+        <div style="font-size:1.2rem; margin-bottom:6px;">👨‍💻</div>
+        <div style="font-weight:700; color:var(--text); margin-bottom:8px; font-size:0.9rem;">Developer</div>
+        <div style="font-size:0.78rem; color:var(--dim); display:flex; flex-direction:column; gap:5px;">
+          <div>Installs Repo A (plugin)</div>
+          <div>Runs phases 0–6 per project</div>
+          <div>Follows CLAUDE.md rules</div>
+          <div>Reads from the Marketplace (auto via plugin)</div>
+          <div style="color:var(--red);">Never bypasses gates</div>
+        </div>
+      </div>
+      <div style="background:var(--surface); border:1px solid rgba(63,185,80,0.4); border-radius:10px; padding:18px;">
+        <div style="font-size:1.2rem; margin-bottom:6px;">📋</div>
+        <div style="font-weight:700; color:var(--text); margin-bottom:8px; font-size:0.9rem;">PM / Design / Architect</div>
+        <div style="font-size:0.78rem; color:var(--dim); display:flex; flex-direction:column; gap:5px;">
+          <div>Own and maintain the Marketplace</div>
+          <div>Add feature specs before dev starts</div>
+          <div>Add design assets before UI work</div>
+          <div>Approve CLAUDE.md (Phase 4)</div>
+          <div>Define approved library list</div>
+        </div>
+      </div>
+      <div style="background:var(--surface); border:1px solid rgba(192,132,252,0.4); border-radius:10px; padding:18px;">
+        <div style="font-size:1.2rem; margin-bottom:6px;">🛡️</div>
+        <div style="font-weight:700; color:var(--text); margin-bottom:8px; font-size:0.9rem;">Plugin (automated)</div>
+        <div style="font-size:0.78rem; color:var(--dim); display:flex; flex-direction:column; gap:5px;">
+          <div>Queries Marketplace API on every session start</div>
+          <div>Checks all 4 gates per feature</div>
+          <div>Enforces CLAUDE.md in real-time</div>
+          <div>Generates audit reports</div>
+          <div>Tracks phase state per project</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

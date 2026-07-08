@@ -1,0 +1,134 @@
+# Platform Guardian — Phase Definitions
+# This file defines the workflow phases and their gate conditions.
+# The plugin reads this file to enforce the workflow.
+
+version: "1.0"
+
+phases:
+  - id: p0
+    name: "Environment Setup"
+    description: "Verify developer environment and org knowledge access"
+    gates:
+      - type: "plugin_connected"
+        description: "MCP server is running and connected"
+      - type: "org_repo_accessible"
+        description: "Org Knowledge Repository is readable"
+      - type: "claude_code_version"
+        minimum: "1.0.0"
+    outputs:
+      - "environment-validation.json"
+      - "org-knowledge local cache"
+    human_approval_required: false
+    blocking_message: "Environment is not correctly configured. Fix all environment issues before proceeding."
+
+  - id: p1
+    name: "Project Registration"
+    description: "Register project and link to org knowledge system"
+    requires: ["p0"]
+    gates:
+      - type: "phase_complete"
+        phase: "p0"
+      - type: "platform_registered"
+        description: "Platform type exists in org-knowledge/platforms/"
+      - type: "project_repo_accessible"
+    outputs:
+      - ".platform-guardian/project-config.yaml"
+    human_approval_required: false
+    blocking_message: "Platform type is not registered in Org Knowledge Repository. Contact PM to register the platform."
+
+  - id: p2
+    name: "Initial Audit"
+    description: "Compare existing codebase against all org specs"
+    requires: ["p1"]
+    gates:
+      - type: "phase_complete"
+        phase: "p1"
+      - type: "codebase_not_empty"
+        description: "Project has source files to audit"
+    outputs:
+      - ".platform-guardian/audit-report.md"
+    human_approval_required: true
+    approval_roles: ["developer", "pm"]
+    approval_reason: "Critical audit findings must be acknowledged before proceeding"
+    blocking_message: "Audit critical findings must be acknowledged by developer and PM before Phase 3 can begin."
+
+  - id: p3
+    name: "Architecture Analysis"
+    description: "Map current tech stack and document deviations"
+    requires: ["p2"]
+    gates:
+      - type: "phase_complete"
+        phase: "p2"
+      - type: "audit_acknowledged"
+        description: "Phase 2 critical items acknowledged"
+    outputs:
+      - ".platform-guardian/architecture-map.md"
+    human_approval_required: false
+    post_conditions:
+      - type: "all_deviations_documented"
+        description: "Every deviation from org architecture has a documented reason"
+    blocking_message: "All architecture deviations must be documented with reasons before Phase 4."
+
+  - id: p4
+    name: "Rules Definition"
+    description: "Generate CLAUDE.md — requires PM and Tech Lead approval"
+    requires: ["p3"]
+    gates:
+      - type: "phase_complete"
+        phase: "p3"
+      - type: "deviations_documented"
+    outputs:
+      - "CLAUDE.md"
+      - ".platform-guardian/phase-state.json (updated)"
+    human_approval_required: true
+    approval_roles: ["pm", "tech_lead"]
+    approval_reason: "CLAUDE.md defines what Claude can do in this project — must be reviewed by PM and Tech Lead"
+    blocking_message: "CLAUDE.md requires PM and Tech Lead approval. No development work can begin without approved rules."
+    note: "This is a SYNCHRONOUS human gate. There is no automated bypass for this phase."
+
+  - id: p5
+    name: "Development Mode"
+    description: "Active development with enforced guardrails"
+    requires: ["p4"]
+    gates:
+      - type: "phase_complete"
+        phase: "p4"
+      - type: "claude_md_approved"
+        description: "CLAUDE.md has been approved"
+    per_feature_gates:
+      - type: "feature_spec_exists"
+        location: "org-knowledge/product-spec/{{platform}}/"
+        blocking_message: "Feature not in product spec. Contact PM to add spec before implementation."
+      - type: "design_assets_exist"
+        location: "org-knowledge/design-system/"
+        only_for: ["ui_work"]
+        blocking_message: "No design assets found. Contact Design Lead."
+      - type: "dependency_approved"
+        location: "org-knowledge/architecture/approved-libraries.md"
+        blocking_message: "Library not approved. Contact Tech Lead."
+      - type: "platform_supports_capability"
+        location: "org-knowledge/platforms/{{platform}}/capability-matrix.md"
+        blocking_message: "Feature not supported on this platform."
+    human_approval_required: false
+    emergency_bypass: true
+    emergency_bypass_conditions:
+      - "Production incident with ticket reference"
+      - "Tech Lead notified immediately"
+      - "Remediation required within 48 hours"
+
+  - id: p6
+    name: "Release Preparation"
+    description: "Cross-platform coordination and compliance verification"
+    requires: ["p5"]
+    gates:
+      - type: "phase_complete"
+        phase: "p5"
+        for_all_release_scope_features: true
+      - type: "qa_signoff"
+        description: "QA has signed off for this platform"
+      - type: "no_critical_blockers"
+    outputs:
+      - "release-compliance-report.md"
+    human_approval_required: true
+    approval_roles: ["qa_lead", "pm"]
+    blocking_message: "Cannot release with open QA blockers. All blockers must be resolved or explicitly accepted by PM."
