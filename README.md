@@ -5,9 +5,9 @@
 
   ![Status](https://img.shields.io/badge/status-in%20development-yellow?style=flat-square)
   ![Platforms](https://img.shields.io/badge/platforms-7-blue?style=flat-square)
+  ![Marketplace Plugins](https://img.shields.io/badge/marketplace%20plugins-5-green?style=flat-square)
   ![Claude Code](https://img.shields.io/badge/Claude%20Code-MCP%20Plugin-orange?style=flat-square)
   ![Workflow Phases](https://img.shields.io/badge/workflow%20phases-7-purple?style=flat-square)
-  ![Repos](https://img.shields.io/badge/org%20repos-5-green?style=flat-square)
 </div>
 
 ---
@@ -31,60 +31,78 @@ yes+ ships on **7 platforms**, developed by separate teams, all using Claude Cod
 
 ---
 
-## ✅ The Solution — One Enforced Workflow Across Seven Repos
+## ✅ The Solution — Two Knowledge Layers, One Enforced Workflow
 
-Platform Guardian doesn't read from a single source. It connects to the **entire yes+ org plugin ecosystem** — reading from all relevant repos based on the context of each task.
+Platform Guardian reads from **two complementary knowledge layers** depending on the context of each task.
 
-### The yes+ Plugin Ecosystem
+### Layer 1 — Dev Workflow Plugins (the yes+ Marketplace)
 
-| Repo | What it does | Used when |
+Five Claude Code plugin repos that govern *how* developers work: pipeline commands, agents, skills, and platform-specific coding standards.
+
+| Repo | What it provides | Used when |
 |---|---|---|
-| 🏪 [ono-plugin-marketplace](https://github.com/appsadmin-design/ono-plugin-marketplace) | Registry of all approved org plugins | Always — Platform Guardian validates plugin versions and registry state |
-| 📱 [ono-mobile-dev-plugin](https://github.com/appsadmin-design/ono-mobile-dev-plugin) | Dev workflow for Mobile: standards, agents, skills, pipeline for iOS / Android / RN / React | Feature development on any mobile platform |
-| 🔍 [ono-plugin-project-inspector](https://github.com/appsadmin-design/ono-plugin-project-inspector) | Project audit engine and state machine | Phase 2 (Initial Audit) and Phase 3 (Architecture Analysis) |
+| 🏪 [ono-plugin-marketplace](https://github.com/appsadmin-design/ono-plugin-marketplace) | Plugin registry — lists all approved org plugins and their versions | Always — Platform Guardian validates plugin versions and registry state |
+| 📱 [ono-mobile-dev-plugin](https://github.com/appsadmin-design/ono-mobile-dev-plugin) | Dev workflow for Mobile: pipeline commands, coding standards, agents, and skills for iOS / Android / React Native / React web | Feature development on any mobile or web platform |
+| 🔍 [ono-plugin-project-inspector](https://github.com/appsadmin-design/ono-plugin-project-inspector) | Project audit engine, state machine, and inspection workflow | Phase 2 (Initial Audit) and Phase 3 (Architecture Analysis) |
 | 🧪 [ono-plugin-qa](https://github.com/appsadmin-design/ono-plugin-qa) | QA coverage analysis, Figma validation, test plan tooling | Phase 6 (Release Preparation) and ongoing QA gates |
-| 📐 [spec-team-toolkit](https://github.com/appsadmin-design/spec-team-toolkit) | HLD/LLD spec building, Figma-to-spec tooling | Phase 1 (Project Registration) — verifying specs exist before development |
-| 📚 **Org Knowledge Repo** _(to be created)_ | Universal org standards: design tokens, approved libraries, security rules, forbidden patterns | All phases — read-only enforcement source. Not a plugin. A prerequisite. |
-| 🛡️ **This repo** — Platform Guardian | Enforcement layer: phase gates, cross-repo validation, enforcement hook | Always installed — orchestrates all of the above |
+| 📐 [spec-team-toolkit](https://github.com/appsadmin-design/spec-team-toolkit) | HLD/LLD spec building, Figma-to-spec conversion | Phase 1 — verifying specs exist and are complete before development starts |
 
-```
-Developer + Claude
-        │
-        ▼
-┌───────────────────────────┐
-│    Platform Guardian      │  ← you are here
-│  Checks: phase gates,     │
-│  spec exists, Figma       │
-│  current, dep approved    │
-└───────────┬───────────────┘
-            │ reads from, based on context
-    ┌───────┼───────┐
-    ▼       ▼       ▼
- Mobile   QA    Spec Team   ...and more
- Plugin  Plugin  Toolkit
-    \       |       /
-     \      |      /
-      ▼     ▼     ▼
-   ono-plugin-marketplace (registry)
-              +
-   Org Knowledge Repo (standards)
+### Layer 2 — Org Knowledge Repo *(to be created)*
+
+A standalone git repository — **not a plugin** — that holds universal org-wide standards that apply to all platforms and all projects:
+
+- 🎨 Design system tokens, components, themes
+- 🔐 Security and privacy policies
+- ⚡ Performance budgets per platform (critical for TV hardware constraints)
+- 🏛️ Architecture decisions and approved library list
+- 🚫 Org-wide forbidden patterns
+
+> **Why two separate layers?** The marketplace plugins define *how Claude works* during development (workflow, agents, pipeline). The Org Knowledge Repo defines *what the rules are* (standards, constraints, policies). Platform Guardian enforces both — but they serve different purposes and are owned by different teams.
+
+### How it all connects
+
+```mermaid
+flowchart TD
+    DEV([👨‍💻 Developer + Claude]) -->|every write · git · deploy| PG
+
+    PG[🛡️ Platform Guardian\nMCP Plugin]
+
+    PG -->|phase gate · plugin versions| MKT[🏪 ono-plugin-marketplace]
+    PG -->|coding standards · pipeline| MP[📱 ono-mobile-dev-plugin]
+    PG -->|audit state| PI[🔍 ono-plugin-project-inspector]
+    PG -->|QA gates| QA[🧪 ono-plugin-qa]
+    PG -->|spec exists?| ST[📐 spec-team-toolkit]
+    PG -->|universal standards| ORG[(📚 Org Knowledge Repo\ndesign · security · budgets\narchitecture · forbidden patterns)]
+
+    MKT & MP & PI & QA & ST --> ALLOW([✅ Allowed])
+    MKT & MP & PI & QA & ST --> BLOCK([❌ Blocked + reason])
+    ORG --> ALLOW
+    ORG --> BLOCK
+
+    style PG fill:#4f46e5,color:#fff,stroke:#818cf8,stroke-width:2px
+    style ORG fill:#78350f,color:#fef3c7,stroke:#d97706,stroke-width:2px
+    style ALLOW fill:#065f46,color:#d1fae5,stroke:#059669
+    style BLOCK fill:#7f1d1d,color:#fee2e2,stroke:#dc2626
+    style DEV fill:#1e293b,color:#94a3b8,stroke:#475569
 ```
 
 ---
 
-## 📱 Supported Platforms
+## 📱 Supported Platforms (7)
 
-| Platform | Type | Tooling today | Target status |
+yes+ has **7 product platforms**. React Native is the cross-platform framework used for iOS Mobile and Android Mobile development — not a separate platform target.
+
+| Platform | Implementation | Tooling today | Target |
 |---|---|---|---|
-| 📱 **iOS Mobile** | Native Swift / SwiftUI | Standards: empty — Owner: Boris | 🔴 Not ready |
-| 🤖 **Android Mobile** | Native Kotlin | Standards: empty — Owner: Guy | 🔴 Not ready |
-| ⚛️ **React Native** | Cross-platform | ✅ Fully authored | ✅ Ready |
-| 🌐 **React (web)** | React / TypeScript | Standards: empty — Owner: Magen | 🔴 Not ready |
-| 🍎 **Apple TV** | tvOS | No coverage at all | 🔴 No coverage |
-| 📺 **Android TV** | Android / Compose TV | No coverage at all | 🔴 No coverage |
-| 🖥️ **Tizen** | Samsung Smart TV | No coverage at all | 🔴 No coverage |
-| 🖥️ **WebOS** | LG Smart TV | No coverage at all | 🔴 No coverage |
-| 🖥️ **Vidaa** | Hisense Smart TV | No coverage at all | 🔴 No coverage |
+| 📱 **iOS Mobile** | Native Swift / SwiftUI | Standards: empty placeholders — Owner: Boris | 🔴 Not ready |
+| 🤖 **Android Mobile** | Native Kotlin | Standards: empty placeholders — Owner: Guy | 🔴 Not ready |
+| 🍎 **Apple TV** | tvOS | No coverage in any repo | 🔴 No coverage |
+| 📺 **Android TV** | Android / Compose TV | No coverage in any repo | 🔴 No coverage |
+| 🖥️ **Tizen** | Samsung Smart TV | No coverage in any repo | 🔴 No coverage |
+| 🖥️ **WebOS** | LG Smart TV | No coverage in any repo | 🔴 No coverage |
+| 🖥️ **Vidaa** | Hisense Smart TV | No coverage in any repo | 🔴 No coverage |
+
+> **React Native mobile layer** (`ono-mobile-dev-plugin`): all standards, agents (7), and skills (9) fully authored — ready for iOS and Android cross-platform development. Native Swift and Kotlin standards are separately empty (see Org Knowledge Status below).
 
 ---
 
@@ -96,11 +114,11 @@ Developer + Claude
 
 | Phase | Name | What happens | Gate to advance |
 |---|---|---|---|
-| **0** | 🔌 Environment Setup | Plugin connects, Org Knowledge Repo is verified reachable | Plugin online + Repo B accessible |
-| **1** | 📋 Project Registration | Platform type registered. Spec and Figma data checked — must exist and be current | Spec + Figma present and not stale |
-| **2** | 🔍 Initial Audit | Codebase compared against org standards. Deviations, missing docs, and forbidden patterns surfaced | Audit acknowledged by developer + PM |
-| **3** | 🏗️ Architecture Analysis | `package.json` / Podfile / `build.gradle` scanned. State management, navigation, network patterns mapped. Deviation log produced | Architecture documented |
-| **4** | 📐 Rules Definition | CLAUDE.md generated from org template — platform constraints, forbidden patterns, approved deps, QA rules | **⭐ Human gate: PM + Tech Lead approval required** |
+| **0** | 🔌 Environment Setup | Plugin connects, Org Knowledge Repo reachability verified | Claude Code version meets minimum · MCP server online · Org Knowledge Repo reachable · developer has read access |
+| **1** | 📋 Project Registration | Platform type registered. Spec documents verified to exist | Platform type registered in `org-knowledge/platforms/` · project repository accessible |
+| **2** | 🔍 Initial Audit | Codebase compared against org standards. Deviations, missing docs, and forbidden patterns surfaced. Output must be formally acknowledged by developer + PM | Audit report acknowledged by both developer and PM |
+| **3** | 🏗️ Architecture Analysis | `package.json` / Podfile / `build.gradle` scanned. State management, navigation, and network patterns mapped. Deviation log produced | Architecture map documented |
+| **4** | 📐 Rules Definition | CLAUDE.md generated from org template — platform constraints, forbidden patterns, approved deps | **⭐ Human gate: PM + Tech Lead approval required** |
 | **5** | 💻 Development Mode | Active development. Every Claude action validated against org standards in real time | Feature QA complete, no open blockers |
 | **6** | 🚀 Release Preparation | Cross-platform consistency check, CI/CD gate validation, final sign-off | All checks green |
 
@@ -112,72 +130,66 @@ Developer + Claude
 
 Three layers — each with a different cost and trigger:
 
----
+**Layer 1 — The instant blocker** *(always on, zero tokens, ~1ms)*
 
-**Layer 1 — The instant blocker** _(always on, zero tokens, zero cost)_
+Before any file write, git command, or terminal action, a **PreToolCall hook** checks two things:
+1. Is there a Platform Guardian project here? (`.platform-guardian/` folder present)
+2. Is the current workflow phase gate satisfied for this action?
 
-Before any file write, git command, or terminal action, a lightweight hook checks:
-- Is there a Platform Guardian project here? (`.platform-guardian/` folder)
-- Is the current workflow phase gate satisfied for this action?
+If no → the action is **blocked immediately** with a clear reason. No LLM, no cost, no delay. This is the enforcement floor — it fires even when a developer doesn't explicitly invoke anything.
 
-If the answer to either is no → the action is **blocked immediately** with a clear reason. No LLM involved, no cost, no delay. This is the floor — it enforces the rules even when a developer doesn't explicitly invoke anything.
-
----
-
-**Layer 2 — The quality gate** _(triggers only at phase transitions)_
-
-When a developer advances from one phase to the next, Platform Guardian invokes the right tool for that transition:
-
-- Moving to Phase 2 → runs `/plan` before any implementation
-- Moving to Phase 3 → runs `/review` or `/workflow` for the audit
-- Moving to Phase 4 → runs `/code-review` before the human gate
-- Moving to Phase 6 → runs `/workflow` for CI/CD validation
-- Architectural decisions at any phase → runs `/peak-quality`
-
-These run **once per transition**, not on every action. Expensive but infrequent.
+> The alternative (a UserPromptSubmit hook firing on every response) was explicitly considered and rejected: it reviews prose instead of actions, doubles token cost on every message, and doesn't catch what actually matters. PreToolCall is the right enforcement surface.
 
 ---
 
-**Layer 3 — The human gate** _(Phase 4 only, non-negotiable)_
+**Layer 2 — Quality gates at phase transitions** *(infrequent, proportionate)*
 
-PM and Tech Lead must read and sign off on the generated CLAUDE.md. No automation. No bypass. If they're unavailable, the project waits.
+When advancing between phases, Platform Guardian invokes the right skill:
+- `/plan` before any implementation begins
+- `/review` or `/workflow` for audit and analysis phases  
+- `/code-review` before the Phase 4 human gate
+- `/peak-quality` for significant architectural decisions
+
+These run **once per phase transition**, not on every action.
+
+---
+
+**Layer 3 — Human approval** *(Phase 4 only, non-negotiable)*
+
+PM and Tech Lead must read and sign off on the generated CLAUDE.md. No automation. No bypass.
 
 ---
 
 ## 📚 Org Knowledge Status — What Exists vs. What's Missing
 
-This table reflects the **June 2026 marketplace audit** (47 gaps identified). It shows the honest state of what Platform Guardian can enforce today vs. what needs to be authored first.
+Based on the **July 2026 marketplace audit** (47 gaps identified across all 5 repos).
 
 ### Plugin content — per platform
 
 | Platform | Standards | Agents | Skills | Notes |
 |---|---|---|---|---|
-| ✅ React Native | 6 complete | 5 complete | 3 complete | Fully ready |
-| ❌ iOS | 5 empty placeholders | 4 empty | 3 empty | Owner: Boris. Blocks all iOS gate enforcement |
-| ❌ Android | 5 empty placeholders | 4 empty | 3 empty | Owner: Guy. Blocks all Android gate enforcement |
-| ❌ React (web) | 6 empty placeholders | 4 empty | 3 empty | Owner: Magen. Also missing XSS/CSRF security coverage |
-| ❌ Apple TV | None | None | None | No coverage in any repo. Needs new plugin or major extension |
+| ✅ React Native | 6 complete | 7 complete (5 RN + 2 shared) | 9 complete (3 RN + 6 shared) | Fully ready — cross-platform mobile |
+| ❌ iOS | 5 empty placeholders | 4 empty | 3 empty | Owner: Boris · Also missing: iOS-specific security and accessibility rules (mobile-security.md and accessibility.md are RN-only) |
+| ❌ Android | 5 empty placeholders | 4 empty | 3 empty | Owner: Guy · Same gap: Android-specific security and accessibility rules not authored |
+| ❌ React web | 6 empty placeholders | 4 empty | 3 empty | Owner: Magen · Missing XSS/CSRF/CSP security coverage + React ARIA accessibility rules not yet authored |
+| ❌ Apple TV | None | None | None | No coverage in any repo |
 | ❌ Android TV | None | None | None | No coverage in any repo |
-| ❌ Tizen | None | None | None | No coverage in any repo — Samsung-specific APIs required |
-| ❌ WebOS | None | None | None | No coverage in any repo — LG-specific APIs required |
-| ❌ Vidaa | None | None | None | No coverage in any repo — Hisense-specific APIs required |
+| ❌ Tizen | None | None | None | No coverage — Samsung-specific APIs required |
+| ❌ WebOS | None | None | None | No coverage — LG-specific APIs required |
+| ❌ Vidaa | None | None | None | No coverage — Hisense-specific APIs required |
 
-### Org Knowledge Repo (Repo B) — doesn't exist yet
+### Org Knowledge Repo — universal standards (Layer 2)
 
-The Org Knowledge Repo is **not** a plugin — it's a standalone git repository that Platform Guardian reads to enforce org-wide standards (design tokens, approved library list, security rules, forbidden patterns). It is the single most critical prerequisite before Platform Guardian can enforce anything beyond phase gates.
+The Org Knowledge Repo **does not yet exist** as a git repository. The structure template is in [`org-knowledge-template/`](./org-knowledge-template/). All 12 domains are at "Not started."
 
-The structure template is in [`org-knowledge-template/`](./org-knowledge-template/) in this repo.
-
-| Domain | Status | Where it should live |
+| Domain | Status | Owner |
 |---|---|---|
-| 🎨 Design System tokens, components, themes | ❌ Not started | Org Knowledge Repo |
-| 📄 Product Specifications per platform | ❌ Not started | `.platform-guardian/` project config |
-| 🏛️ Architecture decisions, approved libraries, forbidden patterns | ❌ Not started | Org Knowledge Repo |
-| 📝 Coding standards (iOS, Android, RN, React, TV) | ❌ Partially in plugins — see above | `ono-mobile-dev-plugin` (after authoring) |
-| 🔐 Security & privacy rules | ❌ Not started | Org Knowledge Repo |
-| ⚡ Performance budgets per platform | ❌ Not started — critical for TV | Org Knowledge Repo |
-| 🌍 Localization, RTL, market rules | ❌ Partial in plugins | `ono-mobile-dev-plugin` |
-| 🧪 QA standards, test coverage requirements | ❌ Partial in `ono-plugin-qa` | `ono-plugin-qa` (after authoring) |
+| 🎨 Design System (tokens, components, themes) | ❌ Not started | Design Lead |
+| 🔐 Security & privacy policies | ❌ Not started | Architect |
+| ⚡ Performance budgets per platform | ❌ Not started — critical for TV | Architect |
+| 🏛️ Architecture decisions, approved libraries, forbidden patterns | ❌ Not started | Architect |
+| 🌍 Localization, RTL, market rules | ❌ Partial in plugins | Magen |
+| 📄 Product specifications per feature / platform | ❌ Not started | PM |
 
 ---
 
@@ -188,7 +200,7 @@ yes-platform-guardian/
 ├── 📦 plugin/                    MCP server (TypeScript — in development)
 │   └── src/
 │       ├── workflow/             Phase enforcement + gate conditions
-│       ├── knowledge/            Org Knowledge Repo connector + cache
+│       ├── knowledge/            Knowledge connector + cache (marketplace + Repo B)
 │       ├── analysis/             Audit engine + gap analysis
 │       └── tools/                MCP tool definitions
 │
@@ -199,7 +211,7 @@ yes-platform-guardian/
 │   ├── CLAUDE.md.template        Per-platform CLAUDE.md starter
 │   └── project-config.yaml.template
 │
-├── 🏛️ org-knowledge-template/    Starter structure for the Org Knowledge Repo
+├── 🏛️ org-knowledge-template/    Starter structure for the Org Knowledge Repo (Layer 2)
 │
 └── 📚 docs/
     ├── process-overview.html     Interactive system overview (open in browser)
@@ -215,9 +227,9 @@ yes-platform-guardian/
 
 ## 🚀 Getting Started
 
-> **Platform Guardian is in development.** The flow below reflects the intended installation experience once v1.0 ships.
+> **Platform Guardian is in development.** The flow below reflects the intended installation experience once v1.0 ships. Steps 1–3 will work once the plugin is published to the marketplace (after M1.1). Step 4 is coming in M3.
 
-**Step 1 — Add the yes+ marketplace to your Claude Code settings** _(org-wide, one-time setup)_
+**Step 1 — Add the yes+ marketplace to your Claude Code settings** *(org-wide, one-time setup)*
 
 ```json
 {
@@ -232,10 +244,10 @@ yes-platform-guardian/
 }
 ```
 
-**Step 2 — Install the platform plugins for your team** _(via Claude Code)_
+**Step 2 — Install the platform plugins for your team**
 
 ```bash
-# For mobile developers (iOS / Android / React Native / React)
+# For mobile developers (iOS / Android / React Native / React web)
 /install-plugin ono-mobile-dev-plugin@yes-plugins
 
 # For project inspection and audit
@@ -254,13 +266,13 @@ yes-platform-guardian/
 /install-plugin yes-platform-guardian@yes-plugins
 ```
 
-**Step 4 — Initialize a new project**
+**Step 4 — Initialize a new project** *(coming in M3 — not yet implemented)*
 
 ```bash
 guardian init
-# → Prompts for platform type, Figma file IDs, and org knowledge repo location
-# → Creates .platform-guardian/project-config.yaml and phase-state.json
-# → Runs Phase 0 checks automatically
+# Prompts for platform type, Figma file IDs, and Org Knowledge Repo location
+# Creates .platform-guardian/project-config.yaml and phase-state.json
+# Runs Phase 0 checks automatically
 ```
 
 ---
@@ -269,22 +281,22 @@ guardian init
 
 | Milestone | Item | Why it's needed | Status |
 |---|---|---|---|
-| **Design** | System architecture | The blueprint — without this, nothing else is buildable | ✅ Done |
-| **Design** | 7 workflow phases | Defines the enforced sequence every developer must follow | ✅ Done |
-| **Design** | 12 knowledge domains | Maps what must exist in Repo B for gates to fire correctly | ✅ Done |
-| **Design** | Marketplace gap audit | Identifies exactly what's missing before enforcement can work | ✅ Done |
-| **Design** | Enforcement architecture | Defines the 3-layer mechanism (hook, skills, human gate) | ✅ Done |
-| **Foundation** | Git repo initialized | Tracks all changes — required before any collaborative work | ✅ Done |
-| **Foundation** | PreToolCall enforcement hook | Layer 1 — installed globally, fires before every write/git action | ✅ Done |
+| **Design** | System architecture | The blueprint — without it, nothing else is buildable | ✅ Done |
+| **Design** | 7 workflow phases | The enforced sequence every developer must follow | ✅ Done |
+| **Design** | 12 knowledge domains | Maps what must exist in each layer for gates to fire | ✅ Done |
+| **Design** | Marketplace gap audit | Identifies exactly what's missing before enforcement can work (47 gaps found) | ✅ Done |
+| **Design** | Enforcement architecture (SC-2) | The 3-layer mechanism — hook, skills, human gate | ✅ Done |
+| **Foundation** | Git repository initialized | Tracks all changes before collaborative work begins | ✅ Done |
+| **Foundation** | PreToolCall enforcement hook | Layer 1 installed globally, fires before every write/git action | ✅ Installed *(stub — enforcement logic pending M1.2)* |
 | **M0.2** | TypeScript project scaffold | Build system, linter, test runner — the foundation for all plugin code | 🔜 Next |
 | **M1** | MCP server + phase engine | The actual plugin — connects to Claude Code and enforces phases | ⏳ |
 | **M2** | Audit engine + architecture analyzer | Powers Phase 2 and Phase 3 — the baseline scan for every new project | ⏳ |
 | **M3** | CLI + developer experience | `guardian init`, emergency bypass, onboarding docs | ⏳ |
-| **M4** | iOS standards, agents, skills | Unlocks all iOS gate enforcement — currently all empty | ⏳ Owner: Boris |
-| **M4** | Android standards, agents, skills | Unlocks all Android gate enforcement — currently all empty | ⏳ Owner: Guy |
-| **M4** | React web standards, agents, skills | Unlocks React web gate enforcement | ⏳ Owner: Magen |
-| **M4** | TV platform coverage (5 platforms) | Tizen, WebOS, Vidaa, Apple TV, Android TV — zero coverage today | ⏳ To scope |
-| **M4** | Org Knowledge Repo (Repo B) | The org-wide standard that all enforcement reads from — doesn't exist yet | ⏳ Owner: Tom + PM + Design Lead |
+| **M4** | iOS standards, agents, skills | Unlocks iOS gate enforcement — all 12 files currently empty | ⏳ Owner: Boris |
+| **M4** | Android standards, agents, skills | Unlocks Android gate enforcement — all 12 files currently empty | ⏳ Owner: Guy |
+| **M4** | React web standards, agents, skills | Unlocks React web enforcement | ⏳ Owner: Magen |
+| **M4** | TV platform coverage (5 platforms) | Apple TV, Android TV, Tizen, WebOS, Vidaa — zero coverage today | ⏳ To scope |
+| **M4** | Org Knowledge Repo (Layer 2) | Universal org standards — the prerequisite for all enforcement gates | ⏳ Owner: Tom + PM + Design Lead + Architect |
 
 Full backlog with ~35 sessions scoped: [`docs/backlog.md`](./docs/backlog.md)
 
@@ -299,9 +311,9 @@ Full backlog with ~35 sessions scoped: [`docs/backlog.md`](./docs/backlog.md)
 | **Yagil Cohen** | AI Champion | Project inspector plugin — domain owner |
 | **Arditi** | QA Lead | QA plugin (`ono-plugin-qa`) — domain owner |
 
-**Human approval gate (Phase 4):** PM + Tech Lead must sign off before any feature code is written. Non-negotiable.
+**Phase 4 human gate:** PM + Tech Lead must approve before any feature code is written. Non-negotiable.
 
-Marketplace versioning follows semver: **Major** blocks execution, **Minor** warns + re-checks, **Patch** notifies only.
+Marketplace versioning follows semver: **Major** blocks execution · **Minor** warns + re-checks · **Patch** notifies only.
 
 ---
 
@@ -313,7 +325,7 @@ Marketplace versioning follows semver: **Major** blocks execution, **Minor** war
 | 🗂️ Full Backlog | [`docs/backlog.md`](./docs/backlog.md) |
 | 🔍 Marketplace Gap Audit | [`docs/marketplace-gap-audit.md`](./docs/marketplace-gap-audit.md) |
 | 🌐 Interactive System Overview | [`docs/process-overview.html`](./docs/process-overview.html) |
-| 📋 Trello Board | _Link to be added_ |
+| 📋 Trello Board | *Link to be added* |
 
 ---
 
