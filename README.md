@@ -79,11 +79,11 @@ flowchart TD
     ORG --> ALLOW
     ORG --> BLOCK
 
-    style PG fill:#4f46e5,color:#fff,stroke:#818cf8,stroke-width:2px
-    style ORG fill:#78350f,color:#fef3c7,stroke:#d97706,stroke-width:2px
-    style ALLOW fill:#065f46,color:#d1fae5,stroke:#059669
-    style BLOCK fill:#7f1d1d,color:#fee2e2,stroke:#dc2626
-    style DEV fill:#1e293b,color:#94a3b8,stroke:#475569
+    style PG fill:#ede9fe,color:#3730a3,stroke:#6d28d9,stroke-width:2px
+    style ORG fill:#fef3c7,color:#92400e,stroke:#d97706,stroke-width:2px
+    style ALLOW fill:#d1fae5,color:#065f46,stroke:#059669
+    style BLOCK fill:#fee2e2,color:#991b1b,stroke:#dc2626
+    style DEV fill:#f1f5f9,color:#334155,stroke:#94a3b8
 ```
 
 ---
