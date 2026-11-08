@@ -2,6 +2,18 @@
 
 ---
 
+## Session 5 — 2026-11-08 — Ecosystem refresh, goal redefined, G0 done
+
+- Re-cloned 6 OnOAppsDev repos (main = latest everywhere) and diffed vs July with 6 parallel agents: 22 baseline gaps closed/obsolete, 11 partial, 12 new (MGA-66..77) — `docs/ecosystem-status-2026-11.md`. The plugins now own phase gates, standards, QA readiness and CLAUDE.md, so the July MCP plan was archived to `archive/2026-07-mcp-plan/`.
+- New goal (`docs/vision.md`): Guardian = the single plugin employees install and the coordinator into the org plugins — git-hygiene opener → intent routing → close-out with commit/PR and an explicit `/clear`.
+- Git policy (user): central branch per project (usually `develop`, ask if unsure); never push to it without a PR; behind → ⚠️🚨 warn, employee decides. Guardian ships its own open/close (not the personal session-rituals): close = local session log (never in git) + plain summary + `/clear`; stray files Claude creates → `.gitignore` unless on the org plugins' committed-artifacts allowlist (G3.4/G3.5).
+- Verified in official docs: plugin `dependencies` (bundle) + managed `enabledPlugins` make "install one plugin" native; mods expose context % but need Claude Code ≥ ~2.1.290 (local 2.1.280). Skeleton `.claude-plugin/plugin.json` 0.1.0 depends on the 4 core Ono plugins; validates.
+- Open: Matrix plugins for everyone or Matrix projects only? Who is the claude.ai org Owner (G4)? Session 4 entry is missing from this log (backlog cites it for SC-2). Never install Guardian on this machine — local tests only.
+- **Process improvement:** never fill identity fields from session context — codified in memory `no-personal-account.md`.
+- **Next session:** G1 — `scripts/git-status.sh` + SessionStart hook + session-opener skill, tested against throwaway git repos (G1.1–G1.5 in `docs/backlog.md`).
+
+---
+
 ## Session 3 — 2026-07-08 — Marketplace audit, architecture decisions, work plan finalized
 
 - Cloned all 5 marketplace repos into `~/Projects/OnO Marketplace/`. Ran a two-pass agent workflow (5 parallel deep-readers + adversarial verifier) — found 47 gaps, 15 critical. Key finding: all iOS, Android, and React standards are empty placeholders on both main and the unmerged branch; 5 TV platforms have zero plugin coverage.

@@ -32,10 +32,33 @@ Guardian is a **coordinator, not a re-implementation.** The org plugins own thei
    - Then: "All set. Are we working on a bug, a feature, tests, a spec? Tell me what we're doing."
 2. **Route** — classify the intent, confirm it, start the matching org-plugin command. If work is already in progress, resume it from the plugin's own state. Human-only steps (commands with `disable-model-invocation`, e.g. `/qa-approve`) are never run by the model — Guardian tells the employee exactly what to type.
 3. **Work** — the org plugin's process runs as its owners designed it.
-4. **Close** — when the task / stage is done or the context is getting long:
-   - Commit what belongs. **Never push to the central branch without a PR.** Ask where to open the PR and who reviews.
-   - Save a handoff note (resumable by step 2).
-   - Tell the employee very clearly: everything is saved, run `/clear`, and start a new session with Guardian.
+4. **Close** — when the employee says goodbye, the task / stage is done, or the context is getting long:
+   - **Commit hygiene** (see below), then commit what belongs. **Never push to the central branch without a PR.** Ask where to open the PR and who reviews.
+   - **Write the session log entry** — local only (see below) — so the next session's opener knows the status.
+   - **Plain-language summary** of what was done this session (a few short sentences, no jargon).
+   - **Clear instruction:** everything is saved — run `/clear` and start a new session with Guardian.
+
+The opener (step 1) reads the latest log entry for the current repo + branch and starts with "last time you stopped at …".
+
+Guardian ships its **own** open / close — employees don't have personal rituals. No scores, no retrospectives, no focus menus: just git, intent, log, summary, `/clear`.
+
+---
+
+## Session log
+
+- **Local only, never in git.** Stored on the employee's machine outside the repo: `~/.claude/platform-guardian/<repo>/<branch>.md`, newest entry first.
+- **Entry:** date/time · branch · what we did · where we stopped (plugin + stage / task) · next step · open PR (if any).
+- Private per employee; no PR noise, no merge conflicts. Does not travel between computers (accepted trade-off).
+
+---
+
+## Commit hygiene
+
+Employees must never commit or push working files that Claude creates along the way — stray `.md` notes, drafts, scratch outputs, Guardian's own state.
+
+- **Allowlist, not blanket ignore.** Only artifacts the org plugins define as committed may be committed (e.g. inspector's `CLAUDE.md`, `AUDIT.md`, `docs/project/`, `.ono/repo-knowledge.json`; dev-plugin planning docs; QA plans in the QA repo). The list is built from the 6 org repos' latest branch and kept as data (`routing/committed-artifacts.json`), re-checked when a plugin version changes. No `*.md` blanket rule — it would hide READMEs and the planning docs the plugins need.
+- **Everything else created during the session goes into `.gitignore`.** At close-out (and before any `git add` / `git commit`), Guardian lists new untracked files that are not on the allowlist and ensures they are ignored — the `.gitignore` change itself travels through the employee's normal PR.
+- **Guard:** a PreToolUse hook on `git add` / `git commit` warns / blocks when a staged file is neither pre-existing nor on the allowlist.
 
 ---
 

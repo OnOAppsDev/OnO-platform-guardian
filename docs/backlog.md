@@ -22,6 +22,7 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 - [ ] **G1.1: `scripts/git-status.sh`** — Deterministic JSON: repo?, current branch, central branch (detected: origin HEAD → `develop` → `main` → `master`; project override), ahead/behind vs. central after `git fetch`, dirty files, on-central-branch flag, detection confidence. Fails open outside git.
 - [ ] **G1.2: SessionStart hook** — Runs on `startup` (and `clear`); injects the git report + opener instructions as context.
 - [ ] **G1.3: `session-opener` skill** — Greets, presents git state. Behind central → ⚠️🚨 warning, make sure the employee understands, explain options (merge / rebase / continue as-is), and **wait for their decision** — never auto-update. Unsure of central branch → ask which branch to branch from. On the central branch → offer to create a work branch.
+- [ ] **G1.6: Read last session-log entry** — Opener reads `~/.claude/platform-guardian/<repo>/<branch>.md` (local, never in git) and starts with "last time you stopped at …".
 - [ ] **G1.4: Project config** — Optional `.platform-guardian.json` in the work repo (central branch override, team/role). Absent = auto-detect.
 - [ ] **G1.5: Tests** — Script tests against throwaway git repos: clean, dirty, behind, ahead, diverged, detached HEAD, no remote, `develop` vs `main`.
 
@@ -37,7 +38,9 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 
 - [ ] **G3.1: Session-length signal** — UserPromptSubmit hook measuring transcript size; threshold → close-out suggestion. Also trigger on task/stage completion.
 - [ ] **G3.2: Git close-out** — Commit what belongs; **never push to the central branch without a PR**; ask target branch + reviewers; open PR.
-- [ ] **G3.3: Handoff note + `/clear` instruction** — Save where we are (resumable by G2.3), then tell the employee very clearly: everything is saved, run `/clear`, start a new session.
+- [ ] **G3.3: Close-out = session log + plain-language summary + `/clear`** — Guardian's own close (no personal-ritual scores/retros): write the local session-log entry (date · branch · what we did · where we stopped · next step · open PR), give a short plain-language summary, then tell the employee very clearly: everything is saved, run `/clear`, start a new session.
+- [ ] **G3.4: Committed-artifacts allowlist** — From the 6 org repos (latest branch): which files each plugin intends to be committed (inspector outputs, dev planning docs, QA plans, …) → `routing/committed-artifacts.json`.
+- [ ] **G3.5: Commit hygiene** — At close-out and before `git add`/`commit`: new untracked files not on the allowlist → ensure in `.gitignore` (change goes via the employee's PR); PreToolUse guard warns/blocks staging non-allowlisted new files. No blanket `*.md` ignore.
 
 ## G4 — Rollout (1 session + pilot)
 
