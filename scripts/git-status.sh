@@ -224,7 +224,9 @@ fi
 
 upstream="" up_ahead="" up_behind=""
 if [ -n "$branch" ] && ! $unborn; then
-  upstream="$(git rev-parse -q --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)"
+  # Trust the exit status, not the output: newer git (2.4x) echoes "@{u}" on stdout when there is no upstream.
+  upstream="$(git rev-parse -q --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)" || upstream=""
+  [ "$upstream" = "@{u}" ] && upstream=""
   if [ -n "$upstream" ]; then
     counts="$(git rev-list --left-right --count "HEAD...$upstream" 2>/dev/null)"
     up_ahead="${counts%%[[:space:]]*}"
