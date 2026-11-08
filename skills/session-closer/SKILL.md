@@ -39,6 +39,8 @@ Go through `changes.files` (and `git status --porcelain` if the list is truncate
 
 Show the employee the short list: **will commit** / **will ignore** / **left as-is**, and wait for their OK.
 
+A PreToolUse guard (`hooks/pre-tool-use.sh`) backs this up on every `git add` / `git commit`: new files on a `neverCommit` list are blocked, and new working files (`.md`, `.txt`, `.log`, `.html` … not on any `commit` list) trigger a permission prompt. If it blocks or the employee declines, add those paths to `.gitignore` and stage the rest — never work around it (e.g. `git add -f` on a blocked file).
+
 ### 3. Branch
 
 - On the central branch (`onCentral`) → commits can't go there. Offer to create a work branch now (`git switch -c ‹name›`, following the repo's branch naming) and carry the changes over.

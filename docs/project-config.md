@@ -31,3 +31,7 @@ The session opener offers to create this file when the central branch can't be d
 ## Session-length signal
 
 `hooks/prompt-submit.sh` reads the real context size from the transcript and, past the threshold, asks Claude to suggest the close-out once per band. Env: `PG_CLOSEOUT_TOKENS` (default 120000), `PG_CLOSEOUT_STEP` (default 40000).
+
+## Commit guard
+
+`hooks/pre-tool-use.sh` runs before every Bash command. Only `git add` / `git stage` / `git commit` (also after `cd`, `&&`, `;`, `|`, and with `git -C`) are inspected: it runs `git add --dry-run` with the same arguments and reads new files already staged, then checks the **new** (untracked) files against `routing/committed-artifacts.json` — `neverCommit` → denied; not on any `commit` list and a working-file type (`.md`, `.txt`, `.log`, `.html`, `.csv`, `.patch` …, except README / CHANGELOG / LICENSE and frontmatter planning docs) → permission prompt; anything else → no output. Commands with `$(…)` or backticks, and interactive adds, are skipped. Env: `PG_COMMIT_GUARD=off`.
