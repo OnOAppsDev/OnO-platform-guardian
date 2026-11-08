@@ -18,6 +18,13 @@ The marketplace and all six Ono plugin repos are **public**; `yes-platform-guard
 | Make `yes-platform-guardian` public (like the other six) | Installs work everywhere, no setup. Guardian holds no secrets — only scripts, skills and routing data. |
 | Keep it private | Every employee needs org repo access + git credentials before Guardian can install; failures will look like "plugin not found". |
 
+**Pre-public audit (2026-11-08)** — full history (27 commits, one author `tom@onoapps.com`): no tokens, keys, passwords or personal emails. Not secret, but internal — decide before flipping:
+
+- `archive/2026-07-mcp-plan/docs/backlog.md` and `docs/marketplace-gap-audit.md` name colleagues as task owners (magen, Boris, Guy, Arditi) and an internal tool (Opium); the archive also links the old `appsadmin-design` repo.
+- The repo name starts with `yes-` — if that names a client, it becomes public too.
+
+Deleting those files only hides them from the current tree; they stay in history. Clean ways: (a) accept them as-is; (b) publish the plugin from a fresh public repo (plugin files only, new history) and keep this one private for planning; (c) rewrite history before flipping — not recommended (breaks every clone and PR #3).
+
 ## G4.2 — managed settings (claude.ai admin console)
 
 Who: an **Owner** of the Claude organization. Where: **Organization settings → Claude Code → Managed settings** (server-managed; applies to every member). Users can't disable a plugin enabled here.
@@ -47,4 +54,16 @@ Notes for the Owner:
 ## Open
 
 - Who is the org Owner? (vision open question 2)
-- Minimum Claude Code version for employees (vision open question 3) — Guardian's hooks need nothing new; only a future mods-based context meter would.
+- Repo visibility — public as-is / fresh public plugin repo / stay private (above).
+
+## Minimum Claude Code version: 2.1.140
+
+From the official [CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) (checked 2026-11-08; current is 2.1.280):
+
+| Needed for | Since |
+|---|---|
+| Dependencies declared in `plugin.json` installed even though the marketplace entry doesn't list them (ours doesn't) | 2.1.110 |
+| Background auto-update installs missing dependencies (a new Ono plugin added to Guardian reaches everyone) | 2.1.116 |
+| Managed `extraKnownMarketplaces` auto-update setting actually persisted | 2.1.140 |
+
+Guardian's hooks (`SessionStart` startup/clear, `UserPromptSubmit`, `PreToolUse` ask/deny) need nothing newer. Anyone on an older version: `claude update`.

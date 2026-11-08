@@ -73,7 +73,7 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 /plugin install platform-guardian@ono-plugin-marketplace
 ```
 
-Installing Guardian installs the six org plugins it depends on. For org-wide rollout, admins enable it through Claude for Organizations managed settings (see [`docs/vision.md`](docs/vision.md) → "How it is built").
+Installing Guardian installs the six org plugins it depends on. Needs Claude Code **2.1.140 or newer** (`claude --version`; `claude update`). For org-wide rollout, admins enable it through Claude for Organizations managed settings — exact JSON and steps in [`docs/rollout.md`](docs/rollout.md).
 
 Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
 
@@ -88,6 +88,7 @@ scripts/session-log.sh          local session notes — ~/.claude/platform-guard
 scripts/resume-state.sh         unfinished work from the plugins' own documents (docs/resume-state.md)
 scripts/check-routes.sh         drift guard: routes.json vs. the org plugins
 scripts/fetch-org-plugins.sh    clone every plugin the marketplace lists (for check-routes / CI)
+scripts/live-test-setup.sh      test-machine setup for the live test (docs/live-test.md)
 routing/                        routes.json · committed-artifacts.json
 tests/run-all.sh                tests against throwaway git repos
 .github/workflows/ci.yml        tests on macOS bash 3.2 + Linux · weekly drift check vs. the org

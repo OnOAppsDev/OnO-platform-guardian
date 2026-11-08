@@ -97,6 +97,7 @@ Employees must never commit or push working files that Claude creates along the 
 ## Open questions
 
 1. ~~**Matrix plugins**~~ — **Decided 2026-11-08:** every org plugin is part of the process; Guardian depends on all six (QA team uses both QA plugins: mobile/TV and web). The router picks the QA plugin from the task and asks only when unclear.
-4. ~~**Spec location**~~ — **Decided 2026-11-08:** specs written in a work repo go to `docs/specs/<feature-slug>/` and are committed (the toolkit has no repo location of its own).
 2. **Who is the claude.ai org Owner** who will set managed settings (G4)?
-. **Repo visibility** — Guardian is private; the marketplace and the six plugins are public. Private means every employee needs GitHub access + git credentials to install. See `docs/rollout.md`.
+3. ~~**Minimum Claude Code version**~~ — **Resolved 2026-11-08:** 2.1.140 (plugin dependencies + managed marketplace auto-update) — `docs/rollout.md`.
+4. ~~**Spec location**~~ — **Decided 2026-11-08:** specs written in a work repo go to `docs/specs/<feature-slug>/` and are committed (the toolkit has no repo location of its own).
+5. **Repo visibility** — Guardian is private; the marketplace and the six plugins are public. Private means every employee needs GitHub access + git credentials to install. Pre-public audit and options: `docs/rollout.md`.

@@ -25,7 +25,7 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 - [x] **G1.6: Read last session-log entry** — Opener reads `~/.claude/platform-guardian/<repo>/<branch>.md` (local, never in git) and starts with "last time you stopped at …".
 - [x] **G1.4: Project config** — Optional `.platform-guardian.json` in the work repo (central branch override, team/role). Absent = auto-detect. Done: `centralBranch` read by the script; `team`/`role` reserved for G2 — `docs/project-config.md`.
 - [x] **G1.5: Tests** — Script tests against throwaway git repos: clean, dirty, behind, ahead, diverged, detached HEAD, no remote, `develop` vs `main`. Done: `tests/run-all.sh` — 71 checks, mutation-checked, bash 3.2.
-- [ ] **G1.7: Live test on the test machine** — Kit: `docs/live-test.md` (fill and paste back). Install Guardian there (never here); verify the hook fires on startup and `/clear`, the report reaches the model, and the opener handles behind / on-central / ambiguous / clean. Check hook latency with a real remote.
+- [ ] **G1.7: Live test on the test machine** — Kit: `docs/live-test.md` (fill and paste back). Install Guardian there (never here); verify the hook fires on startup and `/clear`, the report reaches the model, and the opener handles behind / on-central / ambiguous / clean. Check hook latency with a real remote. **Shortened 2026-11-08:** `scripts/live-test-setup.sh <app-repo-url>` makes the test repos + `pg/*` branches and fills the §0 table (versions, installed Ono plugins, hook time) — ~35 min of model-behavior checks remain.
 
 ## G2 — Router (2–3 sessions)
 
@@ -47,8 +47,9 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 
 ## G4 — Rollout (1 session + pilot)
 
-- [ ] **G4.1: Register in `ono-plugin-marketplace`** (closes MGA-11) — PR to the org repo; ask before opening. **Prepared:** local branch `add-platform-guardian` in the marketplace clone (entry, 1.6.0, README, CHANGELOG; validates). Blocked on: PR #3 merge + repo-visibility decision — `docs/rollout.md`.
+- [ ] **G4.1: Register in `ono-plugin-marketplace`** (closes MGA-11) — PR to the org repo; ask before opening. **Prepared:** local branch `add-platform-guardian` in the marketplace clone (entry, 1.6.0, README, CHANGELOG; validates). Blocked on: PR #3 merge + repo-visibility decision — `docs/rollout.md` (pre-public audit done 2026-11-08: no secrets; colleague names + `yes-` name to decide). Local branch also notes the minimum Claude Code version (2.1.140).
 - [ ] **G4.2: Managed settings** — Org-wide marketplace + plugin enablement (per G0.5 result). **Prepared:** exact JSON + Owner steps in `docs/rollout.md`. Blocked on: who is the org Owner.
+- [x] **G4.5: Minimum Claude Code version** — Done 2026-11-08: **2.1.140** (plugin.json dependencies when the marketplace entry omits them 2.1.110; auto-update installs missing deps 2.1.116; managed marketplace auto-update persisted 2.1.140). In README + `docs/rollout.md`.
 - [ ] **G4.3: Pilot** — One team, 1–2 weeks; collect friction; fix.
 - [x] **G4.4: README rewrite** — Done 2026-11-08. — Reflect the router product (install, session flow, routing table). Current README describes the archived plan.
 
