@@ -47,8 +47,8 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 
 ## G4 — Rollout (1 session + pilot)
 
-- [ ] **G4.1: Register in `ono-plugin-marketplace`** (closes MGA-11) — PR to the org repo; ask before opening.
-- [ ] **G4.2: Managed settings** — Org-wide marketplace + plugin enablement (per G0.5 result).
+- [ ] **G4.1: Register in `ono-plugin-marketplace`** (closes MGA-11) — PR to the org repo; ask before opening. **Prepared:** local branch `add-platform-guardian` in the marketplace clone (entry, 1.6.0, README, CHANGELOG; validates). Blocked on: PR #3 merge + repo-visibility decision — `docs/rollout.md`.
+- [ ] **G4.2: Managed settings** — Org-wide marketplace + plugin enablement (per G0.5 result). **Prepared:** exact JSON + Owner steps in `docs/rollout.md`. Blocked on: who is the org Owner.
 - [ ] **G4.3: Pilot** — One team, 1–2 weeks; collect friction; fix.
 - [x] **G4.4: README rewrite** — Done 2026-11-08. — Reflect the router product (install, session flow, routing table). Current README describes the archived plan.
 
