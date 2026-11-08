@@ -2,6 +2,18 @@
 
 ---
 
+## Session 7 — 2026-11-08 — G3.5 commit guard, live-test kit, rollout prep
+
+- Plan to the goal: ~3–5 build sessions left + 1–2 week pilot (≈4–5 weeks at 2–3 sessions/week); the critical path is external — test machine, PR #3 reviewer, org Owner, pilot team.
+- G3.5 done: `hooks/pre-tool-use.sh` (PreToolUse on Bash) dry-runs `git add` / reads staged new files → `neverCommit` deny, stray working files ask, source silent. 53 tests, mutation-checked (survivors were dead code, removed); 155 total, plugin validates.
+- G1.7 kit: `docs/live-test.md` (~30 checks incl. guard, latency, MGA-83 Figma prompts) for the user to run on the test machine and paste back.
+- G4.1 prepared on local branch `add-platform-guardian` in the marketplace clone (1.6.0, README, CHANGELOG; validates; not pushed). G4.2 JSON + Owner steps in `docs/rollout.md`, verified against the official org-plugins doc.
+- Open decisions (user): Guardian repo is PRIVATE while marketplace + 6 plugins are public — private breaks credential-less installs; PR #3 reviewer; org Owner; OK to push the marketplace PR after #3 merges.
+- **Process improvement:** launch long test loops (mutation runs) with `run_in_background` from the start — none codified (one-off).
+- **Next session:** process the filled `docs/live-test.md` → fix findings (+ G2.3 adapters if resume probes proved unreliable).
+
+---
+
 ## Session 6 — 2026-11-08 — G1–G3 built, all six org plugins mapped, one consolidated PR
 
 - G1 opener: `scripts/git-status.sh` (JSON vs. central branch, bounded fetch, NUL-safe, bash 3.2, no jq, fails open), `scripts/session-log.sh` (local notes, never in git), SessionStart hook, `session-opener` skill — fires on ANY first message, no trigger word.
