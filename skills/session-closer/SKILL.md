@@ -79,7 +79,7 @@ Never end with a vague "you can stop now". End with these steps, clearly and on 
 >
 > **To start fresh:**
 > 1. Type **`/clear`** and press Enter.
-> 2. A new session opens automatically; I'll show your git state and where we stopped.
-> 3. Say **"continue"** to pick up from there — or tell me something new.
+> 2. Write your next message — anything: "continue", a new task, a question.
+> 3. Before anything else I'll show your git state and where we stopped, then get to your message.
 >
-> Closing for the day? Same steps tomorrow: open Claude Code in this project folder and I'll take it from there.
+> Closing for the day? Tomorrow, open Claude Code in this project folder and write whatever you want to work on — same thing happens.

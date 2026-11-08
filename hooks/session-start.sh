@@ -17,8 +17,8 @@ last="$("$scripts/session-log.sh" last "$dir" 2>/dev/null)"
 others="$("$scripts/session-log.sh" others "$dir" 2>/dev/null | paste -sd, - | sed 's/,/, /g')"
 
 cat <<MSG
-[platform-guardian] New session. Before anything else, run the \`platform-guardian:session-opener\` skill and follow it, using the data below.
-Exception: if the user's first message is a slash command, run that command first and open the session right after its output.
+[platform-guardian] New session. Whatever the user's first message is — a greeting, a question, a task, a single word — run the \`platform-guardian:session-opener\` skill first, using the data below, then return to their message. No specific trigger word is needed.
+Exception: if the first message is a slash command, run that command first and open the session right after its output.
 
 Git report (scripts/git-status.sh, schema 1):
 $report

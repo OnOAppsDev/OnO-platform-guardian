@@ -53,7 +53,7 @@ Answer the user's message first. Then end your reply with a short close-out sugg
 💡 This session is getting long. Good moment to save and start fresh:
 1. Say **"close the session"** — I'll save everything: commit, PR, and a note of where we stopped.
 2. When I say it's saved, type **\`/clear\`** and press Enter.
-3. A fresh session opens and I'll pick up right where we stopped — just say "continue".
+3. In the fresh session, write your next message — anything, e.g. "continue" — and I'll open with where we stopped.
 ---
 
 Don't start the close-out until they say so (it runs the \`platform-guardian:session-closer\` skill).

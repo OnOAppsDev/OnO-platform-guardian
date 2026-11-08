@@ -23,7 +23,8 @@ Key fields: `repo`, `branch`, `detached`, `fetch` (`ok` | `failed` | `timeout` |
 - **Never change git state without the employee's explicit choice in this session** — no merge, rebase, pull, reset, stash, checkout or branch creation on your own initiative.
 - **Never use force operations** (`--force`, `reset --hard`, `clean -f`, `branch -D`, `checkout -- .`).
 - **Never push to the central branch.** Changes go back through a PR (session closer).
-- If the user's first message is a slash command, run it first; open the session right after its output.
+- **The trigger is the first message, whatever it is** — a greeting, a question, a task, one word. Never wait for or ask for a particular phrase. Open the session first, then come back to what they wrote (if it was a task, offer it as the answer to step 4).
+- If the first message is a slash command, run it first; open the session right after its output.
 
 ## Steps
 
