@@ -1,0 +1,17 @@
+{
+  "description": "Platform Guardian session opener: on a new session (startup or /clear) injects the git report and the last local session-log entry, and tells Claude to run the session-opener skill.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}

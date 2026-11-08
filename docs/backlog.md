@@ -19,12 +19,13 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 
 ## G1 — Session opener (1–2 sessions)
 
-- [ ] **G1.1: `scripts/git-status.sh`** — Deterministic JSON: repo?, current branch, central branch (detected: origin HEAD → `develop` → `main` → `master`; project override), ahead/behind vs. central after `git fetch`, dirty files, on-central-branch flag, detection confidence. Fails open outside git.
-- [ ] **G1.2: SessionStart hook** — Runs on `startup` (and `clear`); injects the git report + opener instructions as context.
-- [ ] **G1.3: `session-opener` skill** — Greets, presents git state. Behind central → ⚠️🚨 warning, make sure the employee understands, explain options (merge / rebase / continue as-is), and **wait for their decision** — never auto-update. Unsure of central branch → ask which branch to branch from. On the central branch → offer to create a work branch.
-- [ ] **G1.6: Read last session-log entry** — Opener reads `~/.claude/platform-guardian/<repo>/<branch>.md` (local, never in git) and starts with "last time you stopped at …".
-- [ ] **G1.4: Project config** — Optional `.platform-guardian.json` in the work repo (central branch override, team/role). Absent = auto-detect.
-- [ ] **G1.5: Tests** — Script tests against throwaway git repos: clean, dirty, behind, ahead, diverged, detached HEAD, no remote, `develop` vs `main`.
+- [x] **G1.1: `scripts/git-status.sh`** — Deterministic JSON: repo?, current branch, central branch (detected: origin HEAD → `develop` → `main` → `master`; project override), ahead/behind vs. central after `git fetch`, dirty files, on-central-branch flag, detection confidence. Fails open outside git.
+- [x] **G1.2: SessionStart hook** — Runs on `startup` (and `clear`); injects the git report + opener instructions as context.
+- [x] **G1.3: `session-opener` skill** — Greets, presents git state. Behind central → ⚠️🚨 warning, make sure the employee understands, explain options (merge / rebase / continue as-is), and **wait for their decision** — never auto-update. Unsure of central branch → ask which branch to branch from. On the central branch → offer to create a work branch.
+- [x] **G1.6: Read last session-log entry** — Opener reads `~/.claude/platform-guardian/<repo>/<branch>.md` (local, never in git) and starts with "last time you stopped at …".
+- [x] **G1.4: Project config** — Optional `.platform-guardian.json` in the work repo (central branch override, team/role). Absent = auto-detect. Done: `centralBranch` read by the script; `team`/`role` reserved for G2 — `docs/project-config.md`.
+- [x] **G1.5: Tests** — Script tests against throwaway git repos: clean, dirty, behind, ahead, diverged, detached HEAD, no remote, `develop` vs `main`. Done: `tests/run-all.sh` — 71 checks, mutation-checked, bash 3.2.
+- [ ] **G1.7: Live test on the test machine** — install Guardian there (never here); verify the hook fires on startup and `/clear`, the report reaches the model, and the opener handles behind / on-central / ambiguous / clean. Check hook latency with a real remote.
 
 ## G2 — Router (2–3 sessions)
 
