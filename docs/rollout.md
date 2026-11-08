@@ -9,7 +9,11 @@ Verified against the official docs on 2026-11-08: [Manage plugins for your organ
 3. **Pilot install by hand** (one team) — `/plugin install platform-guardian@ono-plugin-marketplace`, confirm the six plugins come with it.
 4. **G4.2 — managed settings** (org Owner), below.
 
-## Decision needed before G4.1: repo visibility
+## Repo visibility — decided: public (2026-11-08)
+
+**Decided by the user: make it public.** Blocked on permissions: `tomzion90` has only *write*; changing visibility needs *admin* — today only `OnOApps-Admin`. That account: repo **Settings → Danger Zone → Change visibility → Make public** (or `gh repo edit OnOAppsDev/yes-platform-guardian --visibility public --accept-visibility-change-consequences`). After the flip: check an install works without credentials (`git ls-remote` with no auth).
+
+Background:
 
 The marketplace and all six Ono plugin repos are **public**; `yes-platform-guardian` is **private**. Plugins install by cloning on the employee's machine with their stored git credentials and no prompt — so with a private repo, every employee needs GitHub read access to it **and** working git credentials (e.g. `gh auth setup-git`), or the install fails. Background auto-update has the same requirement.
 
@@ -49,12 +53,13 @@ Notes for the Owner:
 
 - Takes effect at each member's **next session start**. Check on one machine with `/status` (`Enterprise managed settings` in *Setting sources*) and `/plugin`.
 - If server-managed settings are used, MDM / `managed-settings.json` plugin keys on the same machine are ignored (unless `managedSourcesBehavior: "merge"`).
+- Optional: if Figma ever needs one org-wide definition, add it under `managedMcpServers` (needs Claude Code 2.1.259+) — it then wins over the four plugin copies. Not needed today: the plugins' four `figma` entries share one URL, so Claude Code already connects once (MGA-83).
 - Optional lockdown (later, not for the pilot): `strictKnownMarketplaces` allowing only `anthropics/claude-plugins-official` + `OnOAppsDev/*` (+ `{ "source": "skills-dir" }`), and `disableSideloadFlags: true`. Note: `MatrixStudioPlugin` lives under `OnOApps-Admin`, but the allowlist matches the **marketplace** source, not each plugin's — so `OnOAppsDev/*` is enough.
 
 ## Open
 
 - Who is the org Owner? (vision open question 2)
-- Repo visibility — public as-is / fresh public plugin repo / stay private (above).
+- Repo visibility — decided public; waiting on an admin of the repo (`OnOApps-Admin`) to flip it (above).
 
 ## Minimum Claude Code version: 2.1.140
 

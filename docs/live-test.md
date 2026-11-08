@@ -113,7 +113,7 @@ Clean up: `rm -rf docs`.
 |---|---|---|---|
 | 6.1 | Hook time — already measured by the setup script (§0 table) | < 3 s with the real remote (fetch is capped at 5 s) | see §0 |
 | 6.2 | Re-run the setup script with Wi-Fi off (hook-time row) | Still returns (≤ ~6 s); opener says the numbers may be outdated | |
-| 6.3 | Startup of a session with all six Ono plugins | How many Figma MCP auth prompts / duplicate `figma` servers do you see in `/mcp`? (count them) | |
+| 6.3 | Startup of a session with all six Ono plugins | `/mcp` shows **one** active Figma server (the other three listed as duplicates / hidden) and at most **one** Figma sign-in — the four plugins use the same URL, which Claude Code connects once. Count what you see | |
 | 6.4 | Startup feels slow? | Note seconds from `claude` to first prompt, with vs without `--plugin-dir` | |
 
 ---

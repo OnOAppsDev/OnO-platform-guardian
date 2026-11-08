@@ -100,4 +100,4 @@ Employees must never commit or push working files that Claude creates along the 
 2. **Who is the claude.ai org Owner** who will set managed settings (G4)?
 3. ~~**Minimum Claude Code version**~~ — **Resolved 2026-11-08:** 2.1.140 (plugin dependencies + managed marketplace auto-update) — `docs/rollout.md`.
 4. ~~**Spec location**~~ — **Decided 2026-11-08:** specs written in a work repo go to `docs/specs/<feature-slug>/` and are committed (the toolkit has no repo location of its own).
-5. **Repo visibility** — Guardian is private; the marketplace and the six plugins are public. Private means every employee needs GitHub access + git credentials to install. Pre-public audit and options: `docs/rollout.md`.
+5. ~~**Repo visibility**~~ — **Decided 2026-11-08: public** (like the marketplace and the six plugins). Waiting on a repo admin (`OnOApps-Admin`) to flip it — `docs/rollout.md`.

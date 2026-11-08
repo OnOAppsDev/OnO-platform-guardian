@@ -47,7 +47,7 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 
 ## G4 — Rollout (1 session + pilot)
 
-- [ ] **G4.1: Register in `ono-plugin-marketplace`** (closes MGA-11) — PR to the org repo; ask before opening. **Prepared:** local branch `add-platform-guardian` in the marketplace clone (entry, 1.6.0, README, CHANGELOG; validates). Blocked on: PR #3 merge + repo-visibility decision — `docs/rollout.md` (pre-public audit done 2026-11-08: no secrets; colleague names + `yes-` name to decide). Local branch also notes the minimum Claude Code version (2.1.140).
+- [ ] **G4.1: Register in `ono-plugin-marketplace`** (closes MGA-11) — PR to the org repo; ask before opening. **Prepared:** local branch `add-platform-guardian` in the marketplace clone (entry, 1.6.0, README, CHANGELOG; validates). Blocked on: PR #3 merge + the repo going public (decided 2026-11-08; needs a repo admin, `OnOApps-Admin`, to flip it) — `docs/rollout.md`. Local branch also notes the minimum Claude Code version (2.1.140).
 - [ ] **G4.2: Managed settings** — Org-wide marketplace + plugin enablement (per G0.5 result). **Prepared:** exact JSON + Owner steps in `docs/rollout.md`. Blocked on: who is the org Owner.
 - [x] **G4.5: Minimum Claude Code version** — Done 2026-11-08: **2.1.140** (plugin.json dependencies when the marketplace entry omits them 2.1.110; auto-update installs missing deps 2.1.116; managed marketplace auto-update persisted 2.1.140). In README + `docs/rollout.md`.
 - [ ] **G4.3: Pilot** — One team, 1–2 weeks; collect friction; fix.
