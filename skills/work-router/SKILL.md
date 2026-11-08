@@ -41,4 +41,4 @@ Never invoke, auto-chain into, or "help along" anything in `humanOnly.commands` 
 
 ## Between stages
 
-When a plugin stage finishes, say what's next (from the plugin's own hint, its `next_command`, or the intent's `pipeline`) and ask whether to continue. A finished stage is also a natural point to offer the session close-out (`platform-guardian:session-closer`).
+When a plugin stage finishes, say what's next (from the plugin's own hint, its `next_command`, or the intent's `pipeline`) and ask whether to continue. A finished stage is also a natural point to offer the session close-out — say how, not just when: "Want to stop here? Say **close the session** and I'll save everything; then type `/clear` to start fresh."

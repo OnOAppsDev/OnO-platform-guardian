@@ -71,8 +71,15 @@ The script adds the date + branch heading. The next session's opener reads this 
 
 Two to four short sentences anyone could understand: what got done, what's saved where, what's next. No jargon, no scores.
 
-### 8. Clear instruction to start fresh
+### 8. Tell them exactly what to do next
 
-End with, clearly and on its own:
+Never end with a vague "you can stop now". End with these steps, clearly and on their own (in the employee's language):
 
-> ✅ Everything is saved. Type **`/clear`** to start a fresh session — I'll pick up right where we stopped.
+> ✅ **Everything is saved** — ‹committed / PR link / "not pushed, as you chose"› and a note of where we stopped.
+>
+> **To start fresh:**
+> 1. Type **`/clear`** and press Enter.
+> 2. A new session opens automatically; I'll show your git state and where we stopped.
+> 3. Say **"continue"** to pick up from there — or tell me something new.
+>
+> Closing for the day? Same steps tomorrow: open Claude Code in this project folder and I'll take it from there.

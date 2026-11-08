@@ -47,6 +47,15 @@ mkdir -p "$state_dir" 2>/dev/null && printf '%s' "$band" >"$state" 2>/dev/null
 k=$(( tokens / 1000 ))
 cat <<MSG
 [platform-guardian] This session's context is about ${k}k tokens — long sessions get slower and less accurate.
-Answer the user's message first. Then, at the end of your reply, suggest in one short line that this is a good point to close the session (\`platform-guardian:session-closer\`: save progress, commit / PR, then /clear). Don't close without their OK.
+Answer the user's message first. Then end your reply with a short close-out suggestion that tells the employee exactly what to do — never just "it's a good time to stop". Use this shape (in their language):
+
+---
+💡 This session is getting long. Good moment to save and start fresh:
+1. Say **"close the session"** — I'll save everything: commit, PR, and a note of where we stopped.
+2. When I say it's saved, type **\`/clear\`** and press Enter.
+3. A fresh session opens and I'll pick up right where we stopped — just say "continue".
+---
+
+Don't start the close-out until they say so (it runs the \`platform-guardian:session-closer\` skill).
 MSG
 exit 0

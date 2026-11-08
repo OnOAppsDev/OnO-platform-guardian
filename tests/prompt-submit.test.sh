@@ -30,6 +30,11 @@ expect "below threshold" no "$(hook "$T")"
 turn 2 300 99800
 out="$(hook "$T")"
 expect "crosses threshold (sums all three fields)" yes "$out"
+for want in '`/clear`' 'close the session' '`platform-guardian:session-closer`'; do
+  case "$out" in *"$want"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL message missing: $want" ;; esac
+done
+err="$(printf '{"session_id":"s9","transcript_path":"%s"}' "$T" | "$HOOK" 2>&1 >/dev/null)"
+[ -z "$err" ] && PASS=$((PASS + 1)) || { FAIL=$((FAIL + 1)); echo "FAIL hook wrote to stderr: $err"; }
 case "$out" in *"about 100k tokens"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL token count in message: $out" ;; esac
 expect "same band stays quiet" no "$(hook "$T")"
 
