@@ -2,6 +2,18 @@
 
 ---
 
+## Session 9 — 2026-11-08 — Unblocking rollout: live-test setup, min version, visibility, MGA-83
+
+- Autonomous (user: "close as many tasks as possible"). Org repos unchanged; drift guard clean; 264 checks green on macOS bash 3.2 + Debian; CI green on PR #3.
+- G1.7 shortened: `scripts/live-test-setup.sh <app-repo-url>` builds the test repos + `pg/*` branches and fills the §0 table (versions, Ono plugins, hook time); 21 tests, mutation-checked.
+- Min Claude Code **2.1.140** (verified in the raw CHANGELOG — the subagent's 2.1.153 was unsupported); in README, rollout, local marketplace branch (new commit `007c178`, not pushed). MGA-83 → Low: the four `figma` servers share one URL and Claude Code connects once (official MCP docs).
+- Visibility **decided: public** — history audit clean (no secrets). Flip failed: `tomzion90` has only *write*; needs `OnOApps-Admin` (steps in `docs/rollout.md`).
+- Still blocked on the user: admin flips visibility, live test, PR #3 reviewer (`magen`/`yagilcohen` need read access), org Owner.
+- **Process improvement:** "since which version" questions → grep the raw CHANGELOG directly (one call), no subagent; check `permissions` via `gh api` before admin-level repo actions — none codified (one-off).
+- **Next session:** process the filled `docs/live-test.md` → fix findings; once public + PR #3 merged: tag `platform-guardian--v0.1.0`, push the marketplace PR (G4.1, ask first).
+
+---
+
 ## Session 8 — 2026-11-08 — G2.3 resume adapter, CI, Linux bug fix
 
 - Autonomous session (user: "finish as much as possible"). Org repos re-fetched: no change since Session 6; `check-routes --strict` clean.
