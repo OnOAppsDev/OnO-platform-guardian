@@ -48,7 +48,11 @@
       "neverCommit": [
         ".claude/qa-workspace.json"
       ],
-      "doNotTouch": ["qa-ledger/**", "bugs/**", "readiness/**"],
+      "doNotTouch": [
+        "qa-ledger/**",
+        "bugs/**",
+        "readiness/**"
+      ],
       "evidence": "docs/qa-ledger-contract.md (hash-chained, 'QA reviews and commits ledger files by hand')."
     },
     "matrix-qa-plugin": {
@@ -75,16 +79,35 @@
         ".env",
         ".env.*"
       ],
-      "doNotTouch": ["qa/test-cases/.lld-baseline/**"],
+      "doNotTouch": [
+        "qa/test-cases/.lld-baseline/**"
+      ],
       "evidence": "templates/project/gitignore; /qa-init merges these into .gitignore itself."
     },
     "spec-team-toolkit": {
+      "commit": [
+        "docs/specs/**/*.md"
+      ],
+      "neverCommit": [
+        "docs/specs/**/*.html"
+      ],
+      "note": "Guardian convention (decided 2026-11-08): the toolkit has no repo location of its own, so in a work repo specs are saved to docs/specs/<feature-slug>/ and committed. The .html preview is scratch."
+    },
+    "matrix-studio": {
       "commit": [],
-      "note": "Writes nothing into the repo by design (outputs are downloads / sandbox paths). If the employee saves specs into the repo (spac_*.md, dd_*.md, hld-draft.md, scope-list.md), ask before committing; the .html preview is scratch."
+      "note": "Writes only to Figma (variables, text styles, reference frames); nothing lands in the repo."
     }
   },
   "always": {
-    "neverCommit": [".env", ".env.*", "!.env.example", "*.pem", "*.p12", "*.keystore", "*.jks"],
+    "neverCommit": [
+      ".env",
+      ".env.*",
+      "!.env.example",
+      "*.pem",
+      "*.p12",
+      "*.keystore",
+      "*.jks"
+    ],
     "note": "Secrets are never committed regardless of plugin."
   }
 }

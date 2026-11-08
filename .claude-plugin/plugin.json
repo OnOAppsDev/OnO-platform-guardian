@@ -18,6 +18,8 @@
     "ono-project-inspector",
     "ono-mobile-dev-plugin",
     "ono-plugin-qa",
-    "spec-team-toolkit"
+    "spec-team-toolkit",
+    "matrix-qa-plugin",
+    "matrix-studio"
   ]
 }

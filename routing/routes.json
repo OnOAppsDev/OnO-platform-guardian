@@ -6,19 +6,52 @@
     "ono-plugin-qa": "0.11.0",
     "matrix-qa-plugin": "0.1.0",
     "spec-team-toolkit": "0.4.2",
-    "ono-project-inspector": "0.11.0"
+    "ono-project-inspector": "0.11.0",
+    "matrix-studio": "0.1.0"
   },
   "humanOnly": {
     "note": "Guardian never runs these and never auto-chains into them; it tells the employee exactly what to type. Only matrix-qa-plugin enforces this with disable-model-invocation — everywhere else it is a text-level rule, so Guardian enforces it.",
     "commands": [
-      { "plugin": "matrix-qa-plugin", "command": "/qa-approve", "why": "QA engineer approves the test plan (enforced: disable-model-invocation)" },
-      { "plugin": "ono-plugin-qa", "command": "/approve-qa-test-plan", "why": "stamps the approver's name" },
-      { "plugin": "ono-plugin-qa", "command": "/qa-signoff", "why": "QA sign-off of the readiness verdict" },
-      { "plugin": "ono-plugin-qa", "command": "/resolve-bug", "why": "duplicate / won't-fix is a human decision" },
-      { "plugin": "ono-plugin-qa", "command": "/set-qa-scope", "why": "all values entered by QA" },
-      { "plugin": "ono-plugin-qa", "command": "/plan-regression", "why": "QA decides regression scope" },
-      { "plugin": "ono-mobile-dev-plugin", "command": "/verify-fix-cycle", "why": "the human records pass / fail" },
-      { "plugin": "ono-project-inspector", "command": "/inspect-approve", "why": "running it IS the approval" }
+      {
+        "plugin": "matrix-qa-plugin",
+        "command": "/qa-approve",
+        "why": "QA engineer approves the test plan (enforced: disable-model-invocation)"
+      },
+      {
+        "plugin": "ono-plugin-qa",
+        "command": "/approve-qa-test-plan",
+        "why": "stamps the approver's name"
+      },
+      {
+        "plugin": "ono-plugin-qa",
+        "command": "/qa-signoff",
+        "why": "QA sign-off of the readiness verdict"
+      },
+      {
+        "plugin": "ono-plugin-qa",
+        "command": "/resolve-bug",
+        "why": "duplicate / won't-fix is a human decision"
+      },
+      {
+        "plugin": "ono-plugin-qa",
+        "command": "/set-qa-scope",
+        "why": "all values entered by QA"
+      },
+      {
+        "plugin": "ono-plugin-qa",
+        "command": "/plan-regression",
+        "why": "QA decides regression scope"
+      },
+      {
+        "plugin": "ono-mobile-dev-plugin",
+        "command": "/verify-fix-cycle",
+        "why": "the human records pass / fail"
+      },
+      {
+        "plugin": "ono-project-inspector",
+        "command": "/inspect-approve",
+        "why": "running it IS the approval"
+      }
     ],
     "approvalEdits": "Flipping a planning document's status (proposed→approved, draft→approved, draft→ready-for-qa) is the employee's decision — never edit it on their behalf."
   },
@@ -26,42 +59,80 @@
     {
       "id": "feature",
       "label": "Build a new feature (mobile / TV / React web)",
-      "examples": ["new screen", "add login", "implement the settings page"],
+      "examples": [
+        "new screen",
+        "add login",
+        "implement the settings page"
+      ],
       "plugin": "ono-mobile-dev-plugin",
       "start": "/analyze-feature",
       "args": "<description> [design link]",
-      "requires": ["work branch (the plugin blocks every file write on main/master)"],
-      "pipeline": ["/analyze-feature", "/dev-design-start <feature>", "/dev-feature-start <feature>", "/implement-task <feature> T<n>", "/review-code + /review-security", "/fix-review-comments <notes>", "/create-dev-qa-notes <feature>", "/prepare-mobile-release <version>"],
+      "requires": [
+        "work branch (the plugin blocks every file write on main/master)"
+      ],
+      "pipeline": [
+        "/analyze-feature",
+        "/dev-design-start <feature>",
+        "/dev-feature-start <feature>",
+        "/implement-task <feature> T<n>",
+        "/review-code + /review-security",
+        "/fix-review-comments <notes>",
+        "/create-dev-qa-notes <feature>",
+        "/prepare-mobile-release <version>"
+      ],
       "gates": "Each stage needs the previous document approved by a human (status field)."
     },
     {
       "id": "continue-task",
       "label": "Continue implementing a task",
-      "examples": ["next task", "continue T3"],
+      "examples": [
+        "next task",
+        "continue T3"
+      ],
       "plugin": "ono-mobile-dev-plugin",
       "start": "/implement-task",
       "args": "[feature] T<n>  |  bug:<key> T<n>",
-      "requires": ["work branch", "FA, DD, Dev Plan and Task Breakdown approved"]
+      "requires": [
+        "work branch",
+        "FA, DD, Dev Plan and Task Breakdown approved"
+      ]
     },
     {
       "id": "bug",
       "label": "Fix a bug",
-      "examples": ["fix BUG-27", "the player crashes"],
+      "examples": [
+        "fix BUG-27",
+        "the player crashes"
+      ],
       "plugin": "ono-mobile-dev-plugin",
       "start": "/analyze-bug",
       "args": "<BUG-KEY>  |  qa=<BUG-KEY> --qa-repo <path>  |  --external=<ref> --report=<file>",
-      "requires": ["work branch"],
-      "pipeline": ["/analyze-bug <key>", "/implement-task bug:<key> T<n>", "/verify-fix-cycle bug:<key>", "/review-code --bug <key>", "/create-dev-qa-notes bug:<key>"],
+      "requires": [
+        "work branch"
+      ],
+      "pipeline": [
+        "/analyze-bug <key>",
+        "/implement-task bug:<key> T<n>",
+        "/verify-fix-cycle bug:<key>",
+        "/review-code --bug <key>",
+        "/create-dev-qa-notes bug:<key>"
+      ],
       "next": "Bug-flow helpers print a next_command JSON ({skill, args, display}) — follow it after the employee says yes."
     },
     {
       "id": "review",
       "label": "Review code",
-      "examples": ["review my changes", "security review"],
+      "examples": [
+        "review my changes",
+        "security review"
+      ],
       "plugin": "ono-mobile-dev-plugin",
       "start": "/review-code",
       "args": "[scope] [--bug <key>]",
-      "alternatives": ["/review-security [scope]", "/fix-review-comments <notes-file>"]
+      "alternatives": [
+        "/review-security [scope]",
+        "/fix-review-comments <notes-file>"
+      ]
     },
     {
       "id": "qa-handoff",
@@ -87,46 +158,139 @@
     },
     {
       "id": "qa-mobile",
-      "label": "QA: test plan, execution, bugs, readiness (mobile / TV)",
-      "examples": ["write a test plan", "register a build", "record test run", "report a bug from QA"],
+      "label": "QA for mobile / TV apps: test plan, execution, bugs, readiness",
+      "examples": [
+        "write a test plan",
+        "register a build",
+        "record test run",
+        "report a bug from QA"
+      ],
       "plugin": "ono-plugin-qa",
       "start": "/create-qa-test-plan",
       "args": "<feature> [figma] [--spec <path>] [--code-repo <path>] [--qa-repo <path>]",
-      "requires": ["launched from the workspace folder that holds the code repo and the QA repo (name contains \"qa\")"],
-      "pipeline": ["/create-qa-test-plan", "/approve-qa-test-plan (human)", "/check-qa-coverage", "/generate-automation-scripts", "/register-build", "/set-qa-scope (human)", "/define-smoke-suite", "/record-execution", "/report-bug · /verify-bug · /retest-bug", "/plan-regression (human)", "/qa-readiness", "/qa-signoff (human)"]
+      "requires": [
+        "launched from the workspace folder that holds the code repo and the QA repo (name contains \"qa\")"
+      ],
+      "pipeline": [
+        "/create-qa-test-plan",
+        "/approve-qa-test-plan (human)",
+        "/check-qa-coverage",
+        "/generate-automation-scripts",
+        "/register-build",
+        "/set-qa-scope (human)",
+        "/define-smoke-suite",
+        "/record-execution",
+        "/report-bug · /verify-bug · /retest-bug",
+        "/plan-regression (human)",
+        "/qa-readiness",
+        "/qa-signoff (human)"
+      ],
+      "pickWhen": "Mobile or TV app under test (iOS, Android, React Native, tvOS, Android TV), Appium automation, a QA workspace with a code repo + QA repo."
     },
     {
       "id": "qa-web-matrix",
-      "label": "QA for Matrix IT web projects (LLD → plan → Playwright)",
-      "audience": "Matrix IT QA teams only",
+      "label": "QA for web projects (LLD → plan → Playwright)",
+      "audience": "QA team — web projects",
       "plugin": "matrix-qa-plugin",
       "start": "/qa-plan",
       "args": "<qa/lld/<feature>.md> [--with-source] [--figma <url>]",
-      "requires": ["matrix-qa.config.json in the repo (else start with /qa-init)"],
-      "pipeline": ["/qa-init", "/qa-plan", "/qa-review", "/qa-approve (human)", "/qa-sync", "/qa-automate", "/qa-run"]
+      "requires": [
+        "matrix-qa.config.json in the repo (else start with /qa-init to set the repo up)"
+      ],
+      "pipeline": [
+        "/qa-init",
+        "/qa-plan",
+        "/qa-review",
+        "/qa-approve (human)",
+        "/qa-sync",
+        "/qa-automate",
+        "/qa-run"
+      ],
+      "pickWhen": "Web project under test, Playwright automation, an LLD in qa/lld/, or matrix-qa.config.json in the repo."
     },
     {
       "id": "spec",
       "label": "Write a spec (HLD / LLD / SPAC)",
-      "examples": ["customer HLD", "mobile SPAC", "web component LLD from Figma", "backend API LLD"],
+      "examples": [
+        "customer HLD",
+        "mobile SPAC",
+        "web component LLD from Figma",
+        "backend API LLD"
+      ],
       "plugin": "spec-team-toolkit",
       "start": "ask which document",
       "choices": [
-        { "doc": "HLD (customer, Hebrew)", "skill": "spec-team-toolkit:hld-builder" },
-        { "doc": "Mobile LLD / SPAC", "skill": "spec-team-toolkit:lld-mobile-spec" },
-        { "doc": "Web component LLD from Figma", "skill": "spec-team-toolkit:lld-web-figma-spec" },
-        { "doc": "Backend API / data-model LLD", "skill": "spec-team-toolkit:lld-backend-spec" }
+        {
+          "doc": "HLD (customer, Hebrew)",
+          "skill": "spec-team-toolkit:hld-builder"
+        },
+        {
+          "doc": "Mobile LLD / SPAC",
+          "skill": "spec-team-toolkit:lld-mobile-spec"
+        },
+        {
+          "doc": "Web component LLD from Figma",
+          "skill": "spec-team-toolkit:lld-web-figma-spec"
+        },
+        {
+          "doc": "Backend API / data-model LLD",
+          "skill": "spec-team-toolkit:lld-backend-spec"
+        }
       ],
-      "notes": "Interview-style, one question per turn. Invoke the spec-team-toolkit skill explicitly — \"write a SPAC\" also matches other spec skills. The toolkit does not choose where files go in the repo; ask the employee."
+      "notes": "Interview-style, one question per turn. Invoke the spec-team-toolkit skill explicitly — \"write a SPAC\" also matches other spec skills. The toolkit has no repo location of its own (MGA-68/81): in a work repo, tell it to save the documents to docs/specs/<feature-slug>/ (spac_<f>.md, dd_<f>.md, hld-draft.md, scope-list.md, lld-<kind>-<f>.md). The .html preview is not committed. Outside a repo, keep the toolkit default.",
+      "saveTo": "docs/specs/<feature-slug>/"
+    },
+    {
+      "id": "design-system",
+      "label": "Generate a Figma design system (colors, spacing, typography)",
+      "examples": [
+        "build a design system from our brand color",
+        "color palette in Figma",
+        "typography styles"
+      ],
+      "audience": "Designers",
+      "plugin": "matrix-studio",
+      "start": "ask which part",
+      "choices": [
+        {
+          "doc": "Complete design system (colors → spacing → typography)",
+          "skill": "matrix-studio:generate-design-system"
+        },
+        {
+          "doc": "Color palette only",
+          "skill": "matrix-studio:figma-color-palette-generator"
+        },
+        {
+          "doc": "Spacing / scale tokens only",
+          "skill": "matrix-studio:figma-space-scale-generator"
+        },
+        {
+          "doc": "Typography only",
+          "skill": "matrix-studio:figma-type-system-generator"
+        }
+      ],
+      "requires": [
+        "Figma MCP connected (/mcp), Full Figma seat with edit access to the target file"
+      ],
+      "notes": "Writes only to Figma — no repo files, no git."
     },
     {
       "id": "onboard-repo",
       "label": "Understand / onboard to this repo, generate CLAUDE.md and project docs",
-      "examples": ["what is this project", "onboard me", "inspect the repo", "audit"],
+      "examples": [
+        "what is this project",
+        "onboard me",
+        "inspect the repo",
+        "audit"
+      ],
       "plugin": "ono-project-inspector",
       "start": "/inspect",
       "args": "[repo-path]",
-      "alternatives": ["/inspect-status (read-only: progress + next action)", "/inspect-topic [topic]", "/inspect-sync"],
+      "alternatives": [
+        "/inspect-status (read-only: progress + next action)",
+        "/inspect-topic [topic]",
+        "/inspect-sync"
+      ],
       "notes": "/inspect always stops at a menu for the employee's choice."
     }
   ],
@@ -143,7 +307,7 @@
       "feature": "Glob qa/test-cases/*.md (skip .lld-baseline/) → node \"<plugin>/scripts/mqa.mjs\" plan state <feature> → {status, effectiveApproval, reason}. DRAFT/CHANGES_REQUIRED → /qa-review · REVIEWED → /qa-approve (human) · reason LLD_CHANGED → /qa-sync · effectiveApproval → /qa-automate then /qa-run."
     },
     "spec-team-toolkit": {
-      "spec": "No stored state; files live wherever the employee saved them. spac_<f>.md \"**Status:**\" DRAFT|READY; dd_<f>.md present → SPAC is READY; hld-draft.md per-section [סטטוס: …] tags."
+      "spec": "Look in docs/specs/*/ (Guardian convention; older specs may be elsewhere — ask). spac_<f>.md \"**Status:**\" DRAFT|READY; dd_<f>.md present → SPAC is READY; hld-draft.md per-section [סטטוס: …] tags; web/backend LLDs: exists or not."
     },
     "ono-project-inspector": {
       "repo": "AUDIT.md topic statuses + CLAUDE.md / docs/project/ existence are the truth; .ono/state.json resume.nextAction is a hint (often stale — its agent can't run bun). Or route to /inspect-status."

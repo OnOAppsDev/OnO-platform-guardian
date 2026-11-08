@@ -14,7 +14,7 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 - [x] **G0.1: Ecosystem status refresh** — 6-repo diff vs. July baseline. Output: `docs/ecosystem-status-2026-11.md`.
 - [x] **G0.2: Archive the July plan** — `archive/2026-07-mcp-plan/`.
 - [x] **G0.3: Vision document** — `docs/vision.md`: north star, session flow, git policy, routing principles, non-goals, feasibility notes.
-- [x] **G0.4: Plugin skeleton** — `claude plugin validate .` passes; deps on the 4 core Ono plugins (Matrix plugins pending decision). repo root becomes the plugin: `.claude-plugin/plugin.json`, `hooks/`, `skills/`, `scripts/`, `tests/`. Matches org conventions (`ono-mobile-dev-plugin` layout, author "Ono Apps").
+- [x] **G0.4: Plugin skeleton** — `claude plugin validate .` passes; deps on all six org plugins (Matrix plugins added 2026-11-08 per G3.6). repo root becomes the plugin: `.claude-plugin/plugin.json`, `hooks/`, `skills/`, `scripts/`, `tests/`. Matches org conventions (`ono-mobile-dev-plugin` layout, author "Ono Apps").
 - [x] **G0.5: Feasibility — org-wide install** — Confirm Claude for Organizations managed settings can force-add the marketplace and enable all plugins. Record result in `docs/vision.md`. **Result: feasible** — plugin `dependencies` (bundle) + managed `enabledPlugins`; mods for context %. See vision "How it is built".
 
 ## G1 — Session opener (1–2 sessions)
@@ -43,7 +43,7 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 - [x] **G3.4: Committed-artifacts allowlist** — From the 6 org repos (latest branch): which files each plugin intends to be committed (inspector outputs, dev planning docs, QA plans, …) → `routing/committed-artifacts.json`. Done (commit / neverCommit / doNotTouch per plugin).
 - [ ] **G3.5: Commit hygiene** — At close-out and before `git add`/`commit`: new untracked files not on the allowlist → ensure in `.gitignore` (change goes via the employee's PR); PreToolUse guard warns/blocks staging non-allowlisted new files. No blanket `*.md` ignore. **Partly done:** close-out hygiene in the closer skill. Remaining: the PreToolUse guard on `git add`/`commit`.
 
-- [ ] **G3.6: Decisions needed (user)** — (a) Where should specs from spec-team-toolkit live in a work repo, if anywhere (MGA-68/81)? (b) Matrix plugins: `matrix-qa-plugin` is for Matrix IT QA teams only → keep it out of Guardian's `dependencies` (recommended) and route to it only in Matrix repos?
+- [x] **G3.6: Decisions needed (user)** — (a) ~~Where do specs live?~~ **Decided 2026-11-08:** `docs/specs/<feature-slug>/` in the work repo, committed; `.html` previews not (routes.json `spec.saveTo`, allowlist). (b) ~~Matrix plugins?~~ **Decided 2026-11-08 (user):** every org plugin is part of the process — `matrix-qa-plugin` (QA team, web) and `matrix-studio` (designers, Figma design systems) added to `dependencies`; the router picks the QA plugin from the nature of the task and asks only when unclear.
 
 ## G4 — Rollout (1 session + pilot)
 

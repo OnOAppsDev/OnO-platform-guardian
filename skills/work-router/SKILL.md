@@ -13,7 +13,9 @@ The routing map is data: `${CLAUDE_PLUGIN_ROOT}/routing/routes.json` — read it
 
 ### 1. Classify
 
-Match what the employee said to one intent in `routes.json` (`feature`, `continue-task`, `bug`, `review`, `qa-handoff`, `release`, `figma-theme`, `qa-mobile`, `qa-web-matrix`, `spec`, `onboard-repo`). If two fit, or none, ask one short question with the likely options. `qa-web-matrix` is only for Matrix IT QA teams — pick it when the repo has `matrix-qa.config.json` or the employee says they're on Matrix.
+Match what the employee said to one intent in `routes.json` (`feature`, `continue-task`, `bug`, `review`, `qa-handoff`, `release`, `figma-theme`, `qa-mobile`, `qa-web-matrix`, `spec`, `design-system`, `onboard-repo`). If two fit, or none, ask one short question with the likely options.
+
+**QA has two plugins** — the QA team uses both. Decide from the nature of the task and the repo (each intent's `pickWhen`): mobile / TV app, Appium, a QA workspace → `qa-mobile` (ono-plugin-qa); web project, Playwright, an LLD in `qa/lld/`, `matrix-qa.config.json` → `qa-web-matrix` (matrix-qa-plugin). Ask what they're testing only when you can't tell on your own.
 
 Confirm in one line: "Got it — a new feature. I'll start it with `/analyze-feature`. OK?"
 
@@ -29,7 +31,7 @@ If the employee says continue / where was I, or the last session-log entry names
 
 ### 4. Start
 
-Invoke the start command through the Skill tool with the arguments you have (`<plugin>:<command>`, e.g. `ono-mobile-dev-plugin:analyze-feature`), or for `spec` the chosen `spec-team-toolkit:<skill>` — invoke that one explicitly, since "write a SPAC" also matches other spec skills. From here the plugin's own process runs; follow it.
+Invoke the start command through the Skill tool with the arguments you have (`<plugin>:<command>`, e.g. `ono-mobile-dev-plugin:analyze-feature`), or for `spec` the chosen `spec-team-toolkit:<skill>` — invoke that one explicitly, since "write a SPAC" also matches other spec skills — and tell it to save into `docs/specs/<feature-slug>/` (the toolkit has no repo location of its own). From here the plugin's own process runs; follow it.
 
 ## Human-only steps — never run them
 

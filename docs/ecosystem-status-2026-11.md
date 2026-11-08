@@ -82,13 +82,14 @@ MGA-34 (CLAUDE_PLUGIN_ROOT — 1 of 3 hooks has fallback) · MGA-37 (inspector: 
 | MGA-72 | ono-plugin-qa | `appium-mcp@latest` unpinned | Medium |
 | MGA-73 | QA (both) | Two QA plugins, two state schemas (YAML frontmatter + ledger vs. key:value + fingerprints), no shared QA-status contract; React web boundary unclear | Medium |
 | MGA-74 | Matrix-qa | No CI; tests + validator never run automatically (tests not executed in this audit) | High |
-| MGA-75 | Matrix-qa | Client-specific ("Matrix IT") plugin in the internal registry; `UNLICENSED` on a public repo; author mismatch vs marketplace | Low–Med |
+| MGA-75 | Matrix-qa | ~~Client-specific ("Matrix IT") plugin in the internal registry~~ — confirmed in use by the QA team (web) 2026-11-08; `UNLICENSED` on a public repo; author mismatch vs marketplace | Low–Med |
 | MGA-76 | inspector ↔ dev | Vendored repo-knowledge contract intentionally behind ("Stage B"); no version check between copies | Medium |
 | MGA-77 | dev plugin | iOS lane has 5 standards vs Android 10 — no testing / networking / persistence docs | Medium |
 | MGA-78 | all except Matrix | No approval command sets `disable-model-invocation` (`/approve-qa-test-plan`, `/qa-signoff`, `/inspect-approve` — "running it IS the approval"); the model can self-approve. Guardian enforces a human-only list (`routing/routes.json`) | High |
 | MGA-79 | dev plugin | Feature Analysis, Dev Plan and Task Breakdown have no defined filename/path; feature `/review-code`, `/review-security`, release checklist write no file. Feature flow has no machine-readable next step (only Bug Flow `next_command`) | Medium |
 | MGA-80 | ono-plugin-qa | Commit/push hook falls back to "folder name contains `qa`" (matches e.g. `aqua`); README internals table lists 6 of 17 commands; plan status lives in a fenced yaml block, not frontmatter | Low–Med |
 | MGA-81 | spec toolkit | `lld-mobile-spec` calls "Phase 16 — DD Starter" which doesn't exist; outputs hardcoded to `/mnt/user-data/outputs/` (claude.ai sandbox) — no repo location in Claude Code (extends MGA-68) | Medium |
+| MGA-83 | dev, qa, Matrix-qa, matrix-studio | Four plugins each bundle their own `figma` MCP server — with all bundled under Guardian, employees may see several Figma auth prompts / duplicate tools. Verify in the live test (G1.7) | Medium |
 | MGA-82 | Matrix-qa | Guard denies every git write and `gh pr create` session-wide once the session starts inside a Matrix repo — also for other repos in that session | Low (by design) |
 
 ---

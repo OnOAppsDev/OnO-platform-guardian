@@ -96,6 +96,7 @@ Employees must never commit or push working files that Claude creates along the 
 
 ## Open questions
 
-1. **Matrix plugins** — `matrix-qa-plugin` and `matrix-studio` are client-specific (Matrix IT). Should Guardian depend on them for everyone, or only route to them when the project is a Matrix project?
+1. ~~**Matrix plugins**~~ — **Decided 2026-11-08:** every org plugin is part of the process; Guardian depends on all six (QA team uses both QA plugins: mobile/TV and web). The router picks the QA plugin from the task and asks only when unclear.
+4. ~~**Spec location**~~ — **Decided 2026-11-08:** specs written in a work repo go to `docs/specs/<feature-slug>/` and are committed (the toolkit has no repo location of its own).
 2. **Who is the claude.ai org Owner** who will set managed settings (G4)?
 3. **Minimum Claude Code version** for employees (mods need ≥ ~2.1.290) — enforce via managed auto-update?
