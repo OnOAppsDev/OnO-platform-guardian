@@ -235,6 +235,29 @@ elapsed=$(( $(date +%s) - start ))
 check ".fetch == \"timeout\" and $(has_warning fetch-timeout)"
 if [ "$elapsed" -le 4 ]; then PASS=$((PASS + 1)); else FAIL=$((FAIL + 1)); echo "FAIL [$CASE] took ${elapsed}s"; fi
 
+case_ "Matrix QA repo → git writes blocked flag"
+MQ="$(clone "$R" matrix)"
+run "$MQ"
+check '.guards.matrixQa == false'
+mkdir -p "$MQ/qa/lld"; echo '{}' >"$MQ/matrix-qa.config.json"
+run "$MQ/qa/lld"
+check ".guards.matrixQa == true and $(has_warning matrix-qa-git-blocked)"
+
+case_ "ono-plugin-qa: repo folder name contains qa → commit blocked"
+run "$C"
+check '.guards.onoQaCommitBlocked == false'
+QW="$WORK/ws"; mkdir -p "$QW"
+g clone "$R" "$QW/app-ios"; g clone "$R" "$QW/App-QA"
+run "$QW/App-QA"
+check ".guards.onoQaCommitBlocked == true and $(has_warning ono-qa-commit-blocked)"
+
+case_ "ono-plugin-qa: qa-workspace.json is authoritative"
+mkdir -p "$QW/.claude"; echo '{"qaRepoPath": "app-ios", "codeRepoPath": "x"}' >"$QW/.claude/qa-workspace.json"
+run "$QW/App-QA"
+check '.guards.onoQaCommitBlocked == false' "named repo is app-ios, so App-QA is not blocked"
+run "$QW/app-ios"
+check '.guards.onoQaCommitBlocked == true'
+
 case_ "awkward paths stay valid JSON"
 W="$WORK/weird"
 g init "$W"; commit "$W" a.txt

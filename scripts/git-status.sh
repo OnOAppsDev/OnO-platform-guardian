@@ -85,6 +85,7 @@ if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ]; then
   exit 0
 fi
 
+start_dir="$PWD"
 root="$(git rev-parse --show-toplevel 2>/dev/null)"
 [ -n "$root" ] && cd "$root" 2>/dev/null
 
@@ -271,6 +272,40 @@ elif [ -f "$(gp BISECT_LOG)" ]; then operation="bisect"
 fi
 [ -n "$operation" ] && warn "operation-in-progress"
 
+# ---------- org-plugin guards ----------
+
+# Matrix QA's guard hook denies every git write and `gh pr create` from Claude
+# inside a repo that has matrix-qa.config.json at or above the session dir.
+matrix_qa=false
+d="$start_dir"
+while [ -n "$d" ]; do
+  [ -f "$d/matrix-qa.config.json" ] && { matrix_qa=true; break; }
+  [ "$d" = "/" ] && break
+  d="$(dirname "$d")"
+done
+$matrix_qa && warn "matrix-qa-git-blocked"
+
+# ono-plugin-qa's hook blocks `git commit` / `git push` from Claude in the QA
+# repo: the one named by .claude/qa-workspace.json (qaRepoPath), else any repo
+# whose folder name contains "qa". Mirrors hooks/block-qa-repo-git-writes.sh.
+ono_qa=false
+if ! grep -q '"name"[[:space:]]*:[[:space:]]*"ono-plugin-qa"' .claude-plugin/plugin.json 2>/dev/null; then
+  ws=""
+  for cand in "$(dirname "$PWD")" "$start_dir"; do
+    [ -f "$cand/.claude/qa-workspace.json" ] && { ws="$cand"; break; }
+  done
+  qa_path=""
+  [ -n "$ws" ] && qa_path="$(sed -n 's/.*"qaRepoPath"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$ws/.claude/qa-workspace.json" | head -n 1)"
+  if [ -n "$qa_path" ]; then
+    case "$qa_path" in /*) ;; *) qa_path="$ws/$qa_path" ;; esac
+    qa_root="$(cd "$qa_path" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null)"
+    [ -n "$qa_root" ] && [ "$qa_root" = "$PWD" ] && ono_qa=true
+  else
+    case "$(basename "$PWD" | tr '[:upper:]' '[:lower:]')" in *qa*) ono_qa=true ;; esac
+  fi
+fi
+$ono_qa && warn "ono-qa-commit-blocked"
+
 # ---------- output ----------
 
 printf '{'
@@ -302,6 +337,7 @@ printf '"changes":{"staged":%s,"unstaged":%s,"untracked":%s,"conflicted":%s,"tot
   "$staged" "$unstaged" "$untracked" "$conflicted" "$n_files" "$files" \
   "$([ "$n_files" -gt "$MAX_FILES" ] && echo true || echo false)"
 printf '"operation":%s,' "$(json_str_or_null "$operation")"
+printf '"guards":{"matrixQa":%s,"onoQaCommitBlocked":%s},' "$matrix_qa" "$ono_qa"
 printf '"warnings":[%s]' "$WARNINGS"
 printf '}\n'
 exit 0

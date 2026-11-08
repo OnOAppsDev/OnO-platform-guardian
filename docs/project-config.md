@@ -26,4 +26,8 @@ The session opener offers to create this file when the central branch can't be d
 
 ## Git report
 
-`scripts/git-status.sh [dir]` prints one JSON object (schema 1) and always exits 0. Warnings: `dir-not-found`, `git-not-installed`, `detached-head`, `unborn-head`, `no-remote`, `fetch-failed`, `fetch-timeout`, `override-not-found`, `central-ambiguous`, `central-unknown`, `on-central`, `behind-central`, `operation-in-progress`. Env: `PG_NO_FETCH=1`, `PG_FETCH_TIMEOUT=<seconds>` (default 5).
+`scripts/git-status.sh [dir]` prints one JSON object (schema 1) and always exits 0. Warnings: `dir-not-found`, `git-not-installed`, `detached-head`, `unborn-head`, `no-remote`, `fetch-failed`, `fetch-timeout`, `override-not-found`, `central-ambiguous`, `central-unknown`, `on-central`, `behind-central`, `operation-in-progress`, `matrix-qa-git-blocked`, `ono-qa-commit-blocked` (the last two mirror org-plugin hooks that block Claude's git writes; also in `guards`). Env: `PG_NO_FETCH=1`, `PG_FETCH_TIMEOUT=<seconds>` (default 5).
+
+## Session-length signal
+
+`hooks/prompt-submit.sh` reads the real context size from the transcript and, past the threshold, asks Claude to suggest the close-out once per band. Env: `PG_CLOSEOUT_TOKENS` (default 120000), `PG_CLOSEOUT_STEP` (default 40000).

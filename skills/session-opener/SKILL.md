@@ -62,7 +62,7 @@ Show a compact summary (branch · central branch · behind/ahead · uncommitted 
 
 7. **Unpushed commits** (`upstream.ahead` > 0): one line, FYI only — the closer handles pushing.
 
-Situations not listed (no remote, `override-not-found`, unborn repo) → mention in one line and move on.
+Situations not listed (no remote, `override-not-found`, unborn repo) → mention in one line and move on. If `guards.matrixQa` or `guards.onoQaCommitBlocked` is true, mention once that in this repo the employee runs commits / pushes themselves (an Ono QA plugin blocks Claude from doing it) — the closer will hand them the commands.
 
 ### 3. All clear
 
@@ -72,4 +72,4 @@ When nothing needs a decision, a single line is enough: "✅ You're on `‹branc
 
 > All set. What are we working on — a bug, a feature, tests, a spec? Tell me what we're doing.
 
-Then help with what they say. (Routing into the matching Ono plugin command comes in a later Guardian version.)
+Then hand over to the `platform-guardian:work-router` skill with their answer — it picks the right Ono plugin command (or resumes the work named in the last session-log entry).

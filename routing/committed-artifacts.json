@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "verifiedAt": "2026-11-08",
+  "note": "Files the Ono plugins write into a work repo and intend to be COMMITTED. The session closer never .gitignores these. Patterns are git-style globs relative to the repo root. 'neverCommit' lists plugin scratch files that land in the repo but must not be committed. Generated ledger/readiness files must never be edited, formatted or line-ending-normalized.",
+  "plugins": {
+    "ono-mobile-dev-plugin": {
+      "commit": [
+        "docs/tasks/**",
+        "docs/bugs/**",
+        "docs/qa/*-qa-handoff.md",
+        "docs/*-DD.md",
+        "*-DD.md",
+        "docs/reviews/**"
+      ],
+      "frontmatterDocs": "Feature Analysis, Dev Plan and Task Breakdown have no fixed filename: any new .md whose YAML frontmatter has doc_schema_version + feature: is a planning doc → commit.",
+      "neverCommit": [],
+      "evidence": "docs/task-state-contract.md:20, docs/bug-work-plan-contract.md:412, scripts/reference-integrity.ts:331; scratch is written outside the repo."
+    },
+    "ono-project-inspector": {
+      "commit": [
+        "CLAUDE.md",
+        "AUDIT.md",
+        "docs/project/**",
+        "audits/**",
+        ".ono/state.json",
+        ".ono/repo-knowledge.json"
+      ],
+      "neverCommit": [
+        "*.bak",
+        ".ono/knowledge-refresh-snapshot.json"
+      ],
+      "evidence": "skills/inspection-state/SKILL.md:52, docs/repo-knowledge-contract.md:11; .bak written in Version mode; the inspector never edits .gitignore."
+    },
+    "ono-plugin-qa": {
+      "repo": "QA repo only (writes nothing into the code repo). The QA engineer commits by hand — the plugin's hook blocks Claude's commit/push there.",
+      "commit": [
+        "*/test-plan.md",
+        "*/test-cases.xlsx",
+        "*/coverage-report.md",
+        "*/automation-verification-report.md",
+        "app-knowledge.md",
+        "automation/**",
+        "smoke/**",
+        "qa-ledger/**",
+        "bugs/**",
+        "readiness/**"
+      ],
+      "neverCommit": [
+        ".claude/qa-workspace.json"
+      ],
+      "doNotTouch": ["qa-ledger/**", "bugs/**", "readiness/**"],
+      "evidence": "docs/qa-ledger-contract.md (hash-chained, 'QA reviews and commits ledger files by hand')."
+    },
+    "matrix-qa-plugin": {
+      "repo": "Matrix QA repo (matrix-qa.config.json). The QA engineer does all git writes.",
+      "commit": [
+        "matrix-qa.config.json",
+        "qa/lld/**",
+        "qa/test-cases/**",
+        "qa/test-cases/.lld-baseline/**",
+        "tests/**",
+        "playwright.config.ts",
+        "tsconfig.json",
+        "package.json",
+        ".env.example",
+        "scripts/open-report.mjs"
+      ],
+      "neverCommit": [
+        "node_modules/",
+        "test-results/",
+        "playwright-report/",
+        "blob-report/",
+        "playwright/.cache/",
+        "playwright/.auth/",
+        ".env",
+        ".env.*"
+      ],
+      "doNotTouch": ["qa/test-cases/.lld-baseline/**"],
+      "evidence": "templates/project/gitignore; /qa-init merges these into .gitignore itself."
+    },
+    "spec-team-toolkit": {
+      "commit": [],
+      "note": "Writes nothing into the repo by design (outputs are downloads / sandbox paths). If the employee saves specs into the repo (spac_*.md, dd_*.md, hld-draft.md, scope-list.md), ask before committing; the .html preview is scratch."
+    }
+  },
+  "always": {
+    "neverCommit": [".env", ".env.*", "!.env.example", "*.pem", "*.p12", "*.keystore", "*.jks"],
+    "note": "Secrets are never committed regardless of plugin."
+  }
+}
