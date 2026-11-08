@@ -38,7 +38,10 @@ jobs:
           git config --global init.defaultBranch main
       - run: bash --version | head -1
       - name: JSON data files parse
-        run: for f in .claude-plugin/plugin.json hooks/hooks.json routing/*.json; do jq -e . "$f" >/dev/null || { echo "invalid JSON: $f"; exit 1; }; done
+        run: |
+          for f in .claude-plugin/plugin.json hooks/hooks.json routing/*.json; do
+            jq -e . "$f" >/dev/null || { echo "invalid JSON: $f"; exit 1; }
+          done
       - run: tests/run-all.sh
 
   routes:
