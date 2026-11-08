@@ -152,6 +152,8 @@ check ".central.candidates == [\"develop\",\"main\"] and $(has_warning central-a
 
 case_ "no origin/HEAD, develop + main on remote → develop, low"
 g -C "$C2" remote set-head origin -d
+# git >= 2.48 re-creates a missing origin/HEAD on fetch (followRemoteHEAD=create); keep it gone.
+g -C "$C2" config remote.origin.followRemoteHEAD never
 run "$C2"
 check '.central.branch == "develop" and .central.source == "develop" and .central.confidence == "low"'
 
@@ -165,6 +167,7 @@ g -C "$C3" branch -D main
 g -C "$C3" push origin --delete main
 g -C "$C3" fetch --prune origin
 g -C "$C3" remote set-head origin -d
+g -C "$C3" config remote.origin.followRemoteHEAD never
 run "$C3"
 check '.central.branch == "develop" and .central.confidence == "medium" and .central.candidates == ["develop"]'
 check ".onCentral == true and $(no_warning central-ambiguous)"
