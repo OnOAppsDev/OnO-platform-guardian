@@ -238,6 +238,23 @@ elapsed=$(( $(date +%s) - start ))
 check ".fetch == \"timeout\" and $(has_warning fetch-timeout)"
 if [ "$elapsed" -le 4 ]; then PASS=$((PASS + 1)); else FAIL=$((FAIL + 1)); echo "FAIL [$CASE] took ${elapsed}s"; fi
 
+case_ "fast fetch doesn't wait out the timeout"
+start=$(date +%s)
+OUT="$(PG_FETCH_TIMEOUT=4 "$SCRIPT" "$F")"; RC=$?   # fails fast: remote path missing
+elapsed=$(( $(date +%s) - start ))
+check '.fetch == "failed"'
+if [ "$elapsed" -le 2 ]; then PASS=$((PASS + 1)); else FAIL=$((FAIL + 1)); echo "FAIL [$CASE] took ${elapsed}s"; fi
+
+case_ "fetch timeout is wall-clock, not a count of sleeps (slow machine)"
+# Each `sleep` costs 0.3 s here; a cap counted as 10 sleeps per second would take ~6 s instead of ~2.
+mkdir -p "$WORK/slowbin"
+printf '#!/bin/sh\n/bin/sleep 0.3; /bin/sleep "$@"\n' >"$WORK/slowbin/sleep"; chmod +x "$WORK/slowbin/sleep"
+start=$(date +%s)
+OUT="$(PATH="$WORK/slowbin:$PATH" GIT_SSH_COMMAND='/bin/sleep 30 #' PG_FETCH_TIMEOUT=2 "$SCRIPT" "$T")"; RC=$?
+elapsed=$(( $(date +%s) - start ))
+check ".fetch == \"timeout\""
+if [ "$elapsed" -le 4 ]; then PASS=$((PASS + 1)); else FAIL=$((FAIL + 1)); echo "FAIL [$CASE] took ${elapsed}s"; fi
+
 case_ "Matrix QA repo → git writes blocked flag"
 MQ="$(clone "$R" matrix)"
 run "$MQ"

@@ -52,8 +52,9 @@ Stage the confirmed paths and commit with a short message in the style of the re
 
 ### 5. Push + PR
 
+- **Ask first, in one question** — the OK in step 2 covered the commit, not sharing it: "Push `‹branch›` and open a PR to `‹central›`? Reviewers? (or stop here — it's committed locally)". Wait for the answer.
 - Push the work branch: `git push -u origin ‹branch›`. Rejected because the remote moved → explain, offer `git pull --no-rebase` (merge) and retry; never force.
-- PR: check for an existing one first (`gh pr view --json url,state 2>/dev/null`). If none, **ask** the target branch (default: the central branch from the report) and reviewers, then `gh pr create --base ‹target› --fill` (add `--reviewer` if given). If `gh` isn't installed or authenticated, give the compare link from the push output and tell them to open the PR there.
+- PR: check for an existing one first (`gh pr view --json url,state 2>/dev/null`). If none, use the target branch and reviewers from that answer (target default: the central branch from the report), then `gh pr create --base ‹target› --fill` (add `--reviewer` if given). If `gh` isn't installed or authenticated, give the compare link from the push output and tell them to open the PR there.
 - The employee may choose to stop before pushing (e.g. work not ready to share) — fine; record it in the log.
 
 ### 6. Write the session-log entry (local, never in git)

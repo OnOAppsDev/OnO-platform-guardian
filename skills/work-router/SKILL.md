@@ -13,11 +13,11 @@ The routing map is data: `${CLAUDE_PLUGIN_ROOT}/routing/routes.json` — read it
 
 ### 1. Classify
 
-Match what the employee said to one intent in `routes.json` (`feature`, `continue-task`, `bug`, `review`, `qa-handoff`, `release`, `figma-theme`, `qa-mobile`, `qa-web-matrix`, `spec`, `design-system`, `onboard-repo`). If two fit, or none, ask one short question with the likely options.
+Match what the employee said to one intent in `routes.json` (`feature`, `continue-task`, `bug`, `review`, `qa-handoff`, `release`, `figma-theme`, `qa-mobile`, `qa-web-matrix`, `spec`, `design-system`, `onboard-repo`). If two fit, or none, ask one short question with the likely options. If the request is itself a human-only step ("approve the plan", "sign off", "resolve this bug") → don't classify or ask; answer as in **Human-only steps** below, with the command for this repo's plugin.
 
 **QA has two plugins** — the QA team uses both. Decide from the nature of the task and the repo (each intent's `pickWhen`): mobile / TV app, Appium, a QA workspace → `qa-mobile` (ono-plugin-qa); web project, Playwright, an LLD in `qa/lld/`, `matrix-qa.config.json` → `qa-web-matrix` (matrix-qa-plugin). Ask what they're testing only when you can't tell on your own.
 
-Confirm in one line: "Got it — a new feature. I'll start it with `/analyze-feature`. OK?"
+Check the plugin is available (step 3) before confirming, so the employee doesn't say OK to something that can't start. Confirm in one line: "Got it — a new feature. I'll start it with `/analyze-feature`. OK?" If the start command needs something you don't have (a bug key, a feature name — for `spec` it names the folder), ask for it in the same line; never invent one.
 
 ### 2. Resume instead of restarting
 
@@ -30,7 +30,7 @@ The stage is "apparent": the plugin's own command re-checks approvals and finger
 
 ### 3. Check preconditions
 
-- **Plugin available?** The command must appear in your available skills / commands (e.g. `ono-mobile-dev-plugin:analyze-feature`). If it's missing, stop and give the exact install line: `/plugin install <plugin>@ono-plugin-marketplace`, then `/reload-plugins`.
+- **Plugin available?** The command must appear in your available skills / commands (e.g. `ono-mobile-dev-plugin:analyze-feature`). If it's missing, stop and give the exact install line: `/plugin install <plugin>@ono-plugin-marketplace`, then `/reload-plugins`. If it's installed but disabled, tell them to open `/plugin`, enable it, then `/reload-plugins`. Don't substitute a similar skill from elsewhere.
 - **Work branch** for every `ono-mobile-dev-plugin` intent — its hook blocks all file writes on `main` / `master`. If on the central branch, offer to create a work branch first (see session-opener).
 - Anything in the intent's `requires` (e.g. the QA workspace layout, `matrix-qa.config.json`, approved upstream documents). Missing → say what's missing and the step that produces it.
 
@@ -40,10 +40,10 @@ Invoke the start command through the Skill tool with the arguments you have (`<p
 
 ## Human-only steps — never run them
 
-Never invoke, auto-chain into, or "help along" anything in `humanOnly.commands` (e.g. `/qa-approve`, `/approve-qa-test-plan`, `/qa-signoff`, `/inspect-approve`, `/verify-fix-cycle`), and never flip a planning document's approval status yourself. When the process reaches one, stop and tell the employee exactly what to type and why it's theirs to do:
+Never invoke, auto-chain into, or "help along" anything in `humanOnly.commands` (e.g. `/qa-approve`, `/approve-qa-test-plan`, `/qa-signoff`, `/inspect-approve`, `/verify-fix-cycle`), and never flip a planning document's approval status yourself — **even when the employee asks you to**; tell them the file and the line to change. When the process reaches one, stop and tell the employee exactly what to type and why it's theirs to do:
 
 > This step is your approval — type `/approve-qa-test-plan login` when you're happy with the plan.
 
 ## Between stages
 
-When a plugin stage finishes, say what's next (from the plugin's own hint, its `next_command`, or the intent's `pipeline`) and ask whether to continue. A finished stage is also a natural point to offer the session close-out — say how, not just when: "Want to stop here? Say **close the session** and I'll save everything; then type `/clear` to start fresh."
+When a plugin stage finishes, say what's next (from the plugin's own hint, its `next_command`, or the intent's `pipeline`) and ask whether to continue. If the next step is human-only, a "yes" doesn't change that — tell them what to type. A finished stage is also a natural point to offer the session close-out — say how, not just when: "Want to stop here? Say **close the session** and I'll save everything; then type `/clear` to start fresh." Offer it once per session, and not if a 💡 close-out suggestion was already shown.

@@ -122,21 +122,19 @@ else
     export GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=$FETCH_TIMEOUT"
   git fetch --quiet --no-tags "$remote" </dev/null >/dev/null 2>&1 &
   pid=$!
-  ticks=0
-  limit=$((FETCH_TIMEOUT * 10))
-  timed_out=false
-  while kill -0 "$pid" 2>/dev/null; do
-    if [ "$ticks" -ge "$limit" ]; then
-      pkill -TERM -P "$pid" 2>/dev/null
-      kill -TERM "$pid" 2>/dev/null
-      timed_out=true
-      break
-    fi
-    sleep 0.1
-    ticks=$((ticks + 1))
-  done
+  # One watchdog timer, not a polling loop: a count of `sleep 0.1`s drifts on a slow laptop
+  # (each is a process start). If the watchdog is gone when the fetch ends, it fired.
+  ( sleep "$FETCH_TIMEOUT"; pkill -TERM -P "$pid"; kill -TERM "$pid" ) >/dev/null 2>&1 &
+  dog=$!
   wait "$pid" 2>/dev/null
   rc=$?
+  timed_out=true
+  if kill -0 "$dog" 2>/dev/null; then
+    timed_out=false
+    pkill -TERM -P "$dog" 2>/dev/null
+    kill -TERM "$dog" 2>/dev/null
+  fi
+  wait "$dog" 2>/dev/null
   if $timed_out; then
     fetch="timeout"; warn "fetch-timeout"
   elif [ "$rc" -eq 0 ]; then

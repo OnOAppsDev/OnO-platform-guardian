@@ -45,7 +45,7 @@ In each case: `cd` into the repo, start `claude --plugin-dir ~/pg-test/guardian`
 | 1.5 | Central unclear | in `scratch` (no remote, branch `main`/`master`) | Mentions no remote; if unsure of central branch, **asks** which branch to branch from | |
 | 1.6 | Not a git folder | `cd ~/pg-test` (parent folder) | Says it's not a git project · skips checks · asks what we're doing | |
 | 1.7 | First message is a task, not a greeting | on `pg/clean`, first message: `fix the login crash` | Opener runs first (git state), then comes back to the bug — routes to `/analyze-bug` | |
-| 1.8 | First message is a slash command | first message: `/help` | `/help` output first, then the opener | |
+| 1.8 | First message is a slash command | first message: `/help`, then `hi` | `/help` output (built-in — Claude doesn't see it); the opener runs on `hi` | |
 
 ## 2. Opener — fires after `/clear`
 

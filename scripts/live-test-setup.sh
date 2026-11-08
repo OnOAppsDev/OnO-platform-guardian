@@ -27,9 +27,9 @@ fi
 git -C "$app" fetch -q origin 2>/dev/null
 git -C "$app" rev-parse -q --verify "origin/$central" >/dev/null ||
   { echo "no origin/$central in $url — pass the central branch: live-test-setup.sh <url> <branch>" >&2; exit 1; }
-git -C "$app" checkout -q -B pg/behind "origin/$central~3" 2>/dev/null ||
+git -C "$app" checkout -q --no-track -B pg/behind "origin/$central~3" 2>/dev/null ||
   echo "note: $central has fewer than 4 commits — §1.2 (behind) can't be set up" >&2
-git -C "$app" checkout -q -B pg/clean "origin/$central"
+git -C "$app" checkout -q --no-track -B pg/clean "origin/$central"
 git -C "$app" checkout -q "$central" 2>/dev/null || git -C "$app" checkout -q -b "$central" "origin/$central"
 
 if [ ! -d "$scratch/.git" ]; then

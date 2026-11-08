@@ -57,5 +57,6 @@ Answer the user's message first. Then end your reply with a short close-out sugg
 ---
 
 Don't start the close-out until they say so (it runs the \`platform-guardian:session-closer\` skill).
+Show this suggestion once — don't repeat it in later replies unless a new [platform-guardian] notice arrives.
 MSG
 exit 0

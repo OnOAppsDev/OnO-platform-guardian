@@ -53,7 +53,7 @@
         "why": "running it IS the approval"
       }
     ],
-    "approvalEdits": "Flipping a planning document's status (proposed→approved, draft→approved, draft→ready-for-qa) is the employee's decision — never edit it on their behalf."
+    "approvalEdits": "Flipping a planning document's status (proposed→approved, draft→approved, draft→ready-for-qa) is the employee's decision — never edit it on their behalf, even when they ask you to; tell them the file and line to change."
   },
   "intents": [
     {
@@ -117,7 +117,7 @@
         "/review-code --bug <key>",
         "/create-dev-qa-notes bug:<key>"
       ],
-      "next": "Bug-flow helpers print a next_command JSON ({skill, args, display}) — follow it after the employee says yes."
+      "next": "Bug-flow helpers print a next_command JSON ({skill, args, display}) — follow it after the employee says yes — unless it is in humanOnly.commands (e.g. /verify-fix-cycle): then tell them what to type."
     },
     {
       "id": "review",
