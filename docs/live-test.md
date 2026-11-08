@@ -90,6 +90,24 @@ Clean up: `git reset -q && rm -f notes.md .env.test src/Foo.kt`.
 | 5.4 | `/clear`, then `hi` | Opener starts with "Last time you stopped at …" | |
 | 5.5 | Session-length signal: start with `PG_CLOSEOUT_TOKENS=20000 claude --plugin-dir ~/pg-test/guardian`, work a few turns | After ~20k tokens: answer first, then the 💡 close-out suggestion with 3 steps — once, not every turn | |
 
+## 5b. Resume — "where was I" (new — G2.3)
+
+On `pg/clean`, create a planning doc the way the dev plugin writes it (or use a repo where `/analyze-feature` already ran):
+
+```bash
+mkdir -p docs && printf '# FA\n\n```yaml\nfeature: dark-mode\ndd_link:\nsurface: app\nstatus: proposed\n```\n' > docs/dark-mode-feature-analysis.md
+~/pg-test/guardian/scripts/resume-state.sh      # prints one "- ono-mobile-dev-plugin · feature dark-mode · …" line
+```
+
+| # | Step | Expected | Result |
+|---|---|---|---|
+| 5b.1 | Start `claude`, say `hi` | Opener mentions *dark-mode*: analysis waiting for **your** approval → then `/dev-design-start dark-mode` · offers "continue dark-mode, or something new?" | |
+| 5b.2 | Say "approve it for me" | **Refuses** to flip `status` — tells you to change it yourself | |
+| 5b.3 | Set `status: approved` in the file, `/clear`, `hi` | Now: "analysis approved, next `/dev-design-start dark-mode`" | |
+| 5b.4 | In a real repo where an Ono plugin already ran (features / bugs / QA repo / inspector) | Lines match what you know is unfinished — note anything wrong or missing | |
+
+Clean up: `rm -rf docs`.
+
 ## 6. Performance + Figma (MGA-83)
 
 | # | Check | Expected | Result |

@@ -23,6 +23,7 @@ The org has six Claude Code plugins — dev pipeline, two QA plugins, specs, rep
 
 ```
 claude ──► 1. OPEN       git report vs. the central branch · "last time you stopped at …"
+             │           unfinished work in the plugins' documents → "login: 2/5 tasks, next T3"
              │           ⚠️🚨 behind central? → you choose: merge / rebase / continue
              │           on the central branch? → create a work branch
              ▼
@@ -80,13 +81,16 @@ Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
 
 ```
 .claude-plugin/plugin.json      manifest + dependencies on the six org plugins
-hooks/                          SessionStart (open) · UserPromptSubmit (session length)
+hooks/                          SessionStart (open) · UserPromptSubmit (session length) · PreToolUse (commit guard)
 skills/                         session-opener · work-router · session-closer
 scripts/git-status.sh           JSON git report (bash 3.2, no jq, fails open)
 scripts/session-log.sh          local session notes — ~/.claude/platform-guardian/, never in git
+scripts/resume-state.sh         unfinished work from the plugins' own documents (docs/resume-state.md)
 scripts/check-routes.sh         drift guard: routes.json vs. the org plugins
+scripts/fetch-org-plugins.sh    clone every plugin the marketplace lists (for check-routes / CI)
 routing/                        routes.json · committed-artifacts.json
 tests/run-all.sh                tests against throwaway git repos
+.github/workflows/ci.yml        tests on macOS bash 3.2 + Linux · weekly drift check vs. the org
 docs/                           vision · backlog · ecosystem status · project config · session log
 archive/2026-07-mcp-plan/       the superseded July MCP / 7-phase plan
 ```
@@ -95,7 +99,7 @@ archive/2026-07-mcp-plan/       the superseded July MCP / 7-phase plan
 
 ```bash
 tests/run-all.sh                                    # needs git + jq (jq is test-only)
-scripts/check-routes.sh "<folder with org plugin clones>"   # after any org plugin release
+scripts/fetch-org-plugins.sh /tmp/ono && scripts/check-routes.sh /tmp/ono --strict   # CI runs this weekly
 claude plugin validate .
 ```
 
@@ -105,8 +109,8 @@ claude plugin validate .
 |---|---|
 | G0 Reset — vision, skeleton, feasibility | ✅ |
 | G1 Session opener | ✅ built · live test pending (G1.7) |
-| G2 Router | ✅ built · scripted resume adapters pending (G2.3) |
-| G3 Session closer | ✅ built · staging guard pending (G3.5) |
+| G2 Router | ✅ built · scripted resume across all six plugins (G2.3) |
+| G3 Session closer | ✅ built · commit guard (G3.5) |
 | G4 Rollout — marketplace, managed settings, pilot | ⏳ |
 
 Details: [`docs/backlog.md`](docs/backlog.md) · ecosystem gaps: [`docs/ecosystem-status-2026-11.md`](docs/ecosystem-status-2026-11.md).

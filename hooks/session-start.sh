@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# SessionStart hook (startup | clear): injects the git report and the last local
-# session-log entry as context, and instructs Claude to run the session-opener
-# skill. Plain stdout from a SessionStart hook is added to Claude's context.
+# SessionStart hook (startup | clear): injects the git report, the last local
+# session-log entry and any unfinished work found in the Ono plugins' documents
+# as context, and instructs Claude to run the session-opener skill. Plain stdout from a SessionStart hook is added to Claude's context.
 # Fails open: any problem → minimal or no output, always exit 0.
 
 cat >/dev/null 2>&1   # drain the hook payload; we only need the project dir
@@ -30,4 +30,9 @@ else
   printf '\nNo session-log entry for this branch yet.\n'
 fi
 [ -n "$others" ] && printf 'Other branches of this repo with session logs (newest first): %s\n' "$others"
+
+resume="$("$scripts/resume-state.sh" "$dir" 2>/dev/null)"
+if [ -n "$resume" ]; then
+  printf '\nUnfinished work found in the Ono plugins'"'"' documents (scripts/resume-state.sh — apparent stage; the plugin confirms when it runs):\n%s\n' "$resume"
+fi
 exit 0

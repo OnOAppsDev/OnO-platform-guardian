@@ -21,7 +21,12 @@ Confirm in one line: "Got it — a new feature. I'll start it with `/analyze-fea
 
 ### 2. Resume instead of restarting
 
-If the employee says continue / where was I, or the last session-log entry names work in progress, use the `resume` probe for that plugin to find the current stage — documents are the truth, tool state files are hints. Tell them in plain words: "Feature *login* — design approved, tasks not broken down yet. Next: `/dev-feature-start login`."
+If the employee says continue / where was I, or the last session-log entry names work in progress, find the current stage:
+
+1. **Scripted first.** Use the "Unfinished work found" lines from the session start, or run `"${CLAUDE_PLUGIN_ROOT}/scripts/resume-state.sh"` — one line per unfinished item across the dev plugin (features, bugs), both QA plugins, the inspector and saved specs, with the next step. Finished work isn't listed.
+2. **Probe when the script is silent or unsure** about that piece of work (e.g. a spec saved outside `docs/specs/`, a QA repo it couldn't locate, smoke / regression detail): use the plugin's `resume` probe in `routes.json` — documents are the truth, tool state files are hints.
+
+The stage is "apparent": the plugin's own command re-checks approvals and fingerprints when it runs, so start it and let it decide. Tell them in plain words: "Feature *login* — design approved, tasks not broken down yet. Next: `/dev-feature-start login`." A "your step" item is an approval or sign-off — tell them what to type, never run it (see below).
 
 ### 3. Check preconditions
 

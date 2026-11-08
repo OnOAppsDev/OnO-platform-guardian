@@ -77,6 +77,19 @@ expect_contains "hook embeds the git report" "$out" '"branch":"feature/login"'
 expect_contains "hook includes last log entry" "$out" "login form done"
 expect_contains "hook lists other logged branches" "$out" "bugfix_crash"
 
+case "$out" in *"Unfinished work found"*) fail "no resume section without plugin documents" "$out" ;; *) ok ;; esac
+
+# Unfinished work in the plugins' documents → its own section, exact line format.
+mkdir -p "$R/docs"
+printf '# FA\n\n```yaml\nfeature: login\ndd_link:\nsurface: app\nstatus: proposed\n```\n' >"$R/docs/login-feature-analysis.md"
+out="$(echo '{"source":"clear"}' | CLAUDE_PROJECT_DIR="$R" "$HOOK" 2>"$WORK/err")"
+expect_contains "hook has the resume section" "$out" "Unfinished work found in the Ono plugins' documents (scripts/resume-state.sh — apparent stage; the plugin confirms when it runs):"
+expect_contains "hook lists the resume line" "$out" "- ono-mobile-dev-plugin · feature login · feature analysis waiting for approval · next: your step — approve the analysis (status: approved), then /dev-design-start login  [docs/login-feature-analysis.md]"
+expect_eq "hook writes nothing to stderr" "$(cat "$WORK/err")" ""
+out="$(echo '{}' | PG_RESUME=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+case "$out" in *"Unfinished work found"*) fail "PG_RESUME=off removes the section" "$out" ;; *) ok ;; esac
+rm -rf "$R/docs"
+
 report="$(printf '%s\n' "$out" | grep '^{"schema"')"
 if printf '%s' "$report" | jq -e '.repo == true' >/dev/null 2>&1; then ok; else fail "hook report line is valid JSON" "$report"; fi
 

@@ -295,7 +295,7 @@
     }
   ],
   "resume": {
-    "note": "Probes for \"you're at stage X of feature Y\". Documents are the source of truth; tool state files are hints.",
+    "note": "Probes for \"you're at stage X of feature Y\". Documents are the source of truth; tool state files are hints. scripts/resume-state.sh implements these deterministically (formats in docs/resume-state.md) and runs at session start; the probes below are the fallback when it is silent or unsure.",
     "ono-mobile-dev-plugin": {
       "feature": "Find planning docs by YAML frontmatter (doc_schema_version + feature:). No FA → not started · FA status proposed → awaiting approval · DD (*-DD.md) missing/draft → design · Task Breakdown missing/draft → tasks · docs/tasks/<FEATURE>-task-state.json partial → implementing (node --no-warnings \"<plugin>/scripts/task-state.ts\" read --root <repo> --feature <F> --breakdown <path>) · qa_handoff_link set → QA.",
       "bug": "docs/bugs/<key>/ exists → node --no-warnings \"<plugin>/scripts/analyze-bug.ts\" start bug:<key> --root <repo> (status + next_command)."

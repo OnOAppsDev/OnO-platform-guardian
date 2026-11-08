@@ -32,6 +32,8 @@ Key fields: `repo`, `branch`, `detached`, `fetch` (`ok` | `failed` | `timeout` |
 
 One warm line. If there is a session-log entry, follow with one line: "Last time (‹date›) you stopped at ‹where we stopped› — next step was ‹next step›." Don't paste the entry.
 
+If the hook found **unfinished work in the Ono plugins' documents** (lines `- ‹plugin› · ‹what› · ‹stage› · next: ‹step›  [‹file›]`), list it in plain words — at most the top three, one short line each: "Feature *login* — 2 of 5 tasks done. Next: `/implement-task login T3`." Mark the ones that are the employee's own step ("your step" — an approval or sign-off) as theirs; never do those for them. These stages are read from the documents ("apparent") — the plugin re-checks when it runs. Keep them for step 4.
+
 If `repo` is `false`: say this folder isn't a git project, so there are no branch checks, and go to step 4.
 
 ### 2. Git state — handle in this priority order
@@ -72,5 +74,7 @@ When nothing needs a decision, a single line is enough: "✅ You're on `‹branc
 ### 4. Ask what we're doing
 
 > All set. What are we working on — a bug, a feature, tests, a spec? Tell me what we're doing.
+
+If unfinished work was found, offer it first: "Continue *login* (`/implement-task login T3`), or something new?"
 
 Then hand over to the `platform-guardian:work-router` skill with their answer — it picks the right Ono plugin command (or resumes the work named in the last session-log entry).
