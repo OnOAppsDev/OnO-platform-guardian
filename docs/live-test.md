@@ -1,6 +1,6 @@
 # Live test (G1.7) — run on the test machine
 
-Goal: prove Guardian works inside a real Claude Code session, not just in unit tests. About 45 minutes. **Never on the development machine.**
+Goal: prove Guardian works inside a real Claude Code session, not just in unit tests. About 35 minutes. **Never on the development machine.**
 
 Fill the **Result** column as you go (✅ / ❌ + one line of what you saw), then paste this whole file back into a session in this repo — every ❌ becomes a fix.
 
@@ -15,21 +15,20 @@ git clone -b platform-guardian-v0.1 https://github.com/OnOAppsDev/yes-platform-g
 
 Guardian is loaded **for one session at a time** with `--plugin-dir` (no install, nothing to undo). That flag does not install Guardian's dependencies — the six Ono plugins must already be installed from `ono-plugin-marketplace` on this machine (check with `/plugin`). Installing them *through* Guardian is tested later, in G4.1.
 
-Two test repos:
+Test repos + the automatic checks, in one command (any Ono app repo you can clone; add its central branch if it isn't `develop`):
 
 ```bash
-mkdir -p ~/pg-test && cd ~/pg-test
-# A: a real work repo with a develop branch (any Ono app repo you can clone)
-git clone <an Ono app repo> app && cd app && git switch develop && cd ..
-# B: a throwaway repo with no remote
-mkdir scratch && cd scratch && git init -q && echo hi > a.txt && git add a.txt && git commit -qm init && cd ..
+~/pg-test/guardian/scripts/live-test-setup.sh <an Ono app repo URL>
 ```
+
+It creates `~/pg-test/app` (on `develop`, plus the branches `pg/behind` and `pg/clean` that §1 uses) and `~/pg-test/scratch` (no remote), then prints the table below — filled in, including the §6.1 hook time. Paste it over this one. Safe to re-run.
 
 | Item | Value |
 |---|---|
 | Claude Code version | |
 | OS | |
 | Ono plugins installed (`/plugin`) | |
+| 6.1 hook time (app, real remote) | |
 
 ---
 
@@ -40,8 +39,8 @@ In each case: `cd` into the repo, start `claude --plugin-dir ~/pg-test/guardian`
 | # | Situation | How to set it up (in `app`) | Expected | Result |
 |---|---|---|---|---|
 | 1.1 | On the central branch | `git switch develop` | Greeting · "you're on `develop`" · offers to create a work branch, waits for your answer · then asks what we're working on | |
-| 1.2 | Behind central | `git switch -c pg/behind origin/develop~3` | ⚠️🚨 "N commits behind `develop`" (N ≥ 3 — more if develop has merges) · explains merge / rebase / continue · **does nothing until you choose** | |
-| 1.3 | Clean, up to date | `git switch -c pg/clean origin/develop` | One line "✅ up to date" · asks what we're working on | |
+| 1.2 | Behind central | `git switch pg/behind` (made by the setup script) | ⚠️🚨 "N commits behind `develop`" (N ≥ 3 — more if develop has merges) · explains merge / rebase / continue · **does nothing until you choose** | |
+| 1.3 | Clean, up to date | `git switch pg/clean` | One line "✅ up to date" · asks what we're working on | |
 | 1.4 | Dirty | on `pg/clean`: `echo x >> README.md` | Mentions 1 modified file · asks if it's yours · doesn't stash / discard | |
 | 1.5 | Central unclear | in `scratch` (no remote, branch `main`/`master`) | Mentions no remote; if unsure of central branch, **asks** which branch to branch from | |
 | 1.6 | Not a git folder | `cd ~/pg-test` (parent folder) | Says it's not a git project · skips checks · asks what we're doing | |
@@ -112,8 +111,8 @@ Clean up: `rm -rf docs`.
 
 | # | Check | Expected | Result |
 |---|---|---|---|
-| 6.1 | `cd ~/pg-test/app && time ~/pg-test/guardian/hooks/session-start.sh </dev/null >/dev/null` | < 3 s with the real remote (fetch is capped at 5 s) | |
-| 6.2 | Same with Wi-Fi off | Still returns (≤ ~6 s); opener says the numbers may be outdated | |
+| 6.1 | Hook time — already measured by the setup script (§0 table) | < 3 s with the real remote (fetch is capped at 5 s) | see §0 |
+| 6.2 | Re-run the setup script with Wi-Fi off (hook-time row) | Still returns (≤ ~6 s); opener says the numbers may be outdated | |
 | 6.3 | Startup of a session with all six Ono plugins | How many Figma MCP auth prompts / duplicate `figma` servers do you see in `/mcp`? (count them) | |
 | 6.4 | Startup feels slow? | Note seconds from `claude` to first prompt, with vs without `--plugin-dir` | |
 
