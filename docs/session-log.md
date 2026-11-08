@@ -2,6 +2,18 @@
 
 ---
 
+## Session 6 — 2026-11-08 — G1–G3 built, all six org plugins mapped, one consolidated PR
+
+- G1 opener: `scripts/git-status.sh` (JSON vs. central branch, bounded fetch, NUL-safe, bash 3.2, no jq, fails open), `scripts/session-log.sh` (local notes, never in git), SessionStart hook, `session-opener` skill — fires on ANY first message, no trigger word.
+- G2 router: 5 parallel agents mapped the org plugins (latest `main`) + matrix-studio → `routing/routes.json` (12 intents, human-only list — only Matrix enforces it itself, MGA-78), `work-router` skill, `scripts/check-routes.sh` drift guard (47 refs OK).
+- G3 closer: real-token session-length hook (120k, +40k) with concrete how-to steps; `session-closer` skill (hygiene → commit → push → PR, never to central / never force); `committed-artifacts.json`; QA repos whose plugin hooks block Claude's git writes → commands handed to the employee.
+- Decisions: specs → `docs/specs/<feature-slug>/`; all six org plugins bundled (QA team uses both QA plugins; router picks mobile/TV vs web from the task). README rewritten. MGA-78..83 logged.
+- Shipped as one PR #3 (`platform-guardian-v0.1` → master); #1/#2 closed as superseded. 102 tests, mutation-checked; `claude plugin validate .` passes. Not yet live-tested.
+- **Process improvement:** every user-facing text (hook messages, instructions) gets an exact-content + empty-stderr test — "it fired" isn't enough (the backtick bug slipped through). Memories added: one PR at end, close-out gives steps, Guardian independent of personal rituals.
+- **Next session:** G1.7 live test on the test machine (hooks fire on startup + `/clear`, latency with a real remote, MGA-83 Figma prompts) → fix findings → G4.1 marketplace PR (ask first).
+
+---
+
 ## Session 5 — 2026-11-08 — Ecosystem refresh, goal redefined, G0 done
 
 - Re-cloned 6 OnOAppsDev repos (main = latest everywhere) and diffed vs July with 6 parallel agents: 22 baseline gaps closed/obsolete, 11 partial, 12 new (MGA-66..77) — `docs/ecosystem-status-2026-11.md`. The plugins now own phase gates, standards, QA readiness and CLAUDE.md, so the July MCP plan was archived to `archive/2026-07-mcp-plan/`.
