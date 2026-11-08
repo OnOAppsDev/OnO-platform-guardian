@@ -50,7 +50,7 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 - [ ] **G4.1: Register in `ono-plugin-marketplace`** (closes MGA-11) — PR to the org repo; ask before opening.
 - [ ] **G4.2: Managed settings** — Org-wide marketplace + plugin enablement (per G0.5 result).
 - [ ] **G4.3: Pilot** — One team, 1–2 weeks; collect friction; fix.
-- [ ] **G4.4: README rewrite** — Reflect the router product (install, session flow, routing table). Current README describes the archived plan.
+- [x] **G4.4: README rewrite** — Done 2026-11-08. — Reflect the router product (install, session flow, routing table). Current README describes the archived plan.
 
 ## Later
 
