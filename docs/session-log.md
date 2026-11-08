@@ -2,6 +2,18 @@
 
 ---
 
+## Session 8 — 2026-11-08 — G2.3 resume adapter, CI, Linux bug fix
+
+- Autonomous session (user: "finish as much as possible"). Org repos re-fetched: no change since Session 6; `check-routes --strict` clean.
+- G2.3 done: `scripts/resume-state.sh` — unfinished work + next step from all six plugins' own documents (formats traced by 3 parallel agents to plugin source → `docs/resume-state.md`); Matrix fingerprints byte-identical to `mqa.mjs` through every status. Injected at SessionStart; opener/router updated; live-test 5b. 71 tests, 38 mutants (survivors: dead code removed / one equivalent).
+- CI: `.github/workflows/ci.yml` (macOS bash 3.2 + Linux, weekly drift check via new `scripts/fetch-org-plugins.sh`). Linux run (Debian container, git 2.47, mawk) caught a real Session-6 bug: bogus `"@{u}"` upstream on newer git — fixed. First real CI run: git ≥ 2.48 re-creates a deleted origin/HEAD on fetch → 3 test setups pinned (`followRemoteHEAD=never`); CI green on all three jobs.
+- Caught my own hang: the Matrix config walk looped forever on a relative path (`dirname .` = `.`) — fixed + regression test; also one awk pass instead of ~10 processes per doc (<0.1 s on a real repo). First CI push failed on YAML (`: ` in a plain scalar) — fixed; now parsed locally before push.
+- PR #3 updated (243 checks). Still blocked on the user: live test (G1.7), repo visibility, PR #3 reviewer, org Owner.
+- **Process improvement:** parse workflow/YAML files locally (`python3 -c 'import yaml…'`) and run the suite on Linux (local `debian:stable-slim`) before pushing CI changes — none codified (one-off).
+- **Next session:** process the filled `docs/live-test.md` (incl. 5b resume) → fix findings; or, once decided, G4.1 marketplace PR.
+
+---
+
 ## Session 7 — 2026-11-08 — G3.5 commit guard, live-test kit, rollout prep
 
 - Plan to the goal: ~3–5 build sessions left + 1–2 week pilot (≈4–5 weeks at 2–3 sessions/week); the critical path is external — test machine, PR #3 reviewer, org Owner, pilot team.
