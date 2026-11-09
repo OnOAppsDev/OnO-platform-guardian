@@ -12,7 +12,7 @@ Fill the **Result** column as you go (✅ / ❌ + one line of what you saw), the
 
 ```bash
 claude --version                                   # note it below
-git clone -b platform-guardian-v0.1 https://github.com/OnOAppsDev/yes-platform-guardian.git ~/pg-test/guardian
+git clone https://github.com/OnOAppsDev/yes-platform-guardian.git ~/pg-test/guardian
 ```
 
 Guardian is loaded **for one session at a time** with `--plugin-dir` (no install, nothing to undo). That flag does not install Guardian's dependencies — the six Ono plugins must already be installed from `ono-plugin-marketplace` on this machine (check with `/plugin`). Installing them *through* Guardian is tested later, in G4.1.

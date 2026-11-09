@@ -49,9 +49,10 @@ Long session? Once the context passes ~120k tokens, Guardian suggests closing at
 | review my code | `ono-mobile-dev-plugin` | `/review-code`, `/review-security` |
 | hand off to QA · release | `ono-mobile-dev-plugin` | `/create-dev-qa-notes` · `/prepare-mobile-release` |
 | QA — mobile / TV | `ono-plugin-qa` | `/create-qa-test-plan` |
-| QA — web | `matrix-qa-plugin` | `/qa-init` · `/qa-plan` |
+| QA — web | `matrix-qa-plugin` | `/qa-plan` (`/qa-init` first in a new repo) |
 | write a spec (HLD / LLD / SPAC) | `spec-team-toolkit` | the matching spec skill → saved to `docs/specs/<feature>/` |
-| Figma design system | `matrix-studio` | `generate-design-system` |
+| sync the app theme from Figma | `ono-mobile-dev-plugin` | `/rn-sync-figma-theme <figma-url>` |
+| Figma design system | `matrix-studio` | the matching skill — full system, colors, spacing or typography |
 | onboard me to this repo | `ono-project-inspector` | `/inspect` |
 
 The full map — pipelines, prerequisites, resume probes — is data: [`routing/routes.json`](routing/routes.json).
@@ -61,12 +62,17 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 ## 🔐 Git rules Guardian follows
 
 - **Central branch per project** (usually `develop`): `.platform-guardian.json` override → `origin/HEAD` → `develop` → `main` → `master`. Unsure → it asks.
-- **Never pushes to the central branch.** Everything goes back through a PR; you pick the target and reviewers.
+- **Never pushes to the central branch.** Everything goes back through a PR; it asks before every push or PR, and you pick the target and reviewers.
 - **Never updates your branch silently** and never uses force operations.
+- **Offline?** The server check gives up after 5 seconds, and Guardian tells you the numbers may be out of date instead of calling you "up to date".
 - **Commit hygiene:** files the org plugins mean to be committed ([`routing/committed-artifacts.json`](routing/committed-artifacts.json)) are committed; stray session files go to `.gitignore`; secrets never.
 - **QA repos:** both QA plugins block Claude's own commits there by design — Guardian hands you the commands to run instead.
 
 ## 🚀 Install
+
+> **Not in the marketplace yet** — it's added after the live test (G4.1). Until then, try it for one session without installing: clone this repo and start `claude --plugin-dir <path-to-clone>` (the six org plugins must already be installed). Testers: follow [`docs/tester-guide.md`](docs/tester-guide.md).
+
+Once it's in the marketplace:
 
 ```
 /plugin marketplace add OnOAppsDev/ono-plugin-marketplace
@@ -92,7 +98,8 @@ scripts/live-test-setup.sh      test-machine setup for the live test (docs/live-
 routing/                        routes.json · committed-artifacts.json
 tests/run-all.sh                tests against throwaway git repos
 .github/workflows/ci.yml        tests on macOS bash 3.2 + Linux · weekly drift check vs. the org
-docs/                           vision · backlog · ecosystem status · project config · session log
+docs/                           vision · backlog · ecosystem status · project config · rollout · session log
+docs/tester-guide.md            one-page guide for whoever runs the live test → fills docs/live-test.md
 archive/2026-07-mcp-plan/       the superseded July MCP / 7-phase plan
 ```
 
@@ -109,7 +116,7 @@ claude plugin validate .
 | Milestone | State |
 |---|---|
 | G0 Reset — vision, skeleton, feasibility | ✅ |
-| G1 Session opener | ✅ built · live test pending (G1.7) |
+| G1 Session opener | ✅ built · simulated end-to-end · live test on a tester's machine pending (G1.7) |
 | G2 Router | ✅ built · scripted resume across all six plugins (G2.3) |
 | G3 Session closer | ✅ built · commit guard (G3.5) |
 | G4 Rollout — marketplace, managed settings, pilot | ⏳ |

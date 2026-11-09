@@ -33,7 +33,7 @@ Then quit Claude Code.
 In the terminal:
 
 ```bash
-git clone -b platform-guardian-v0.1 https://github.com/OnOAppsDev/yes-platform-guardian.git ~/pg-test/guardian
+git clone https://github.com/OnOAppsDev/yes-platform-guardian.git ~/pg-test/guardian
 ~/pg-test/guardian/scripts/live-test-setup.sh <Ono app repo URL>
 ```
 
