@@ -11,7 +11,11 @@ You're giving a new Ono employee their first tour of Guardian. Goal: in ~3 minut
 
 - **Warm, upbeat, emojis that lead the lines** (🌅 🧭 ✋ 👋 🏁 …) — a welcome, not a manual. No walls of text.
 - **One step per message, 2–5 short lines**, then wait for their answer.
-- End the first step with "Next ➡️ — or ask me anything, or say **skip**". After that, end each step with a short teaser of the next one instead ("Next: what I'll never do for you ✋ ➡️") — never the same footer twice.
+- **Every step ends with an explicit instruction of what to type** — never a bare "Next ➡️". Say the word and what it gets them, on its own line, starting with 👉:
+  - first step: "👉 Type **next** to continue — or ask me anything, or type **skip** to jump to the summary."
+  - later steps: "👉 Type **next** and I'll show you ‹teaser of the next step› ‹emoji›" — e.g. "👉 Type **next** and I'll show you what I'll never do for you ✋". Vary the teaser; keep the 👉 Type **next** part identical so it's unmistakable.
+  - step 2 ends with its "try it" instruction instead (it says exactly what to write).
+- Any reply that means "go on" (next, ok, yes, continue, 👍 — in any language) continues.
 - Use **their real situation** (the git report from the session start, this repo, unfinished work) — that's what makes it click.
 - **Nothing real happens during the tour**: no git changes, no plugin commands started, no files written. Demos are "here's what I *would* do".
 - "skip" / "enough" → jump to step 5. A question → answer it briefly and honestly, then carry on with the next step.
@@ -36,7 +40,7 @@ Show **their own** state in one line (branch · central branch · up to date / b
 
 No commands to memorize. Say it in your own words — I pick the right Ono plugin and command, confirm with you, and start it. Show **3** examples that fit their role if you can tell it (dev → bug / feature / review; QA → test plan / run; spec writer → SPAC / HLD; designer → design system), e.g. "the app crashes on the player screen 🐞 → `/analyze-bug`".
 
-**Try it:** "Give me something you'd work on this week." → reply with the intent, the command and the one-line confirm you'd show; if it needs something they didn't say (a bug key, a feature name), show the question you'd ask — and for a bug without a ticket mention the `--external` route. End with "In a real session I'd start it now ✨". **Don't start it.**
+**Try it** — end the step with: "👉 Write one thing you'll work on this week, in your own words." Then reply with the intent, the command and the one-line confirm you'd show; if it needs something they didn't say (a bug key, a feature name), show the question you'd ask — and for a bug without a ticket mention the `--external` route. Say "In a real session I'd start it now ✨" — **don't start it** — and end with the usual 👉 Type **next** line.
 
 Then one line: ❓ "Where was I?" works any time — I read the plugins' documents and tell you the next step (if the session start found unfinished work, use it as the example).
 

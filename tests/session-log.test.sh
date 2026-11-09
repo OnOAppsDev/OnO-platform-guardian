@@ -74,6 +74,7 @@ out="$(echo '{"source":"startup"}' | CLAUDE_PROJECT_DIR="$R" "$HOOK")"
 expect_contains "first session offers the tour" "$out" "FIRST TIME WITH GUARDIAN"
 expect_contains "offer names the onboarding skill" "$out" "platform-guardian:onboarding"
 expect_contains "offer says how to get it later" "$out" "type **onboarding** any time"
+expect_contains "offer says exactly what to type" "$out" "👉 Type **yes** for the tour, or **later**"
 [ -s "$PG_LOG_DIR/.state/onboarding-offered" ] && ok || fail "marker written" "$(ls -la "$PG_LOG_DIR/.state" 2>&1)"
 out="$(echo '{"source":"clear"}' | CLAUDE_PROJECT_DIR="$R" "$HOOK")"
 case "$out" in *"FIRST TIME"*) fail "offer shown only once" "$out" ;; *) ok ;; esac
