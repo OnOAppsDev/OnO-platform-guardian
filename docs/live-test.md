@@ -2,6 +2,8 @@
 
 Goal: prove Guardian works inside a real Claude Code session, not just in unit tests. About 35 minutes. **Never on the development machine.**
 
+New to this? Start with the one-page [`tester-guide.md`](tester-guide.md).
+
 Fill the **Result** column as you go (✅ / ❌ + one line of what you saw), then paste this whole file back into a session in this repo — every ❌ becomes a fix.
 
 ---
