@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.2] — 2026-11-09
+
+- Branding: **OnO Platform Guardian** — the first-time welcome uses the name; yes+ logo and footer removed from the README (manager's request).
+
 ## [0.2.1] — 2026-11-09
 
 - **Updates reach employees:** first-time welcome and the tour's cheat sheet give the one-time auto-update setup (`/plugin` → Marketplaces → ono-plugin-marketplace → Enable auto-update) — off by default for org marketplaces; managed settings turn it on org-wide (`docs/rollout.md`).

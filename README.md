@@ -1,10 +1,9 @@
 <div align="center">
-  <img src="assets/yes-logo.png" alt="yes+" width="170">
-  <h1>Platform Guardian</h1>
+  <h1>OnO Platform Guardian</h1>
   <p><strong>One plugin to install. One place to start. The right Ono process every time.</strong></p>
 
   ![Status](https://img.shields.io/badge/status-pilot%20prep-yellow?style=flat-square)
-  ![Version](https://img.shields.io/badge/version-0.2.1-blue?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.2.2-blue?style=flat-square)
   ![Org plugins](https://img.shields.io/badge/org%20plugins%20bundled-6-green?style=flat-square)
   ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-orange?style=flat-square)
 </div>
@@ -141,5 +140,5 @@ Details: [`docs/backlog.md`](docs/backlog.md) · ecosystem gaps: [`docs/ecosyste
 ---
 
 <div align="center">
-  <sub>Built for yes+ · Runs in Claude Code</sub>
+  <sub>Built for OnO · Runs in Claude Code</sub>
 </div>

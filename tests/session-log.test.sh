@@ -73,6 +73,7 @@ g -C "$R" checkout feature/login
 out="$(echo '{"source":"startup"}' | CLAUDE_PROJECT_DIR="$R" "$HOOK")"
 expect_contains "first session offers the tour" "$out" "FIRST TIME WITH GUARDIAN"
 expect_contains "offer names the onboarding skill" "$out" "platform-guardian:onboarding"
+expect_contains "welcome uses the product name" "$out" "welcome to **OnO Platform Guardian**"
 expect_contains "offer says how to get it later" "$out" "type **onboarding** any time"
 expect_contains "offer says exactly what to type" "$out" "👉 Type **yes** for the tour, or **later**"
 expect_contains "offer includes the one-time auto-update setup" "$out" "**Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update**"

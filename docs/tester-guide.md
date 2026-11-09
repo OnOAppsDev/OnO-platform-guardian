@@ -1,4 +1,4 @@
-# Platform Guardian — tester guide
+# OnO Platform Guardian — tester guide
 
 Thanks for testing! About **45 minutes**, on **your** computer (not Tom's). You install Guardian **exactly the way every employee will**, so the install itself is part of the test. You can keep it afterwards.
 
