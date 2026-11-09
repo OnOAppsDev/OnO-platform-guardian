@@ -10,12 +10,24 @@ Fill the **Result** column as you go (✅ / ❌ + one line of what you saw), the
 
 ## 0. Setup (once)
 
-```bash
-claude --version                                   # note it below
-git clone https://github.com/OnOAppsDev/yes-platform-guardian.git ~/pg-test/guardian
+**Install Guardian exactly the way every employee will** — in Claude Code:
+
+```
+/plugin marketplace add OnOAppsDev/ono-plugin-marketplace
+/plugin install platform-guardian@ono-plugin-marketplace
 ```
 
-Guardian is loaded **for one session at a time** with `--plugin-dir` (no install, nothing to undo). That flag does not install Guardian's dependencies — the six Ono plugins must already be installed from `ono-plugin-marketplace` on this machine (check with `/plugin`). Installing them *through* Guardian is tested later, in G4.1.
+| # | Check | Expected | Result |
+|---|---|---|---|
+| 0.1 | `claude --version` | 2.1.140 or newer | |
+| 0.2 | The install above | Succeeds with no GitHub sign-in or error | |
+| 0.3 | `/plugin` → installed plugins | `platform-guardian` **plus all six** Ono plugins (ono-project-inspector, ono-mobile-dev-plugin, ono-plugin-qa, spec-team-toolkit, matrix-qa-plugin, matrix-studio) — the six came with Guardian | |
+
+Quit Claude Code, then download the test kit (the setup script and this checklist — not loaded as a plugin):
+
+```bash
+git clone https://github.com/OnOAppsDev/yes-platform-guardian.git ~/pg-test/guardian
+```
 
 Test repos + the automatic checks, in one command (any Ono app repo you can clone; add its central branch if it isn't `develop`):
 
@@ -36,7 +48,7 @@ It creates `~/pg-test/app` (on `develop`, plus the branches `pg/behind` and `pg/
 
 ## 1. Opener — fires on startup
 
-In each case: `cd` into the repo, start `claude --plugin-dir ~/pg-test/guardian`, type **`hi`**.
+In each case: `cd` into the repo, start `claude`, type **`hi`**.
 
 | # | Situation | How to set it up (in `app`) | Expected | Result |
 |---|---|---|---|---|
@@ -89,7 +101,7 @@ Clean up: `git reset -q && rm -f notes.md .env.test src/Foo.kt`.
 | 5.2 | — | Ends with "✅ Everything is saved" + the 3 numbered `/clear` steps | |
 | 5.3 | `cat ~/.claude/platform-guardian/*/pg_clean.md` | Entry with what we did / where we stopped / next step | |
 | 5.4 | `/clear`, then `hi` | Opener starts with "Last time you stopped at …" | |
-| 5.5 | Session-length signal: start with `PG_CLOSEOUT_TOKENS=20000 claude --plugin-dir ~/pg-test/guardian`, work a few turns | After ~20k tokens: answer first, then the 💡 close-out suggestion with 3 steps — once, not every turn | |
+| 5.5 | Session-length signal: start with `PG_CLOSEOUT_TOKENS=20000 claude`, work a few turns | After ~20k tokens: answer first, then the 💡 close-out suggestion with 3 steps — once, not every turn | |
 
 ## 5b. Resume — "where was I" (new — G2.3)
 
@@ -116,7 +128,7 @@ Clean up: `rm -rf docs`.
 | 6.1 | Hook time — already measured by the setup script (§0 table) | < 3 s with the real remote (fetch is capped at 5 s) | see §0 |
 | 6.2 | Re-run the setup script with Wi-Fi off (hook-time row) | Still returns (≤ ~6 s); opener says the numbers may be outdated | |
 | 6.3 | Startup of a session with all six Ono plugins | `/mcp` shows **one** active Figma server (the other three listed as duplicates / hidden) and at most **one** Figma sign-in — the four plugins use the same URL, which Claude Code connects once. Count what you see | |
-| 6.4 | Startup feels slow? | Note seconds from `claude` to first prompt, with vs without `--plugin-dir` | |
+| 6.4 | Startup feels slow? | Note seconds from `claude` to the first prompt | |
 
 ---
 

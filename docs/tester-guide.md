@@ -1,6 +1,6 @@
 # Platform Guardian — tester guide
 
-Thanks for testing! About **45 minutes**, on **your** computer (not Tom's). Nothing gets permanently installed — Guardian is loaded for one session at a time and is gone when you close Claude.
+Thanks for testing! About **45 minutes**, on **your** computer (not Tom's). You install Guardian **exactly the way every employee will**, so the install itself is part of the test. You can keep it afterwards.
 
 At the end you send back **one file**. That's it.
 
@@ -12,23 +12,20 @@ At the end you send back **one file**. That's it.
 - Access to the **OnOAppsDev** GitHub org (you can clone its repos).
 - The URL of **any Ono app repo** you can clone (it should have a `develop` branch — if not, note which branch is the main one).
 
-## Step 1 — the six Ono plugins (5 min)
+## Step 1 — install Guardian (5 min)
 
-Open Claude Code anywhere and type `/plugin`. If you don't see these six, install them:
+Open Claude Code anywhere and type these two lines (one at a time):
 
 ```
 /plugin marketplace add OnOAppsDev/ono-plugin-marketplace
-/plugin install ono-project-inspector@ono-plugin-marketplace
-/plugin install ono-mobile-dev-plugin@ono-plugin-marketplace
-/plugin install ono-plugin-qa@ono-plugin-marketplace
-/plugin install spec-team-toolkit@ono-plugin-marketplace
-/plugin install matrix-qa-plugin@ono-plugin-marketplace
-/plugin install matrix-studio@ono-plugin-marketplace
+/plugin install platform-guardian@ono-plugin-marketplace
 ```
 
-Then quit Claude Code.
+Then type `/plugin` and look at the installed list: you should see **platform-guardian and six more Ono plugins** that came with it. Write down whether that worked — it goes into §0 of the checklist (rows 0.1–0.3).
 
-## Step 2 — download Guardian and prepare test folders (5 min)
+Quit Claude Code.
+
+## Step 2 — download the test kit and prepare test folders (5 min)
 
 In the terminal:
 
@@ -48,7 +45,7 @@ Open `~/pg-test/guardian/docs/live-test.md` in any editor. Paste the table from 
 Each row is one small scenario. The pattern is always the same:
 
 1. Do what the "How to set it up" column says (e.g. `cd ~/pg-test/app` and `git switch develop`).
-2. Start Claude **with Guardian**: `claude --plugin-dir ~/pg-test/guardian`
+2. Start Claude: `claude` (Guardian is installed, so it's always on)
 3. Type what the row says (usually just `hi`).
 4. Compare Claude's answer with the **Expected** column.
 5. Write in the **Result** column: **✅** if it matches, or **❌ + one line of what actually happened**.
@@ -67,7 +64,7 @@ Send Tom the file `~/pg-test/guardian/docs/live-test.md` (the whole file, filled
 ## Clean up (optional)
 
 ```bash
-rm -rf ~/pg-test ~/.claude/platform-guardian
+rm -rf ~/pg-test
 ```
 
-Nothing else was changed on your computer.
+This removes only the test folders. Guardian stays installed — that's the real setup every employee will have.
