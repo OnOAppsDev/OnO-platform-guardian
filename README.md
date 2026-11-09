@@ -70,14 +70,14 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 
 ## 🚀 Install
 
-> **Being added to the org marketplace** — [ono-plugin-marketplace PR #4](https://github.com/OnOAppsDev/ono-plugin-marketplace/pull/4). The commands below work once it's merged. Testers: follow [`docs/tester-guide.md`](docs/tester-guide.md) — the test uses this same install.
-
 ```
 /plugin marketplace add OnOAppsDev/ono-plugin-marketplace
 /plugin install platform-guardian@ono-plugin-marketplace
 ```
 
 Installing Guardian installs the six org plugins it depends on. Needs Claude Code **2.1.140 or newer** (`claude --version`; `claude update`). For org-wide rollout, admins enable it through Claude for Organizations managed settings — exact JSON and steps in [`docs/rollout.md`](docs/rollout.md).
+
+Testing it for the team? Follow [`docs/tester-guide.md`](docs/tester-guide.md) — it uses this same install.
 
 Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
 
@@ -117,7 +117,7 @@ claude plugin validate .
 | G1 Session opener | ✅ built · simulated end-to-end · live test on a tester's machine pending (G1.7) |
 | G2 Router | ✅ built · scripted resume across all six plugins (G2.3) |
 | G3 Session closer | ✅ built · commit guard (G3.5) |
-| G4 Rollout — marketplace, managed settings, pilot | ⏳ |
+| G4 Rollout — marketplace, managed settings, pilot | ✅ in the org marketplace · ⏳ live test, managed settings, pilot |
 
 Details: [`docs/backlog.md`](docs/backlog.md) · ecosystem gaps: [`docs/ecosystem-status-2026-11.md`](docs/ecosystem-status-2026-11.md).
 
