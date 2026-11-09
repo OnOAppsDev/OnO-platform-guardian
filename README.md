@@ -77,7 +77,7 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 /plugin install platform-guardian@ono-plugin-marketplace
 ```
 
-Then, once: `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — so Guardian and the six plugins update by themselves (auto-update is off by default for org marketplaces). Org-wide, the managed settings below turn it on for everyone.
+Then, once: `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — so Guardian and the six plugins update by themselves (auto-update is off by default for org marketplaces). Org-wide, the Owners turn it on for everyone: [`docs/org-setup.md`](docs/org-setup.md).
 
 Installing Guardian installs the six org plugins it depends on. Needs Claude Code **2.1.140 or newer** (`claude --version`; `claude update`). For org-wide rollout, admins enable it through Claude for Organizations managed settings — exact JSON and steps in [`docs/rollout.md`](docs/rollout.md).
 
@@ -105,6 +105,7 @@ tests/run-all.sh                tests against throwaway git repos
 .github/workflows/drift.yml     daily: org plugins vs. routes.json → issue to the maintainer
 docs/                           vision · backlog · ecosystem status · project config · rollout · session log
 docs/tester-guide.md            one-page guide for whoever runs the live test → fills docs/live-test.md
+docs/org-setup.md               one-page guide for the org Owners: turn Guardian + auto-update on for everyone
 archive/2026-07-mcp-plan/       the superseded July MCP / 7-phase plan
 ```
 

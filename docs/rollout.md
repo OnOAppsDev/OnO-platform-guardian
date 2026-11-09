@@ -33,6 +33,8 @@ Deleting those files only hides them from the current tree; they stay in history
 
 ## G4.2 — managed settings (claude.ai admin console)
 
+**The Owners' one-page version (what to do + what each step gives):** [`org-setup.md`](org-setup.md). Below: the same JSON plus maintainer notes.
+
 Who: an **Owner** of the Claude organization — **Magen and Yagil** (confirmed 2026-11-09). Where: **Organization settings → Claude Code → Managed settings** (server-managed; applies to every member). Users can't disable a plugin enabled here.
 
 ```json
