@@ -5,7 +5,7 @@ Verified against the official docs on 2026-11-08: [Manage plugins for your organ
 ## Order
 
 1. ✅ **PR #3 merged** into `master` (2026-11-09) — the marketplace entry tracks `master`.
-2. **G4.1 — marketplace entry.** Ready on a local branch `add-platform-guardian` in the `ono-plugin-marketplace` clone (not pushed): manifest entry (`ref: master`), version 1.5.0 → 1.6.0, README + CHANGELOG in the marketplace's own style; `claude plugin validate .` passes. All six dependencies are already listed in that marketplace, so they resolve.
+2. ✅ **G4.1 — marketplace entry** (merged 2026-11-09, marketplace 1.6.0). Ready on a local branch `add-platform-guardian` in the `ono-plugin-marketplace` clone (not pushed): manifest entry (`ref: master`), version 1.5.0 → 1.6.0, README + CHANGELOG in the marketplace's own style; `claude plugin validate .` passes. All six dependencies are already listed in that marketplace, so they resolve.
 3. **Pilot install by hand** (one team) — `/plugin install platform-guardian@ono-plugin-marketplace`, confirm the six plugins come with it.
 4. **G4.2 — managed settings** (org Owner), below.
 
