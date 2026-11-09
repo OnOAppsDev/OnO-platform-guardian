@@ -2,6 +2,18 @@
 
 ---
 
+## Session 10 — 2026-11-09 — Simulated live test, marketplace launch, onboarding, auto-updates, OnO rename
+
+- Simulated the live test here (hooks/scripts on throwaway repos + model replies by agents): fetch cap drifted to ~7 s → watchdog timer; offline opener said "up to date"; ~15 opener/router/closer wording fixes. 0.1 → 0.2.3, PRs #3–#14 merged (user: no reviewer needed), CI green macOS + Linux.
+- Repo public; Guardian in `ono-plugin-marketplace` 1.6.0 (#4). User changed the order: the tester installs from the marketplace like every employee (`docs/tester-guide.md`, checklist §0–§0b).
+- Onboarding (user idea): first session → one-time emoji welcome + 5-step interactive tour (`skills/onboarding`); hook writes the marker. User-driven fixes: git check shows on the first message, never "hi" (example: "let's start"), every step says exactly what to type.
+- Updates (verified in official docs): auto-update is off for org marketplaces and Claude Code updates only on a version bump → one-time setup in welcome/tour/guide, CI version-bump guard, daily drift check → one GitHub issue (`drift.yml`). Org Owners = Magen + Yagil → `docs/org-setup.md`.
+- Repo renamed to `OnO-platform-guardian`; yes+ logo removed. Open: marketplace PR #5 (new URL — merge blocked without review; old URL redirects), live test, org setup.
+- **Process improvement:** explain to the user in plain, non-technical words first (twice "I didn't understand") and verify any claim about Claude Code behavior in the docs before stating it — saved as memory `plain-language-first`.
+- **Next session:** process the tester's filled `docs/live-test.md` → fix every ❌, bump version, merge.
+
+---
+
 ## Session 9 — 2026-11-08 — Unblocking rollout: live-test setup, min version, visibility, MGA-83
 
 - Autonomous (user: "close as many tasks as possible"). Org repos unchanged; drift guard clean; 264 checks green on macOS bash 3.2 + Debian; CI green on PR #3.
