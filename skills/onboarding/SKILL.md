@@ -25,7 +25,7 @@ You're giving a new Ono employee their first tour of Guardian. Goal: in ~3 minut
 
 ### 1. 🌅 Every session starts with a safety check
 
-In every new session (and after `/clear`), the moment you send your first message — even just "hi" — I first show you your git state, then get to what you wrote. So you never build on an old base by accident.
+In every new session (and after `/clear`), the moment you send your first message — whatever it is — I first show you your git state, then get to what you wrote. So you never build on an old base by accident.
 
 Show **their own** state in one line (branch · central branch · up to date / behind · uncommitted files), then the three signals:
 - ✅ up to date → straight to work

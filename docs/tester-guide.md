@@ -48,7 +48,7 @@ Each row is one small scenario. The pattern is always the same:
 
 1. Do what the "How to set it up" column says (e.g. `cd ~/pg-test/app` and `git switch develop`).
 2. Start Claude: `claude` (Guardian is installed, so it's always on)
-3. Type what the row says (usually just `hi`).
+3. Type what the row says (usually `let's start` — but any first message works, that's part of the test).
 4. Compare Claude's answer with the **Expected** column.
 5. Write in the **Result** column: **✅** if it matches, or **❌ + one line of what actually happened**.
 6. Quit Claude (`/exit`) and go to the next row.

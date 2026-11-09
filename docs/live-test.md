@@ -48,21 +48,21 @@ It creates `~/pg-test/app` (on `develop`, plus the branches `pg/behind` and `pg/
 
 ## 0b. First session — welcome + onboarding tour (new)
 
-Do this **first**, before §1 — the offer appears only once per computer. After the setup script: `cd ~/pg-test/app && git switch pg/clean`, start `claude`, type `hi`.
+Do this **first**, before §1 — the offer appears only once per computer. After the setup script: `cd ~/pg-test/app && git switch pg/clean`, start `claude`, type `let's start`.
 
 | # | Step | Expected | Result |
 |---|---|---|---|
-| 0b.1 | First `hi` after installing | Enthusiastic welcome with emojis 🎉 · one line on what Guardian does · clear offer "quick 3-minute tour? (yes / later)" | |
+| 0b.1 | First message after installing: `let's start` | Enthusiastic welcome with emojis 🎉 · one line on what Guardian does · clear offer "quick 3-minute tour? (yes / later)" | |
 | 0b.2 | Say **yes** | Tour, one short step per message, waits for you each time, **no second welcome**: how a session starts (shows *your* branch) → "just tell me what you're doing" (try it — it shows what it *would* start, starts nothing) → what it never does for you (approvals, commit guard) → closing → cheat sheet + "what are we working on?" | |
 | 0b.3 | Mid-tour, ask a question, then say **skip** | Answers briefly · skip jumps to the cheat sheet | |
 | 0b.4 | Did anything change? `git status` in `app` | Nothing changed — the tour never touches git or files | |
-| 0b.5 | `/clear`, then `hi` | **No** welcome offer again — normal opener | |
+| 0b.5 | `/clear`, then `let's start` | **No** welcome offer again — normal opener | |
 | 0b.6 | Type `onboarding` | The tour starts again (on request) | |
 | 0b.7 | How did the tour *feel*? | Write a line: clear? exciting? too long? anything confusing | |
 
 ## 1. Opener — fires on startup
 
-In each case: `cd` into the repo, start `claude`, type **`hi`**.
+In each case: `cd` into the repo, start `claude`, type **`let's start`**. There is no trigger word — any first message must work, so in at least two cases write something else instead (a question, "good morning", a task).
 
 | # | Situation | How to set it up (in `app`) | Expected | Result |
 |---|---|---|---|---|
@@ -73,13 +73,13 @@ In each case: `cd` into the repo, start `claude`, type **`hi`**.
 | 1.5 | Central unclear | in `scratch` (no remote, branch `main`/`master`) | Mentions no remote; if unsure of central branch, **asks** which branch to branch from | |
 | 1.6 | Not a git folder | `cd ~/pg-test` (parent folder) | Says it's not a git project · skips checks · asks what we're doing | |
 | 1.7 | First message is a task, not a greeting | on `pg/clean`, first message: `fix the login crash` | Opener runs first (git state), then comes back to the bug — routes to `/analyze-bug` | |
-| 1.8 | First message is a slash command | first message: `/help`, then `hi` | `/help` output (built-in — Claude doesn't see it); the opener runs on `hi` | |
+| 1.8 | First message is a slash command | first message: `/help`, then `let's start` | `/help` output (built-in — Claude doesn't see it); the opener runs on `let's start` | |
 
 ## 2. Opener — fires after `/clear`
 
 | # | Step | Expected | Result |
 |---|---|---|---|
-| 2.1 | In any session above, type `/clear`, then `hi` | Opener runs again (git state shown again) | |
+| 2.1 | In any session above, type `/clear`, then `let's start` | Opener runs again (git state shown again) | |
 | 2.2 | Same after `/compact` | Opener does **not** re-run (only startup + clear) | |
 
 ## 3. Router
@@ -114,7 +114,7 @@ Clean up: `git reset -q && rm -f notes.md .env.test src/Foo.kt`.
 | 5.1 | On `pg/clean` with one small change, say "close the session" | Lists will commit / will ignore · waits for OK · commits on the work branch · asks before push / PR (say **no push** for the test) | |
 | 5.2 | — | Ends with "✅ Everything is saved" + the 3 numbered `/clear` steps | |
 | 5.3 | `cat ~/.claude/platform-guardian/*/pg_clean.md` | Entry with what we did / where we stopped / next step | |
-| 5.4 | `/clear`, then `hi` | Opener starts with "Last time you stopped at …" | |
+| 5.4 | `/clear`, then `let's start` | Opener starts with "Last time you stopped at …" | |
 | 5.5 | Session-length signal: start with `PG_CLOSEOUT_TOKENS=20000 claude`, work a few turns | After ~20k tokens: answer first, then the 💡 close-out suggestion with 3 steps — once, not every turn | |
 
 ## 5b. Resume — "where was I" (new — G2.3)
@@ -128,9 +128,9 @@ mkdir -p docs && printf '# FA\n\n```yaml\nfeature: dark-mode\ndd_link:\nsurface:
 
 | # | Step | Expected | Result |
 |---|---|---|---|
-| 5b.1 | Start `claude`, say `hi` | Opener mentions *dark-mode*: analysis waiting for **your** approval → then `/dev-design-start dark-mode` · offers "continue dark-mode, or something new?" | |
+| 5b.1 | Start `claude`, say `let's start` | Opener mentions *dark-mode*: analysis waiting for **your** approval → then `/dev-design-start dark-mode` · offers "continue dark-mode, or something new?" | |
 | 5b.2 | Say "approve it for me" | **Refuses** to flip `status` — tells you to change it yourself | |
-| 5b.3 | Set `status: approved` in the file, `/clear`, `hi` | Now: "analysis approved, next `/dev-design-start dark-mode`" | |
+| 5b.3 | Set `status: approved` in the file, `/clear`, `let's start` | Now: "analysis approved, next `/dev-design-start dark-mode`" | |
 | 5b.4 | In a real repo where an Ono plugin already ran (features / bugs / QA repo / inspector) | Lines match what you know is unfinished — note anything wrong or missing | |
 
 Clean up: `rm -rf docs`.
