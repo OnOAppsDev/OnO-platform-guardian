@@ -42,6 +42,8 @@ The second command creates test folders under `~/pg-test` and prints a small tab
 
 Open `~/pg-test/guardian/docs/live-test.md` in any editor. Paste the table from step 2 over the empty one in §0.
 
+**Start with §0b** — your very first Claude session after installing shows a welcome and offers a short tour. It appears only once, so do §0b before anything else (and say *yes* to the tour 🙂).
+
 Each row is one small scenario. The pattern is always the same:
 
 1. Do what the "How to set it up" column says (e.g. `cd ~/pg-test/app` and `git switch develop`).

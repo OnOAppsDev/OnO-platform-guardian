@@ -4,7 +4,7 @@
   <p><strong>One plugin to install. One place to start. The right Ono process every time.</strong></p>
 
   ![Status](https://img.shields.io/badge/status-pilot%20prep-yellow?style=flat-square)
-  ![Version](https://img.shields.io/badge/version-0.1.0-blue?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.2.0-blue?style=flat-square)
   ![Org plugins](https://img.shields.io/badge/org%20plugins%20bundled-6-green?style=flat-square)
   ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-orange?style=flat-square)
 </div>
@@ -38,6 +38,8 @@ claude ──► 1. OPEN       git report vs. the central branch · "last time y
 ```
 
 Long session? Once the context passes ~120k tokens, Guardian suggests closing at the next natural point.
+
+**First time?** 🎉 Your first session after installing opens with a welcome and an interactive 3-minute tour of how to work with Guardian (offered once; type **onboarding** any time to take it again).
 
 ## 🧭 What gets routed where
 
@@ -86,7 +88,7 @@ Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
 ```
 .claude-plugin/plugin.json      manifest + dependencies on the six org plugins
 hooks/                          SessionStart (open) · UserPromptSubmit (session length) · PreToolUse (commit guard)
-skills/                         session-opener · work-router · session-closer
+skills/                         session-opener · work-router · session-closer · onboarding
 scripts/git-status.sh           JSON git report (bash 3.2, no jq, fails open)
 scripts/session-log.sh          local session notes — ~/.claude/platform-guardian/, never in git
 scripts/resume-state.sh         unfinished work from the plugins' own documents (docs/resume-state.md)

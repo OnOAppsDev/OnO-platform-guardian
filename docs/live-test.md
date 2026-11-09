@@ -46,6 +46,20 @@ It creates `~/pg-test/app` (on `develop`, plus the branches `pg/behind` and `pg/
 
 ---
 
+## 0b. First session — welcome + onboarding tour (new)
+
+Do this **first**, before §1 — the offer appears only once per computer. After the setup script: `cd ~/pg-test/app && git switch pg/clean`, start `claude`, type `hi`.
+
+| # | Step | Expected | Result |
+|---|---|---|---|
+| 0b.1 | First `hi` after installing | Enthusiastic welcome with emojis 🎉 · one line on what Guardian does · clear offer "quick 3-minute tour? (yes / later)" | |
+| 0b.2 | Say **yes** | Tour, one short step per message, waits for you each time, **no second welcome**: how a session starts (shows *your* branch) → "just tell me what you're doing" (try it — it shows what it *would* start, starts nothing) → what it never does for you (approvals, commit guard) → closing → cheat sheet + "what are we working on?" | |
+| 0b.3 | Mid-tour, ask a question, then say **skip** | Answers briefly · skip jumps to the cheat sheet | |
+| 0b.4 | Did anything change? `git status` in `app` | Nothing changed — the tour never touches git or files | |
+| 0b.5 | `/clear`, then `hi` | **No** welcome offer again — normal opener | |
+| 0b.6 | Type `onboarding` | The tour starts again (on request) | |
+| 0b.7 | How did the tour *feel*? | Write a line: clear? exciting? too long? anything confusing | |
+
 ## 1. Opener — fires on startup
 
 In each case: `cd` into the repo, start `claude`, type **`hi`**.

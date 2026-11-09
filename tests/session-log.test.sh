@@ -68,8 +68,28 @@ mkdir -p "$WORK/plain"
 expect_eq "outside git prints nothing" "$("$LOG" path "$WORK/plain")" ""
 "$LOG" bogus "$R" >/dev/null 2>&1; expect_eq "unknown command is a usage error" "$?" "2"
 
-# --- hook ---
+# --- hook: first-time onboarding offer, exactly once ---
 g -C "$R" checkout feature/login
+out="$(echo '{"source":"startup"}' | CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "first session offers the tour" "$out" "FIRST TIME WITH GUARDIAN"
+expect_contains "offer names the onboarding skill" "$out" "platform-guardian:onboarding"
+expect_contains "offer says how to get it later" "$out" "type **onboarding** any time"
+[ -s "$PG_LOG_DIR/.state/onboarding-offered" ] && ok || fail "marker written" "$(ls -la "$PG_LOG_DIR/.state" 2>&1)"
+out="$(echo '{"source":"clear"}' | CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+case "$out" in *"FIRST TIME"*) fail "offer shown only once" "$out" ;; *) ok ;; esac
+out="$(echo '{}' | CLAUDE_PROJECT_DIR="$WORK/plain" "$HOOK")"
+case "$out" in *"FIRST TIME"*) fail "not again outside git either" "$out" ;; *) ok ;; esac
+out="$(echo '{}' | PG_LOG_DIR="$WORK/fresh" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+case "$out" in *"FIRST TIME"*) fail "PG_ONBOARDING=off" "$out" ;; *) ok ;; esac
+[ -e "$WORK/fresh/.state/onboarding-offered" ] && fail "off writes no marker" "" || ok
+if [ "$(id -u)" != 0 ]; then   # root ignores permissions
+  mkdir -p "$WORK/fresh" && chmod 500 "$WORK/fresh"
+  out="$(echo '{}' | PG_LOG_DIR="$WORK/fresh" CLAUDE_PROJECT_DIR="$R" "$HOOK" 2>&1)"; rc=$?
+  case "$rc:$out" in 0:*"FIRST TIME"*) fail "unwritable state dir → no offer (it would repeat every session)" "$out" ;; 0:*) ok ;; *) fail "unwritable state dir fails open" "$rc" ;; esac
+  chmod 700 "$WORK/fresh"
+fi
+
+# --- hook ---
 out="$(echo '{"source":"startup"}' | CLAUDE_PROJECT_DIR="$R" "$HOOK")"; rc=$?
 expect_eq "hook exits 0" "$rc" "0"
 expect_contains "hook names the skill" "$out" "platform-guardian:session-opener"

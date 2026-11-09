@@ -29,6 +29,10 @@ Key fields: `repo`, `branch`, `detached`, `fetch` (`ok` | `failed` | `timeout` |
 
 ## Steps
 
+### 0. First time with Guardian
+
+If the session-start context has the **FIRST TIME WITH GUARDIAN** notice: open with the enthusiastic emoji welcome and the tour offer it describes — that comes before everything else. Yes → run `platform-guardian:onboarding` — it replaces steps 1–4 (it shows the git state and asks what we're working on itself); a ⚠️🚨 behind / on-central warning is still mentioned in the welcome, briefly. Later → "Type **onboarding** any time 🎓" and continue with step 1. The notice appears once; never re-offer on your own.
+
 ### 1. Greet + where we stopped
 
 One warm line. If there is a session-log entry, follow with one line: "Last time (‹date›) you stopped at ‹where we stopped› — next step was ‹next step›." Don't paste the entry.
