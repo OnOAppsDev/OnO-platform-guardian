@@ -12,7 +12,7 @@ set -u
 cmd="${1:-}"
 label="plugin-drift"
 assignee="${PG_DRIFT_ASSIGNEE:-tomzion90}"
-repo="${GITHUB_REPOSITORY:-OnOAppsDev/yes-platform-guardian}"
+repo="${GITHUB_REPOSITORY:-OnOAppsDev/ono-platform-guardian}"
 marker="<!-- drift-findings -->"
 
 open_issue() { gh issue list -R "$repo" --label "$label" --state open --json number -q '.[0].number' 2>/dev/null; }
@@ -35,7 +35,7 @@ $findings
 
 $block
 
-**What to do:** open a Claude Code session in \`yes-platform-guardian\` and say: *\"fix plugin drift issue — see the latest drift issue\"*. Claude updates \`routing/routes.json\` (and the resume formats if a document format changed), bumps the version, and merges. This issue closes by itself once the check passes again.
+**What to do:** open a Claude Code session in \`ono-platform-guardian\` and say: *\"fix plugin drift issue — see the latest drift issue\"*. Claude updates \`routing/routes.json\` (and the resume formats if a document format changed), bumps the version, and merges. This issue closes by itself once the check passes again.
 
 Until then employees already have the new plugin version, so a routed command may point to something that moved."
     else
