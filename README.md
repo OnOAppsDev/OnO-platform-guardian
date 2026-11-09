@@ -70,9 +70,7 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 
 ## 🚀 Install
 
-> **Not in the marketplace yet** — it's added after the live test (G4.1). Until then, try it for one session without installing: clone this repo and start `claude --plugin-dir <path-to-clone>` (the six org plugins must already be installed). Testers: follow [`docs/tester-guide.md`](docs/tester-guide.md).
-
-Once it's in the marketplace:
+> **Being added to the org marketplace** — [ono-plugin-marketplace PR #4](https://github.com/OnOAppsDev/ono-plugin-marketplace/pull/4). The commands below work once it's merged. Testers: follow [`docs/tester-guide.md`](docs/tester-guide.md) — the test uses this same install.
 
 ```
 /plugin marketplace add OnOAppsDev/ono-plugin-marketplace

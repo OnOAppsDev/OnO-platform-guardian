@@ -51,7 +51,7 @@ plugins="$(claude plugin list 2>/dev/null | awk '
 cat <<EOF
 
 Ready. Test repos in $root (app on $central; branches pg/behind, pg/clean; scratch).
-Start each §1 case with:  claude --plugin-dir $guardian
+Start each §1 case with:  claude   (Guardian installed from the marketplace — docs/live-test.md §0)
 
 Paste into docs/live-test.md:
 

@@ -42,7 +42,7 @@ has "version row" "$out" "| Claude Code version | 9.9.9 (Claude Code) |"
 has "ono plugins with status" "$out" "| ono-plugin-qa (enabled), matrix-studio (disabled) |"
 hasnt "non-Ono plugins left out" "$out" "code-review"
 has "timing row" "$out" "| 6.1 hook time (app, real remote) | "
-has "run hint names this clone" "$out" "claude --plugin-dir $(cd "$HERE/.." && pwd)"
+has "run hint: plain claude, installed plugin" "$out" "Start each §1 case with:  claude   (Guardian installed"
 
 # Re-run: reuses the clone, resets pg/* to the new remote state.
 echo 5 >>"$WORK/remote/f" && git -C "$WORK/remote" commit -qam c5
