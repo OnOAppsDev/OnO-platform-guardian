@@ -52,8 +52,8 @@ Do this **first**, before §1 — the offer appears only once per computer. Afte
 
 | # | Step | Expected | Result |
 |---|---|---|---|
-| 0b.1 | First message after installing: `let's start` | Enthusiastic welcome with emojis 🎉 · one line on what Guardian does · clear offer "quick 3-minute tour? (yes / later)" | |
-| 0b.2 | Say **yes** | Tour, one short step per message, waits for you each time, **no second welcome**: how a session starts (shows *your* branch) → "just tell me what you're doing" (try it — it shows what it *would* start, starts nothing) → what it never does for you (approvals, commit guard) → closing → cheat sheet + "what are we working on?" | |
+| 0b.1 | First message after installing: `let's start` | Enthusiastic welcome with emojis 🎉 · one line on what Guardian does · clear offer of the tour that says exactly what to type (👉 **yes** / **later**) | |
+| 0b.2 | Say **yes** | Tour, one short step per message, **each step ends with a clear "👉 Type next …" line** and waits for you, **no second welcome**: how a session starts (shows *your* branch) → "just tell me what you're doing" (try it — it shows what it *would* start, starts nothing) → what it never does for you (approvals, commit guard) → closing → cheat sheet + "what are we working on?" | |
 | 0b.3 | Mid-tour, ask a question, then say **skip** | Answers briefly · skip jumps to the cheat sheet | |
 | 0b.4 | Did anything change? `git status` in `app` | Nothing changed — the tour never touches git or files | |
 | 0b.5 | `/clear`, then `let's start` | **No** welcome offer again — normal opener | |
