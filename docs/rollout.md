@@ -4,18 +4,20 @@ Verified against the official docs on 2026-11-08: [Manage plugins for your organ
 
 ## Order
 
-1. **PR #3 merged** into `master` of this repo — the marketplace entry tracks `master`.
+1. ✅ **PR #3 merged** into `master` (2026-11-09) — the marketplace entry tracks `master`.
 2. **G4.1 — marketplace entry.** Ready on a local branch `add-platform-guardian` in the `ono-plugin-marketplace` clone (not pushed): manifest entry (`ref: master`), version 1.5.0 → 1.6.0, README + CHANGELOG in the marketplace's own style; `claude plugin validate .` passes. All six dependencies are already listed in that marketplace, so they resolve.
 3. **Pilot install by hand** (one team) — `/plugin install platform-guardian@ono-plugin-marketplace`, confirm the six plugins come with it.
 4. **G4.2 — managed settings** (org Owner), below.
 
-## Repo visibility — decided: public (2026-11-08)
+## Repo visibility — ✅ public (2026-11-09)
+
+**Done:** flipped by an admin on 2026-11-09; `git ls-remote` with no credentials works. The rest of this section is the background to the decision.
 
 **Decided by the user: make it public.** Blocked on permissions: `tomzion90` has only *write*; changing visibility needs *admin* — today only `OnOApps-Admin`. That account: repo **Settings → Danger Zone → Change visibility → Make public** (or `gh repo edit OnOAppsDev/yes-platform-guardian --visibility public --accept-visibility-change-consequences`). After the flip: check an install works without credentials (`git ls-remote` with no auth).
 
 Background:
 
-The marketplace and all six Ono plugin repos are **public**; `yes-platform-guardian` is **private**. Plugins install by cloning on the employee's machine with their stored git credentials and no prompt — so with a private repo, every employee needs GitHub read access to it **and** working git credentials (e.g. `gh auth setup-git`), or the install fails. Background auto-update has the same requirement.
+The marketplace and all six Ono plugin repos are **public**; `yes-platform-guardian` was **private** (until 2026-11-09). Plugins install by cloning on the employee's machine with their stored git credentials and no prompt — so with a private repo, every employee needs GitHub read access to it **and** working git credentials (e.g. `gh auth setup-git`), or the install fails. Background auto-update has the same requirement.
 
 | Option | Effect |
 |---|---|
@@ -59,7 +61,7 @@ Notes for the Owner:
 ## Open
 
 - Who is the org Owner? (vision open question 2)
-- Repo visibility — decided public; waiting on an admin of the repo (`OnOApps-Admin`) to flip it (above).
+- ~~Repo visibility~~ — public since 2026-11-09.
 
 ## Minimum Claude Code version: 2.1.140
 
