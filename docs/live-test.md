@@ -27,7 +27,7 @@ Fill the **Result** column as you go (✅ / ❌ + one line of what you saw), the
 Quit Claude Code, then download the test kit (the setup script and this checklist — not loaded as a plugin):
 
 ```bash
-git clone https://github.com/OnOAppsDev/yes-platform-guardian.git ~/pg-test/guardian
+git clone https://github.com/OnOAppsDev/ono-platform-guardian.git ~/pg-test/guardian
 ```
 
 Test repos + the automatic checks, in one command (any Ono app repo you can clone; add its central branch if it isn't `develop`):

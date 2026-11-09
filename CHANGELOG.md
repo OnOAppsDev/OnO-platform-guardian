@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.3] — 2026-11-09
+
+- Repo renamed `yes-platform-guardian` → `ono-platform-guardian`: manifest `repository`, clone commands and the drift-issue script point to the new name (GitHub redirects the old one).
+
 ## [0.2.2] — 2026-11-09
 
 - Branding: **OnO Platform Guardian** — the first-time welcome uses the name; yes+ logo and footer removed from the README (manager's request).
