@@ -39,7 +39,7 @@ fi
 
 # §6.1 — SessionStart hook wall time in app (real remote; fetch is capped at 5 s).
 start=$(date +%s)
-(cd "$app" && "$guardian/hooks/session-start.sh" </dev/null >/dev/null 2>&1)
+(cd "$app" && PG_ONBOARDING=off "$guardian/hooks/session-start.sh" </dev/null >/dev/null 2>&1)   # off: keep the first-time tour offer for the tester
 secs=$(( $(date +%s) - start ))
 
 # "❯ name@ono-plugin-marketplace" … "Status: ✔ enabled" blocks → "name (enabled), …"

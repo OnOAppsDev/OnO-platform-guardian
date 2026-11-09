@@ -1,6 +1,6 @@
 ---
 name: session-closer
-description: Platform Guardian session closer. Run when the employee wants to stop or wrap up ("I'm done", "that's it for today", "close the session", "bye", "thanks, that's all"), when they accept a close-out suggestion from the "[platform-guardian]" session-length signal, or after a plugin stage completes and they agree to stop. Saves the work safely — commit hygiene, commit on a work branch, push, PR to the central branch (never a direct push to it) — writes the local session-log entry, gives a plain-language summary and tells them to /clear.
+description: Platform Guardian session closer. Run when the employee wants to stop or wrap up ("I'm done", "that's it for today", "close the session", "bye", "thanks, that's all" — in any language), when they accept a close-out suggestion from the "[platform-guardian]" session-length signal, or after a plugin stage completes and they agree to stop. Saves the work safely — commit hygiene, commit on a work branch, push, PR to the central branch (never a direct push to it) — writes the local session-log entry, gives a plain-language summary and tells them to /clear.
 ---
 
 # Session closer

@@ -30,8 +30,9 @@ git -C "$WORK/remote" checkout -q -b develop
 for i in 1 2 3 4; do echo "$i" >>"$WORK/remote/f" && git -C "$WORK/remote" commit -qam "c$i"; done
 dev="$(git -C "$WORK/remote" rev-parse develop)"
 
-export PG_TEST_DIR="$WORK/pg"
+export PG_TEST_DIR="$WORK/pg" PG_LOG_DIR="$WORK/logs"
 out="$("$SETUP" "$WORK/remote" 2>&1)"; expect "setup → exit 0" "$?" "0"
+expect "hook timing keeps the first-time tour offer for the tester" "$(ls "$WORK/logs/.state/onboarding-offered" 2>/dev/null)" ""
 expect "app on develop" "$(git -C "$WORK/pg/app" rev-parse --abbrev-ref HEAD)" "develop"
 expect "pg/clean = origin/develop" "$(git -C "$WORK/pg/app" rev-parse pg/clean)" "$dev"
 expect "pg/* don't track develop (a work branch has no upstream yet)" "$(git -C "$WORK/pg/app" config branch.pg/clean.merge; git -C "$WORK/pg/app" config branch.pg/behind.merge)" ""

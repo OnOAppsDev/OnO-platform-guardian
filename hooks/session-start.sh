@@ -24,6 +24,19 @@ Git report (scripts/git-status.sh, schema 1):
 $report
 MSG
 
+# First time on this machine → offer the onboarding tour once. The marker is
+# written here, at the moment the offer is injected, so it shows exactly once.
+state_dir="${PG_LOG_DIR:-$HOME/.claude/platform-guardian}/.state"
+marker="$state_dir/onboarding-offered"
+if [ "${PG_ONBOARDING:-}" != "off" ] && [ ! -e "$marker" ] &&
+   mkdir -p "$state_dir" 2>/dev/null && date '+%Y-%m-%d %H:%M' >"$marker" 2>/dev/null; then
+  cat <<MSG
+
+FIRST TIME WITH GUARDIAN on this computer — this notice appears once (already marked as shown in $marker).
+Open your reply to their first message with an enthusiastic welcome full of emojis (🎉👋🚀), say in one line what Guardian does for them, then clearly offer the interactive tour: "Want a quick 3-minute tour of how to work with this? (yes / later)". If yes → run the \`platform-guardian:onboarding\` skill. If later → tell them they can type **onboarding** any time, and continue the normal opener. Still show any git warning that needs attention (behind central, on central) — briefly.
+MSG
+fi
+
 if [ -n "$last" ]; then
   printf '\nLast session-log entry for this branch:\n%s\n' "$last"
 else
