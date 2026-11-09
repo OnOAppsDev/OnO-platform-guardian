@@ -4,9 +4,8 @@ on:
   push:
     branches: [master]
   pull_request:
-  schedule:
-    - cron: "0 5 * * 1" # Mondays — catch org-plugin drift even when Guardian doesn't change
   workflow_dispatch:
+# Daily org-plugin drift check → issue: .github/workflows/drift.yml
 
 permissions:
   contents: read
@@ -43,6 +42,17 @@ jobs:
             jq -e . "$f" >/dev/null || { echo "invalid JSON: $f"; exit 1; }
           done
       - run: tests/run-all.sh
+
+  version:
+    name: Version bumped when plugin files change
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Installed copies only update when plugin.json's version goes up.
+      - run: scripts/check-version-bump.sh "origin/${{ github.base_ref }}"
 
   routes:
     name: Routes match the org plugins

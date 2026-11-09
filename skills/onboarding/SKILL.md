@@ -67,6 +67,8 @@ When you're done (or the session gets long — I'll tell you 💡), say **"close
 > - 👋 "Close the session" → then `/clear`
 > - 🎓 "Onboarding" — this tour again, any time
 >
+> ⚙️ **One-time setup** so you always have the latest version: `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update**
+>
 > **What are we working on first?** 🚀
 
 The tour replaces the opener's greeting and "what are we working on" — don't greet again, re-show git or ask twice. Their answer goes straight to the `platform-guardian:work-router` skill (offer unfinished work first, if any). A git warning that needs a decision (behind, on the central branch) is handled before starting the work.

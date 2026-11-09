@@ -4,7 +4,7 @@
   <p><strong>One plugin to install. One place to start. The right Ono process every time.</strong></p>
 
   ![Status](https://img.shields.io/badge/status-pilot%20prep-yellow?style=flat-square)
-  ![Version](https://img.shields.io/badge/version-0.2.0-blue?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.2.1-blue?style=flat-square)
   ![Org plugins](https://img.shields.io/badge/org%20plugins%20bundled-6-green?style=flat-square)
   ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-orange?style=flat-square)
 </div>
@@ -77,6 +77,8 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 /plugin install platform-guardian@ono-plugin-marketplace
 ```
 
+Then, once: `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — so Guardian and the six plugins update by themselves (auto-update is off by default for org marketplaces). Org-wide, the managed settings below turn it on for everyone.
+
 Installing Guardian installs the six org plugins it depends on. Needs Claude Code **2.1.140 or newer** (`claude --version`; `claude update`). For org-wide rollout, admins enable it through Claude for Organizations managed settings — exact JSON and steps in [`docs/rollout.md`](docs/rollout.md).
 
 Testing it for the team? Follow [`docs/tester-guide.md`](docs/tester-guide.md) — it uses this same install.
@@ -95,9 +97,12 @@ scripts/resume-state.sh         unfinished work from the plugins' own documents 
 scripts/check-routes.sh         drift guard: routes.json vs. the org plugins
 scripts/fetch-org-plugins.sh    clone every plugin the marketplace lists (for check-routes / CI)
 scripts/live-test-setup.sh      test-machine setup for the live test (docs/live-test.md)
+scripts/check-version-bump.sh   CI: plugin files changed → version must go up (installs update only then)
+scripts/report-drift.sh         CI: daily drift → one GitHub issue, closed when back in sync
 routing/                        routes.json · committed-artifacts.json
 tests/run-all.sh                tests against throwaway git repos
-.github/workflows/ci.yml        tests on macOS bash 3.2 + Linux · weekly drift check vs. the org
+.github/workflows/ci.yml        tests on macOS bash 3.2 + Linux · version-bump check on PRs
+.github/workflows/drift.yml     daily: org plugins vs. routes.json → issue to the maintainer
 docs/                           vision · backlog · ecosystem status · project config · rollout · session log
 docs/tester-guide.md            one-page guide for whoever runs the live test → fills docs/live-test.md
 archive/2026-07-mcp-plan/       the superseded July MCP / 7-phase plan

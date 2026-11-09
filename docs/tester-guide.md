@@ -21,6 +21,8 @@ Open Claude Code anywhere and type these two lines (one at a time):
 /plugin install platform-guardian@ono-plugin-marketplace
 ```
 
+Turn on automatic updates (once): in the same `/plugin` screen go to **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update**.
+
 Then type `/plugin` and look at the installed list: you should see **platform-guardian and six more Ono plugins** that came with it. Write down whether that worked — it goes into §0 of the checklist (rows 0.1–0.3).
 
 Quit Claude Code.
