@@ -1,0 +1,40 @@
+{
+  "description": "Platform Guardian: session opener on startup or /clear (git report + last local session-log entry → session-opener skill), a session-length signal on each prompt that suggests the close-out once the context grows large, and a commit-hygiene guard on git add / commit (secrets and plugin scratch blocked, stray working files need the employee's OK).",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/prompt-submit.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

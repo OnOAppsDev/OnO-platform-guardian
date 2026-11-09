@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: "0 5 * * 1" # Mondays — catch org-plugin drift even when Guardian doesn't change
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS bash 3.2
+            os: macos-latest
+          - name: Linux bash 5
+            os: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use macOS system bash 3.2 (what employees' hooks run with)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p "$RUNNER_TEMP/bash32"
+          ln -s /bin/bash "$RUNNER_TEMP/bash32/bash"
+          echo "$RUNNER_TEMP/bash32" >> "$GITHUB_PATH"
+      - name: Git identity for test repos
+        run: |
+          git config --global user.name ci
+          git config --global user.email ci@example.com
+          git config --global init.defaultBranch main
+      - run: bash --version | head -1
+      - name: JSON data files parse
+        run: |
+          for f in .claude-plugin/plugin.json hooks/hooks.json routing/*.json; do
+            jq -e . "$f" >/dev/null || { echo "invalid JSON: $f"; exit 1; }
+          done
+      - run: tests/run-all.sh
+
+  routes:
+    name: Routes match the org plugins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone every plugin the marketplace lists
+        run: scripts/fetch-org-plugins.sh "$RUNNER_TEMP/plugins"
+      - name: Every routed command exists, versions match routes.json
+        run: scripts/check-routes.sh "$RUNNER_TEMP/plugins" --strict

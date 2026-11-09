@@ -1,0 +1,322 @@
+{
+  "schema": 1,
+  "verifiedAt": "2026-11-08",
+  "verifiedAgainst": {
+    "ono-mobile-dev-plugin": "0.7.0",
+    "ono-plugin-qa": "0.11.0",
+    "matrix-qa-plugin": "0.1.0",
+    "spec-team-toolkit": "0.4.2",
+    "ono-project-inspector": "0.11.0",
+    "matrix-studio": "0.1.0"
+  },
+  "humanOnly": {
+    "note": "Guardian never runs these and never auto-chains into them; it tells the employee exactly what to type. Only matrix-qa-plugin enforces this with disable-model-invocation — everywhere else it is a text-level rule, so Guardian enforces it.",
+    "commands": [
+      {
+        "plugin": "matrix-qa-plugin",
+        "command": "/qa-approve",
+        "why": "QA engineer approves the test plan (enforced: disable-model-invocation)"
+      },
+      {
+        "plugin": "ono-plugin-qa",
+        "command": "/approve-qa-test-plan",
+        "why": "stamps the approver's name"
+      },
+      {
+        "plugin": "ono-plugin-qa",
+        "command": "/qa-signoff",
+        "why": "QA sign-off of the readiness verdict"
+      },
+      {
+        "plugin": "ono-plugin-qa",
+        "command": "/resolve-bug",
+        "why": "duplicate / won't-fix is a human decision"
+      },
+      {
+        "plugin": "ono-plugin-qa",
+        "command": "/set-qa-scope",
+        "why": "all values entered by QA"
+      },
+      {
+        "plugin": "ono-plugin-qa",
+        "command": "/plan-regression",
+        "why": "QA decides regression scope"
+      },
+      {
+        "plugin": "ono-mobile-dev-plugin",
+        "command": "/verify-fix-cycle",
+        "why": "the human records pass / fail"
+      },
+      {
+        "plugin": "ono-project-inspector",
+        "command": "/inspect-approve",
+        "why": "running it IS the approval"
+      }
+    ],
+    "approvalEdits": "Flipping a planning document's status (proposed→approved, draft→approved, draft→ready-for-qa) is the employee's decision — never edit it on their behalf, even when they ask you to; tell them the file and line to change."
+  },
+  "intents": [
+    {
+      "id": "feature",
+      "label": "Build a new feature (mobile / TV / React web)",
+      "examples": [
+        "new screen",
+        "add login",
+        "implement the settings page"
+      ],
+      "plugin": "ono-mobile-dev-plugin",
+      "start": "/analyze-feature",
+      "args": "<description> [design link]",
+      "requires": [
+        "work branch (the plugin blocks every file write on main/master)"
+      ],
+      "pipeline": [
+        "/analyze-feature",
+        "/dev-design-start <feature>",
+        "/dev-feature-start <feature>",
+        "/implement-task <feature> T<n>",
+        "/review-code + /review-security",
+        "/fix-review-comments <notes>",
+        "/create-dev-qa-notes <feature>",
+        "/prepare-mobile-release <version>"
+      ],
+      "gates": "Each stage needs the previous document approved by a human (status field)."
+    },
+    {
+      "id": "continue-task",
+      "label": "Continue implementing a task",
+      "examples": [
+        "next task",
+        "continue T3"
+      ],
+      "plugin": "ono-mobile-dev-plugin",
+      "start": "/implement-task",
+      "args": "[feature] T<n>  |  bug:<key> T<n>",
+      "requires": [
+        "work branch",
+        "FA, DD, Dev Plan and Task Breakdown approved"
+      ]
+    },
+    {
+      "id": "bug",
+      "label": "Fix a bug",
+      "examples": [
+        "fix BUG-27",
+        "the player crashes"
+      ],
+      "plugin": "ono-mobile-dev-plugin",
+      "start": "/analyze-bug",
+      "args": "<BUG-KEY>  |  qa=<BUG-KEY> --qa-repo <path>  |  --external=<ref> --report=<file>",
+      "requires": [
+        "work branch"
+      ],
+      "pipeline": [
+        "/analyze-bug <key>",
+        "/implement-task bug:<key> T<n>",
+        "/verify-fix-cycle bug:<key>",
+        "/review-code --bug <key>",
+        "/create-dev-qa-notes bug:<key>"
+      ],
+      "next": "Bug-flow helpers print a next_command JSON ({skill, args, display}) — follow it after the employee says yes — unless it is in humanOnly.commands (e.g. /verify-fix-cycle): then tell them what to type."
+    },
+    {
+      "id": "review",
+      "label": "Review code",
+      "examples": [
+        "review my changes",
+        "security review"
+      ],
+      "plugin": "ono-mobile-dev-plugin",
+      "start": "/review-code",
+      "args": "[scope] [--bug <key>]",
+      "alternatives": [
+        "/review-security [scope]",
+        "/fix-review-comments <notes-file>"
+      ]
+    },
+    {
+      "id": "qa-handoff",
+      "label": "Hand a finished feature or fix to QA",
+      "plugin": "ono-mobile-dev-plugin",
+      "start": "/create-dev-qa-notes",
+      "args": "<feature>  |  bug:<key>"
+    },
+    {
+      "id": "release",
+      "label": "Prepare a mobile release",
+      "plugin": "ono-mobile-dev-plugin",
+      "start": "/prepare-mobile-release",
+      "args": "<version> --feature=… --bug=… --qa-readiness=… --release-build=…",
+      "gates": "The final Go is a human decision."
+    },
+    {
+      "id": "figma-theme",
+      "label": "Sync the React Native theme from Figma",
+      "plugin": "ono-mobile-dev-plugin",
+      "start": "/rn-sync-figma-theme",
+      "args": "<figma-url> [--dry-run]"
+    },
+    {
+      "id": "qa-mobile",
+      "label": "QA for mobile / TV apps: test plan, execution, bugs, readiness",
+      "examples": [
+        "write a test plan",
+        "register a build",
+        "record test run",
+        "report a bug from QA"
+      ],
+      "plugin": "ono-plugin-qa",
+      "start": "/create-qa-test-plan",
+      "args": "<feature> [figma] [--spec <path>] [--code-repo <path>] [--qa-repo <path>]",
+      "requires": [
+        "launched from the workspace folder that holds the code repo and the QA repo (name contains \"qa\")"
+      ],
+      "pipeline": [
+        "/create-qa-test-plan",
+        "/approve-qa-test-plan (human)",
+        "/check-qa-coverage",
+        "/generate-automation-scripts",
+        "/register-build",
+        "/set-qa-scope (human)",
+        "/define-smoke-suite",
+        "/record-execution",
+        "/report-bug · /verify-bug · /retest-bug",
+        "/plan-regression (human)",
+        "/qa-readiness",
+        "/qa-signoff (human)"
+      ],
+      "pickWhen": "Mobile or TV app under test (iOS, Android, React Native, tvOS, Android TV), Appium automation, a QA workspace with a code repo + QA repo."
+    },
+    {
+      "id": "qa-web-matrix",
+      "label": "QA for web projects (LLD → plan → Playwright)",
+      "audience": "QA team — web projects",
+      "plugin": "matrix-qa-plugin",
+      "start": "/qa-plan",
+      "args": "<qa/lld/<feature>.md> [--with-source] [--figma <url>]",
+      "requires": [
+        "matrix-qa.config.json in the repo (else start with /qa-init to set the repo up)"
+      ],
+      "pipeline": [
+        "/qa-init",
+        "/qa-plan",
+        "/qa-review",
+        "/qa-approve (human)",
+        "/qa-sync",
+        "/qa-automate",
+        "/qa-run"
+      ],
+      "pickWhen": "Web project under test, Playwright automation, an LLD in qa/lld/, or matrix-qa.config.json in the repo."
+    },
+    {
+      "id": "spec",
+      "label": "Write a spec (HLD / LLD / SPAC)",
+      "examples": [
+        "customer HLD",
+        "mobile SPAC",
+        "web component LLD from Figma",
+        "backend API LLD"
+      ],
+      "plugin": "spec-team-toolkit",
+      "start": "ask which document",
+      "choices": [
+        {
+          "doc": "HLD (customer, Hebrew)",
+          "skill": "spec-team-toolkit:hld-builder"
+        },
+        {
+          "doc": "Mobile LLD / SPAC",
+          "skill": "spec-team-toolkit:lld-mobile-spec"
+        },
+        {
+          "doc": "Web component LLD from Figma",
+          "skill": "spec-team-toolkit:lld-web-figma-spec"
+        },
+        {
+          "doc": "Backend API / data-model LLD",
+          "skill": "spec-team-toolkit:lld-backend-spec"
+        }
+      ],
+      "notes": "Interview-style, one question per turn. Invoke the spec-team-toolkit skill explicitly — \"write a SPAC\" also matches other spec skills. The toolkit has no repo location of its own (MGA-68/81): in a work repo, tell it to save the documents to docs/specs/<feature-slug>/ (spac_<f>.md, dd_<f>.md, hld-draft.md, scope-list.md, lld-<kind>-<f>.md). The .html preview is not committed. Outside a repo, keep the toolkit default.",
+      "saveTo": "docs/specs/<feature-slug>/"
+    },
+    {
+      "id": "design-system",
+      "label": "Generate a Figma design system (colors, spacing, typography)",
+      "examples": [
+        "build a design system from our brand color",
+        "color palette in Figma",
+        "typography styles"
+      ],
+      "audience": "Designers",
+      "plugin": "matrix-studio",
+      "start": "ask which part",
+      "choices": [
+        {
+          "doc": "Complete design system (colors → spacing → typography)",
+          "skill": "matrix-studio:generate-design-system"
+        },
+        {
+          "doc": "Color palette only",
+          "skill": "matrix-studio:figma-color-palette-generator"
+        },
+        {
+          "doc": "Spacing / scale tokens only",
+          "skill": "matrix-studio:figma-space-scale-generator"
+        },
+        {
+          "doc": "Typography only",
+          "skill": "matrix-studio:figma-type-system-generator"
+        }
+      ],
+      "requires": [
+        "Figma MCP connected (/mcp), Full Figma seat with edit access to the target file"
+      ],
+      "notes": "Writes only to Figma — no repo files, no git."
+    },
+    {
+      "id": "onboard-repo",
+      "label": "Understand / onboard to this repo, generate CLAUDE.md and project docs",
+      "examples": [
+        "what is this project",
+        "onboard me",
+        "inspect the repo",
+        "audit"
+      ],
+      "plugin": "ono-project-inspector",
+      "start": "/inspect",
+      "args": "[repo-path]",
+      "alternatives": [
+        "/inspect-status (read-only: progress + next action)",
+        "/inspect-topic [topic]",
+        "/inspect-sync"
+      ],
+      "notes": "/inspect always stops at a menu for the employee's choice."
+    }
+  ],
+  "resume": {
+    "note": "Probes for \"you're at stage X of feature Y\". Documents are the source of truth; tool state files are hints. scripts/resume-state.sh implements these deterministically (formats in docs/resume-state.md) and runs at session start; the probes below are the fallback when it is silent or unsure.",
+    "ono-mobile-dev-plugin": {
+      "feature": "Find planning docs by YAML frontmatter (doc_schema_version + feature:). No FA → not started · FA status proposed → awaiting approval · DD (*-DD.md) missing/draft → design · Task Breakdown missing/draft → tasks · docs/tasks/<FEATURE>-task-state.json partial → implementing (node --no-warnings \"<plugin>/scripts/task-state.ts\" read --root <repo> --feature <F> --breakdown <path>) · qa_handoff_link set → QA.",
+      "bug": "docs/bugs/<key>/ exists → node --no-warnings \"<plugin>/scripts/analyze-bug.ts\" start bug:<key> --root <repo> (status + next_command)."
+    },
+    "ono-plugin-qa": {
+      "feature": "In the QA repo: no <slug>/test-plan.md → not started · status in the fenced ```yaml block at the top (draft|approved) · approved without coverage-report.md → waiting for dev handoff · then node \"<plugin>/scripts/qa-ledger.mjs\" view execution|bugs|regression|readiness --scope feature:<slug> --qa-repo <path> (read-only JSON). Never call readiness render/signoff."
+    },
+    "matrix-qa-plugin": {
+      "feature": "Glob qa/test-cases/*.md (skip .lld-baseline/) → node \"<plugin>/scripts/mqa.mjs\" plan state <feature> → {status, effectiveApproval, reason}. DRAFT/CHANGES_REQUIRED → /qa-review · REVIEWED → /qa-approve (human) · reason LLD_CHANGED → /qa-sync · effectiveApproval → /qa-automate then /qa-run."
+    },
+    "spec-team-toolkit": {
+      "spec": "Look in docs/specs/*/ (Guardian convention; older specs may be elsewhere — ask). spac_<f>.md \"**Status:**\" DRAFT|READY; dd_<f>.md present → SPAC is READY; hld-draft.md per-section [סטטוס: …] tags; web/backend LLDs: exists or not."
+    },
+    "ono-project-inspector": {
+      "repo": "AUDIT.md topic statuses + CLAUDE.md / docs/project/ existence are the truth; .ono/state.json resume.nextAction is a hint (often stale — its agent can't run bun). Or route to /inspect-status."
+    }
+  },
+  "gitGuards": {
+    "note": "Org-plugin hooks that block Claude's own git writes. In these repos Guardian hands the exact git / gh commands to the employee (they can run them with the ! prefix) instead of running them.",
+    "matrix-qa-plugin": "Any repo with matrix-qa.config.json at or above the session folder: every git write and gh pr create is denied (also blocks other repos in the same session). Reported as guards.matrixQa.",
+    "ono-plugin-qa": "git commit / push blocked in the QA repo: the repo named by .claude/qa-workspace.json qaRepoPath, else any repo whose folder name contains \"qa\". Reported as guards.onoQaCommitBlocked.",
+    "ono-mobile-dev-plugin": "Every Write/Edit is blocked on main/master (docs too); code edits ask for approval; secrets in written content are blocked."
+  }
+}
