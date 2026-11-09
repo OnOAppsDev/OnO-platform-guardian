@@ -25,7 +25,7 @@ You're giving a new Ono employee their first tour of Guardian. Goal: in ~3 minut
 
 ### 1. 🌅 Every session starts with a safety check
 
-Every time you open Claude Code (or type `/clear`), I check your git first — so you never build on an old base by accident.
+In every new session (and after `/clear`), the moment you send your first message — even just "hi" — I first show you your git state, then get to what you wrote. So you never build on an old base by accident.
 
 Show **their own** state in one line (branch · central branch · up to date / behind · uncommitted files), then the three signals:
 - ✅ up to date → straight to work
@@ -52,7 +52,7 @@ Facts if they ask: the dev plugin covers mobile (iOS, Android, React Native), TV
 When you're done (or the session gets long — I'll tell you 💡), say **"close the session"** — in any language:
 1. I save everything — commit on your work branch, push + PR **after you OK it**, and a note of where we stopped 📝
 2. You type **`/clear`**
-3. Next time I open with "last time you stopped at …" — zero context lost 🔁
+3. In the next session, your first message gets "last time you stopped at …" — zero context lost 🔁
 
 ### 5. 🏁 Cheat sheet
 
