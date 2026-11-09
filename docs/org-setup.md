@@ -1,4 +1,4 @@
-# Turn on Platform Guardian for the whole org
+# Turn on OnO Platform Guardian for the whole org
 
 **For:** Magen / Yagil (Owners of the Claude organization) · **Time:** ~5 minutes · one time
 
