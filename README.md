@@ -22,7 +22,7 @@ The org has six Claude Code plugins — dev pipeline, two QA plugins, specs, rep
 ## 🔄 A session with Guardian
 
 ```
-claude ──► 1. OPEN       on your first message (even "hi"): git report vs. the central branch · "last time you stopped at …"
+claude ──► 1. OPEN       on your first message (any message): git report vs. the central branch · "last time you stopped at …"
              │           unfinished work in the plugins' documents → "login: 2/5 tasks, next T3"
              │           ⚠️🚨 behind central? → you choose: merge / rebase / continue
              │           on the central branch? → create a work branch
