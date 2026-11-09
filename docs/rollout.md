@@ -33,7 +33,7 @@ Deleting those files only hides them from the current tree; they stay in history
 
 ## G4.2 — managed settings (claude.ai admin console)
 
-Who: an **Owner** of the Claude organization. Where: **Organization settings → Claude Code → Managed settings** (server-managed; applies to every member). Users can't disable a plugin enabled here.
+Who: an **Owner** of the Claude organization — **Magen and Yagil** (confirmed 2026-11-09). Where: **Organization settings → Claude Code → Managed settings** (server-managed; applies to every member). Users can't disable a plugin enabled here.
 
 ```json
 {
@@ -60,7 +60,7 @@ Notes for the Owner:
 
 ## Open
 
-- Who is the org Owner? (vision open question 2)
+- ~~Who is the org Owner?~~ — Magen and Yagil (2026-11-09).
 - ~~Repo visibility~~ — public since 2026-11-09.
 
 ## Minimum Claude Code version: 2.1.140

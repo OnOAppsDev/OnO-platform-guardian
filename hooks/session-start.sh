@@ -33,7 +33,7 @@ if [ "${PG_ONBOARDING:-}" != "off" ] && [ ! -e "$marker" ] &&
   cat <<MSG
 
 FIRST TIME WITH GUARDIAN on this computer — this notice appears once (already marked as shown in $marker).
-Open your reply to their first message with an enthusiastic welcome full of emojis (🎉👋🚀), say in one line what Guardian does for them, then clearly offer the interactive tour and say exactly what to type: "Want a quick 3-minute tour of how to work with me? 👉 Type **yes** for the tour, or **later** to skip it for now." If yes → run the \`platform-guardian:onboarding\` skill. If later → tell them they can type **onboarding** any time, and continue the normal opener. Still show any git warning that needs attention (behind central, on central) — briefly.
+Open your reply to their first message with an enthusiastic welcome full of emojis (🎉👋🚀), say in one line what Guardian does for them, then clearly offer the interactive tour and say exactly what to type: "Want a quick 3-minute tour of how to work with me? 👉 Type **yes** for the tour, or **later** to skip it for now." If yes → run the \`platform-guardian:onboarding\` skill. If later → tell them they can type **onboarding** any time, plus the one-time setup so they always get the latest version: \`/plugin\` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — then continue the normal opener. Still show any git warning that needs attention (behind central, on central) — briefly.
 MSG
 fi
 

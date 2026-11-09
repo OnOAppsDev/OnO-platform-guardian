@@ -21,6 +21,7 @@ Fill the **Result** column as you go (✅ / ❌ + one line of what you saw), the
 |---|---|---|---|
 | 0.1 | `claude --version` | 2.1.140 or newer | |
 | 0.2 | The install above | Succeeds with no GitHub sign-in or error | |
+| 0.2b | `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** | The option exists and turns on | |
 | 0.3 | `/plugin` → installed plugins | `platform-guardian` **plus all six** Ono plugins (ono-project-inspector, ono-mobile-dev-plugin, ono-plugin-qa, spec-team-toolkit, matrix-qa-plugin, matrix-studio) — the six came with Guardian | |
 
 Quit Claude Code, then download the test kit (the setup script and this checklist — not loaded as a plugin):
@@ -58,6 +59,7 @@ Do this **first**, before §1 — the offer appears only once per computer. Afte
 | 0b.4 | Did anything change? `git status` in `app` | Nothing changed — the tour never touches git or files | |
 | 0b.5 | `/clear`, then `let's start` | **No** welcome offer again — normal opener | |
 | 0b.6 | Type `onboarding` | The tour starts again (on request) | |
+| 0b.6b | End of the tour (cheat sheet) | Includes the one-time auto-update setup line | |
 | 0b.7 | How did the tour *feel*? | Write a line: clear? exciting? too long? anything confusing | |
 
 ## 1. Opener — fires on startup

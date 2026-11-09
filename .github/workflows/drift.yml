@@ -1,0 +1,43 @@
+name: Org plugin drift
+
+# Daily: do the six Ono plugins still match Guardian's routing data?
+# Drift → one GitHub issue assigned to the maintainer (updated, not duplicated);
+# back in sync → the issue closes itself.
+
+on:
+  schedule:
+    - cron: "0 5 * * *" # every day, 08:00 Israel time
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    name: Routes match the org plugins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone every plugin the marketplace lists
+        run: scripts/fetch-org-plugins.sh "$RUNNER_TEMP/plugins"
+      - name: Check every routed command and version
+        id: check
+        run: |
+          set +e
+          scripts/check-routes.sh "$RUNNER_TEMP/plugins" --strict >"$RUNNER_TEMP/drift.txt" 2>&1
+          echo "rc=$?" >>"$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/drift.txt"
+      - name: Drift → open or update the issue
+        if: steps.check.outputs.rc != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/report-drift.sh open "$RUNNER_TEMP/drift.txt"
+      - name: In sync → close the issue
+        if: steps.check.outputs.rc == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/report-drift.sh close
+      - name: Mark the run red while drifted
+        if: steps.check.outputs.rc != '0'
+        run: exit 1
