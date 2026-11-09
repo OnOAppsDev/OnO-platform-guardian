@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.4] — 2026-11-09
+
+- Routing: spec-team-toolkit 0.5.0 renamed `lld-web-figma-spec` → `lld-web-backend-spec` (one integrated web LLD for frontend, backend and QA) — the `spec` route follows it. Caught by the routes check.
+
 ## [0.2.3] — 2026-11-09
 
 - Repo renamed `yes-platform-guardian` → `ono-platform-guardian`: manifest `repository`, clone commands and the drift-issue script point to the new name (GitHub redirects the old one).
