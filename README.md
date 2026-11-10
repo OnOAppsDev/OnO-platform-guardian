@@ -80,6 +80,8 @@ Then, once: `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **
 
 Installing Guardian installs the six org plugins it depends on. Needs Claude Code **2.1.140 or newer** (`claude --version`; `claude update`). For org-wide rollout, admins enable it through Claude for Organizations managed settings — exact JSON and steps in [`docs/rollout.md`](docs/rollout.md).
 
+**New here?** The one-page employee guide — install + everyday use: [`docs/employee-guide.md`](docs/employee-guide.md).
+
 Testing it for the team? Follow [`docs/tester-guide.md`](docs/tester-guide.md) — it uses this same install.
 
 Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
@@ -103,6 +105,7 @@ tests/run-all.sh                tests against throwaway git repos
 .github/workflows/ci.yml        tests on macOS bash 3.2 + Linux · version-bump check on PRs
 .github/workflows/drift.yml     daily: org plugins vs. routes.json → issue to the maintainer
 docs/                           vision · backlog · ecosystem status · project config · rollout · session log
+docs/employee-guide.md          one-page guide for employees: install + everyday use
 docs/tester-guide.md            one-page guide for whoever runs the live test → fills docs/live-test.md
 docs/org-setup.md               one-page guide for the org Owners: turn Guardian + auto-update on for everyone
 archive/2026-07-mcp-plan/       the superseded July MCP / 7-phase plan
