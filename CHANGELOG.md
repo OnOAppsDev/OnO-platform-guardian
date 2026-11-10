@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.5] — 2026-11-10
+
+- **First-time welcome no longer buries the tour offer** (first tester bug): the first reply is only the welcome + the tour offer, as its last line, and waits. Git questions, the branch choice and "what are we working on" come after the employee answers yes/later — before, they followed the offer in the same message and the tester almost missed the tour.
+- Docs: one-page employee guide, `docs/employee-guide.md`.
+
 ## [0.2.4] — 2026-11-09
 
 - Routing: spec-team-toolkit 0.5.0 renamed `lld-web-figma-spec` → `lld-web-backend-spec` (one integrated web LLD for frontend, backend and QA) — the `spec` route follows it. Caught by the routes check.

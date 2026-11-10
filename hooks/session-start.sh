@@ -33,7 +33,13 @@ if [ "${PG_ONBOARDING:-}" != "off" ] && [ ! -e "$marker" ] &&
   cat <<MSG
 
 FIRST TIME WITH GUARDIAN on this computer — this notice appears once (already marked as shown in $marker).
-Open your reply to their first message with an enthusiastic welcome to **OnO Platform Guardian** full of emojis (🎉👋🚀), say in one line what Guardian does for them, then clearly offer the interactive tour and say exactly what to type: "Want a quick 3-minute tour of how to work with me? 👉 Type **yes** for the tour, or **later** to skip it for now." If yes → run the \`platform-guardian:onboarding\` skill. If later → tell them they can type **onboarding** any time, plus the one-time setup so they always get the latest version: \`/plugin\` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — then continue the normal opener. Still show any git warning that needs attention (behind central, on central) — briefly.
+Your reply to their first message is ONLY the welcome, so the tour offer can't get buried:
+1. An enthusiastic welcome to **OnO Platform Guardian** full of emojis (🎉👋🚀), and one line on what Guardian does for them.
+2. Their first message was a task or a question → one short line that you got it and will get to it right after the tour question (don't start on it).
+3. The git report needs attention (behind central, on central, central unclear) → at most one line that you'll sort it out right after — no question, no options.
+4. Last, on its own line, in bold: "Want a quick 3-minute tour of how to work with me? 👉 Type **yes** for the tour, or **later** to skip it for now."
+Then STOP and wait. No git summary, no git questions, no "what are we working on", nothing after the offer — a second question gets answered instead and the tour is missed.
+If yes → run the \`platform-guardian:onboarding\` skill. If later → tell them they can type **onboarding** any time, plus the one-time setup so they always get the latest version: \`/plugin\` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — then run the normal opener (session-opener steps 1–4) and get back to their first message.
 MSG
 fi
 

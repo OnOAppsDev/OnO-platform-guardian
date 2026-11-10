@@ -76,6 +76,7 @@ expect_contains "offer names the onboarding skill" "$out" "platform-guardian:onb
 expect_contains "welcome uses the product name" "$out" "welcome to **OnO Platform Guardian**"
 expect_contains "offer says how to get it later" "$out" "type **onboarding** any time"
 expect_contains "offer says exactly what to type" "$out" "👉 Type **yes** for the tour, or **later**"
+expect_contains "offer is the whole first reply — nothing after it" "$out" "Then STOP and wait. No git summary, no git questions"
 expect_contains "offer includes the one-time auto-update setup" "$out" "**Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update**"
 [ -s "$PG_LOG_DIR/.state/onboarding-offered" ] && ok || fail "marker written" "$(ls -la "$PG_LOG_DIR/.state" 2>&1)"
 out="$(echo '{"source":"clear"}' | CLAUDE_PROJECT_DIR="$R" "$HOOK")"
