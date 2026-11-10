@@ -5,6 +5,7 @@ Optional file at the root of a work repository. **Absent = auto-detect everythin
 ```json
 {
   "centralBranch": "develop",
+  "commitPaths": ["docs/specs/**", "AUDIT.md"],
   "team": "ios",
   "role": "developer"
 }
@@ -13,10 +14,11 @@ Optional file at the root of a work repository. **Absent = auto-detect everythin
 | Key | Used by | Meaning |
 |---|---|---|
 | `centralBranch` | `scripts/git-status.sh` (G1) | The branch all work branches from and merges back into. Overrides detection (`origin/HEAD` → `develop` → `main` → `master`). Must exist on the remote (or locally when there is no remote); otherwise the report adds the `override-not-found` warning and falls back to detection. |
+| `commitPaths` | `hooks/pre-tool-use.sh`, session closer | Git-style globs of non-code files this project **does** commit (e.g. specs). Everything else that isn't code stays out of commits unless the employee asks. Keep the array on one line. |
 | `team` | reserved — router (G2) | Narrows intent routing to the team's plugins (e.g. `ios`, `android`, `web`, `qa`, `spec`). |
 | `role` | reserved — router (G2) | e.g. `developer`, `qa`, `pm`. |
 
-Unknown keys are ignored. The file is read without `jq`, so keep `"centralBranch": "<name>"` on one line.
+Unknown keys are ignored. The file is read without `jq`, so keep `"centralBranch": "<name>"` and the `"commitPaths": [...]` array each on one line.
 
 The session opener offers to create this file when the central branch can't be detected with confidence.
 
@@ -34,4 +36,10 @@ The session opener offers to create this file when the central branch can't be d
 
 ## Commit guard
 
-`hooks/pre-tool-use.sh` runs before every Bash command. Only `git add` / `git stage` / `git commit` (also after `cd`, `&&`, `;`, `|`, and with `git -C`) are inspected: it runs `git add --dry-run` with the same arguments and reads new files already staged, then checks the **new** (untracked) files against `routing/committed-artifacts.json` — `neverCommit` → denied; not on any `commit` list and a working-file type (`.md`, `.txt`, `.log`, `.html`, `.csv`, `.patch` …, except README / CHANGELOG / LICENSE and frontmatter planning docs) → permission prompt; anything else → no output. Commands with `$(…)` or backticks, and interactive adds, are skipped. Env: `PG_COMMIT_GUARD=off`.
+`hooks/pre-tool-use.sh` runs before every Bash command. Only `git add` / `git stage` / `git commit` (also after `cd`, `&&`, `;`, `|`, with `git -C`, and after `VAR=value` prefixes) are inspected: it runs `git add --dry-run` with the same arguments and reads new files already staged, then checks the **new** (untracked) files. **Only code goes in by default (Ono rule, every flow):**
+
+- `neverCommit` in `routing/committed-artifacts.json` (secrets, plugin scratch) → **denied, always**.
+- Documents, data and working files (`.md`, `.json`, `.yaml`, `.txt`, `.log`, `.html`, `.csv`, `.patch` …) and everything the Ono plugins write while they work (their `commit` lists, frontmatter planning docs) → **denied** — they stay out of the commit, on disk, not `.gitignore`d. Allowed when the project lists them in `"commitPaths"`, or when the employee asked for that file in chat (Claude then runs `PG_INCLUDE_FILES=1 git add <path>`).
+- Source code, README / CHANGELOG / LICENSE, `.env.example`, and config files a code change adds (`package.json`, `tsconfig*.json`, `Contents.json`, CI workflows …) → no output.
+
+Commands with `$(…)` or backticks, and interactive adds, are skipped. Env: `PG_COMMIT_GUARD=off`.

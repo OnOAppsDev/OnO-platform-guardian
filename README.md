@@ -3,7 +3,7 @@
   <p><strong>One plugin to install. One place to start. The right Ono process every time.</strong></p>
 
   ![Status](https://img.shields.io/badge/status-pilot%20prep-yellow?style=flat-square)
-  ![Version](https://img.shields.io/badge/version-0.2.5-blue?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.2.6-blue?style=flat-square)
   ![Org plugins](https://img.shields.io/badge/org%20plugins%20bundled-6-green?style=flat-square)
   ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-orange?style=flat-square)
 </div>
@@ -66,7 +66,8 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 - **Never pushes to the central branch.** Everything goes back through a PR; it asks before every push or PR, and you pick the target and reviewers.
 - **Never updates your branch silently** and never uses force operations.
 - **Offline?** The server check gives up after 5 seconds, and Guardian tells you the numbers may be out of date instead of calling you "up to date".
-- **Commit hygiene:** files the org plugins mean to be committed ([`routing/committed-artifacts.json`](routing/committed-artifacts.json)) are committed; stray session files go to `.gitignore`; secrets never.
+- **Only code goes into a commit** — in every flow. Documents, data and plugin working files (`.md`, `.json`, `.yaml` …, bug plans, task state, reports) stay out — on disk, not `.gitignore`d — unless the employee asks for a file or the project lists it in `.platform-guardian.json` `"commitPaths"`. Secrets never. A guard enforces it on every `git add` / `git commit`.
+- **Pre-PR check before every PR:** a one-page PDF of what your change could break (`skills/pre-pr`), outside the repo, never committed. Type **skip** to skip it.
 - **QA repos:** both QA plugins block Claude's own commits there by design — Guardian hands you the commands to run instead.
 
 ## 🚀 Install
@@ -91,7 +92,7 @@ Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
 ```
 .claude-plugin/plugin.json      manifest + dependencies on the six org plugins
 hooks/                          SessionStart (open) · UserPromptSubmit (session length) · PreToolUse (commit guard)
-skills/                         session-opener · work-router · session-closer · onboarding
+skills/                         session-opener · work-router · session-closer · onboarding · pre-pr
 scripts/git-status.sh           JSON git report (bash 3.2, no jq, fails open)
 scripts/session-log.sh          local session notes — ~/.claude/platform-guardian/, never in git
 scripts/resume-state.sh         unfinished work from the plugins' own documents (docs/resume-state.md)

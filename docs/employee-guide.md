@@ -34,10 +34,11 @@ One plugin to install. One place to start. The right Ono process every time.
    - asks: **bug, feature, QA, spec…?**
 3. **Say what you're doing in plain words** — "fix bug ABC-123", "new login screen", "write a QA plan". Guardian starts the right Ono plugin for you. No commands to remember.
 4. **Approvals are yours.** When a step needs a human (approving a plan, QA sign-off), Guardian stops and tells you exactly what to type.
-5. **Done** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian commits, pushes and opens a PR — never straight to the main branch, and it asks before each step. Then type **`/clear`** to start fresh. Nothing is lost.
+5. **Done** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian shows what goes into the commit (**only code** — notes and plugin documents stay out unless you ask), runs a quick **pre-PR check** (a one-page PDF of what to test; type **skip** to skip), then pushes and opens a PR — never straight to the main branch, and it asks before each step. Then type **`/clear`** to start fresh. Nothing is lost.
 
 ## Good to know
 
+- Want a document in the PR (e.g. a spec)? Just say so — "put docs/specs/login/hld.md in the PR". A project that always commits some paths lists them in `.platform-guardian.json`: `"commitPaths": ["docs/specs/**"]`.
 - Tired of the "which branch is the main one?" question in a project? Add `.platform-guardian.json` to that project with `{"centralBranch": "<its main branch>"}` and commit it — the whole team stops getting asked.
 - 🎉 Your **first** session after installing opens with a welcome and a 3-minute tour — say yes.
 - 🎓 Type **onboarding** any time to see the tour again.

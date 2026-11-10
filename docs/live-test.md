@@ -97,24 +97,28 @@ On `pg/clean` in `app`. After the opener asks what we're doing:
 | 3.4 | "approve the QA plan" | **Refuses to run it** · tells you the exact command to type yourself | |
 | 3.5 | Disable one Ono plugin (`/plugin`), ask for its intent | Gives the exact `/plugin install …@ono-plugin-marketplace` line | |
 
-## 4. Commit guard (new — G3.5)
+## 4. Commit guard — only code goes in (updated 0.2.6)
 
 On `pg/clean` in `app`. Ask Claude to run each command **exactly** (e.g. "run `git add notes.md`").
 
 | # | Setup | Ask Claude to run | Expected | Result |
 |---|---|---|---|---|
-| 4.1 | `echo x > notes.md` | `git add notes.md` | A permission prompt naming `notes.md` as a working file | |
+| 4.1 | `echo x > notes.md` | `git add notes.md` | **Left out** — Claude says `notes.md` stayed out of the commit; the file is still on disk, `.gitignore` unchanged | |
+| 4.1b | `mkdir -p docs/bugs/T-1 && echo '{}' > docs/bugs/T-1/state.json` | `git add docs/bugs` | **Left out** — plugin working files (`.json` too) don't go in | |
+| 4.1c | — | Say "I do want notes.md in the PR" | Claude stages exactly that file (with `PG_INCLUDE_FILES=1`) — no prompt from Guardian | |
 | 4.2 | `echo K=1 > .env.test` | `git add .env.test` | **Blocked** — "must never be committed" | |
 | 4.3 | create `src/Foo.kt` (any source file) | `git add src/Foo.kt` | No prompt from Guardian | |
 | 4.4 | — | `git status` | No prompt from Guardian | |
 
-Clean up: `git reset -q && rm -f notes.md .env.test src/Foo.kt`.
+Clean up: `git reset -q && rm -rf notes.md .env.test src/Foo.kt docs/bugs/T-1`.
 
 ## 5. Closer + session log
 
 | # | Step | Expected | Result |
 |---|---|---|---|
-| 5.1 | On `pg/clean` with one small change, say "close the session" | Lists will commit / will ignore · waits for OK · commits on the work branch · asks before push / PR (say **no push** for the test) | |
+| 5.1 | On `pg/clean` with one small code change **plus** a new `notes.md`, say "close the session" | Lists ✅ will commit (the code) / ⏸️ stays out (`notes.md`) · waits for OK · commits only the code on the work branch · `notes.md` still on disk, not in `.gitignore` | |
+| 5.1b | (continues) | Before asking to push: one line about the pre-PR check, then a **one-page PDF checklist opens** · `git status` shows no `regression-checklist` file in the repo · then asks before push / PR (say **no push** for the test) | |
+| 5.1c | Same again, but type **skip** when the pre-PR line appears | Skips the check, goes straight to the push / PR question | |
 | 5.2 | — | Ends with "✅ Everything is saved" + the 3 numbered `/clear` steps | |
 | 5.3 | `cat ~/.claude/platform-guardian/*/pg_clean.md` | Entry with what we did / where we stopped / next step | |
 | 5.4 | `/clear`, then `let's start` | Opener starts with "Last time you stopped at …" | |

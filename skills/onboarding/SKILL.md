@@ -49,7 +49,8 @@ Facts if they ask: the dev plugin covers mobile (iOS, Android, React Native), TV
 ### 3. ✋🛡️ What I'll never do for you
 
 - ✋ **Approvals are yours** — approving a test plan, QA sign-off, approving a design doc. I tell you exactly what to type, but never do it for you, even if you ask 🙂
-- 🛡️ **Commits stay clean** — secrets (`.env`, keys) never get in, and I ask before committing stray notes or drafts. Your code goes in; junk doesn't. 🧹
+- 🛡️ **Only code goes into your commits** — notes, drafts and the plugins' working documents stay out (still on your disk) unless you ask for one; secrets (`.env`, keys) never. 🧹
+- 🔍 **Before every PR** I open a one-page checklist of what your change could break — test the 🔴 items. (**skip** skips it.)
 
 ### 4. 👋 Ending a session
 

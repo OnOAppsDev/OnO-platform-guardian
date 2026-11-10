@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "verifiedAt": "2026-11-08",
-  "note": "Files the Ono plugins write into a work repo and intend to be COMMITTED. The session closer never .gitignores these. Patterns are git-style globs relative to the repo root. 'neverCommit' lists plugin scratch files that land in the repo but must not be committed. Generated ledger/readiness files must never be edited, formatted or line-ending-normalized.",
+  "note": "Where the Ono plugins write files into a work repo. Ono rule (2026-11-10): only code goes into a commit by default — the files on the 'commit' lists below stay OUT unless the employee asks for one or the project lists it in .platform-guardian.json commitPaths. The session closer never .gitignores these. Patterns are git-style globs relative to the repo root. 'neverCommit' lists plugin scratch files that land in the repo but must not be committed. Generated ledger/readiness files must never be edited, formatted or line-ending-normalized.",
   "plugins": {
     "ono-mobile-dev-plugin": {
       "commit": [
