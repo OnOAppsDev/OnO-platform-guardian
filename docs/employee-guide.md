@@ -29,17 +29,19 @@ One plugin to install. One place to start. The right Ono process every time.
    claude
    ```
 2. **Write anything** — "hi", "let's start", whatever. Guardian:
-   - checks your git state — which branch you're on, whether you're behind `develop`. Something off → you'll see ⚠️🚨 and **you** decide what to do;
+   - checks your git state — which branch you're on, whether you're behind your project's **main branch** (each project has its own — often `develop`; if Guardian isn't sure, it asks you). Something off → you'll see ⚠️🚨 and **you** decide what to do;
    - reminds you where you stopped last time;
    - asks: **bug, feature, QA, spec…?**
 3. **Say what you're doing in plain words** — "fix bug ABC-123", "new login screen", "write a QA plan". Guardian starts the right Ono plugin for you. No commands to remember.
 4. **Approvals are yours.** When a step needs a human (approving a plan, QA sign-off), Guardian stops and tells you exactly what to type.
-5. **Done** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian commits, pushes and opens a PR — never straight to `develop`, and it asks before each step. Then type **`/clear`** to start fresh. Nothing is lost.
+5. **Done** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian commits, pushes and opens a PR — never straight to the main branch, and it asks before each step. Then type **`/clear`** to start fresh. Nothing is lost.
 
 ## Good to know
 
+- Tired of the "which branch is the main one?" question in a project? Add `.platform-guardian.json` to that project with `{"centralBranch": "<its main branch>"}` and commit it — the whole team stops getting asked.
+
 - 🎉 Your **first** session after installing opens with a welcome and a 3-minute tour — say yes.
 - 🎓 Type **onboarding** any time to see the tour again.
-- Guardian never pushes to `develop`, never updates your branch without asking, never commits secrets.
+- Guardian never pushes to the main branch, never updates your branch without asking, never commits secrets.
 - In QA repos the QA plugins block Claude from committing — Guardian gives you the commands to run yourself.
 - Something looks wrong? Tell Tom — a screenshot of the Claude message is the most useful thing.
