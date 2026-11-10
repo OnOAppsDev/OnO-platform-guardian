@@ -31,7 +31,7 @@ Key fields: `repo`, `branch`, `detached`, `fetch` (`ok` | `failed` | `timeout` |
 
 ### 0. First time with Guardian
 
-If the session-start context has the **FIRST TIME WITH GUARDIAN** notice: open with the enthusiastic emoji welcome and the tour offer it describes — that comes before everything else. Yes → run `platform-guardian:onboarding` — it replaces steps 1–4 (it shows the git state and asks what we're working on itself); a ⚠️🚨 behind / on-central warning is still mentioned in the welcome, briefly. Later → "Type **onboarding** any time 🎓" and continue with step 1. The notice appears once; never re-offer on your own.
+If the session-start context has the **FIRST TIME WITH GUARDIAN** notice: your first reply is **only** the emoji welcome and the tour offer it describes, with the offer as the last line — then stop and wait. No git summary, no git or branch questions, no "what are we working on" in that reply: a second question gets answered instead and the tour is missed. A git situation that needs attention, or a task in their first message, gets at most one line ("I'll get to it right after"). Yes → run `platform-guardian:onboarding` — it replaces steps 1–4 (it shows the git state and asks what we're working on itself). Later → "Type **onboarding** any time 🎓", then steps 1–4 as usual and back to their first message. The notice appears once; never re-offer on your own.
 
 ### 1. Greet + where we stopped
 

@@ -53,7 +53,8 @@ Do this **first**, before §1 — the offer appears only once per computer. Afte
 
 | # | Step | Expected | Result |
 |---|---|---|---|
-| 0b.1 | First message after installing: `let's start` | Enthusiastic welcome with emojis 🎉 · one line on what Guardian does · clear offer of the tour that says exactly what to type (👉 **yes** / **later**) | |
+| 0b.1 | First message after installing: `let's start` | Enthusiastic welcome with emojis 🎉 · one line on what Guardian does · clear offer of the tour that says exactly what to type (👉 **yes** / **later**) · **the offer is the last line and nothing comes after it** — no git or branch questions, no "what are we working on" until you answer | |
+| 0b.1b | (only if 0b.1 was already used) Same, but first message is a task and you're on `develop` | One line "got it, right after" + at most one git heads-up line · still ends with the tour offer and waits | |
 | 0b.2 | Say **yes** | Tour, one short step per message, **each step ends with a clear "👉 Type next …" line** and waits for you, **no second welcome**: how a session starts (shows *your* branch) → "just tell me what you're doing" (try it — it shows what it *would* start, starts nothing) → what it never does for you (approvals, commit guard) → closing → cheat sheet + "what are we working on?" | |
 | 0b.3 | Mid-tour, ask a question, then say **skip** | Answers briefly · skip jumps to the cheat sheet | |
 | 0b.4 | Did anything change? `git status` in `app` | Nothing changed — the tour never touches git or files | |
