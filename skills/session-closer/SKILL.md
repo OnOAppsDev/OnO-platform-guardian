@@ -1,6 +1,6 @@
 ---
 name: session-closer
-description: Platform Guardian session closer. Run when the employee wants to stop or wrap up ("I'm done", "that's it for today", "close the session", "bye", "thanks, that's all" — in any language), when they accept a close-out suggestion from the "[platform-guardian]" session-length signal, or after a plugin stage completes and they agree to stop. Saves the work safely — commit hygiene, commit on a work branch, push, PR to the central branch (never a direct push to it) — writes the local session-log entry, gives a plain-language summary and tells them to /clear.
+description: Platform Guardian session closer. Run when the employee wants to stop or wrap up ("I'm done", "that's it for today", "close the session", "bye", "thanks, that's all" — in any language), when they accept a close-out suggestion from the "[platform-guardian]" session-length signal, or after a plugin stage completes and they agree to stop. Saves the work safely — commit hygiene (only code unless the employee asks), commit on a work branch, automatic pre-PR regression check, push, PR to the central branch (never a direct push to it) — writes the local session-log entry, gives a plain-language summary and tells them to /clear.
 ---
 
 # Session closer
@@ -26,20 +26,24 @@ If `repo` is `false`, skip to step 6. If `operation` is set (merge/rebase in pro
 
 **Git guards.** If `guards.matrixQa` is true (Matrix QA repo — every git write and `gh pr create` from Claude is blocked) or `guards.onoQaCommitBlocked` is true (Ono QA repo — `git commit` / `git push` from Claude are blocked), the plugin's owners want the QA engineer to run those themselves. Do steps 2–5 as usual, but instead of running the blocked commands, give them as one ready-to-paste block the employee runs with the `!` prefix (e.g. `! git commit -m "…"`), and check the result with `git status` afterwards. Never work around the guard. In QA repos, never edit, reformat or re-save generated ledger / readiness files (`doNotTouch` in the allowlist).
 
-### 2. Commit hygiene — decide what belongs in git
+### 2. Commit hygiene — only code goes in, unless the employee asks
 
-Go through `changes.files` (and `git status --porcelain` if the list is truncated):
+**Ono rule, every flow (bugs, features, reviews, specs, QA, inspections):** a commit holds the code change. Documents, data and working files stay **out** — not deleted, not `.gitignore`d, just not committed — unless the employee explicitly asks for a file or the project lists it in `.platform-guardian.json` `"commitPaths"`.
 
-- **Modified tracked files** → normally part of the commit; mention anything that looks accidental (debug code, local config).
-- **New untracked files** → check against the committed-artifacts allowlist, `${CLAUDE_PLUGIN_ROOT}/routing/committed-artifacts.json` (files the Ono plugins intend to be committed — planning docs, QA plans, inspector outputs, …):
-  - on a plugin's `commit` list, a planning doc by frontmatter, or project source the employee wrote → commit;
-  - on a `neverCommit` list (`*.bak`, refresh snapshots, `.env`, keys, …) → `.gitignore`, never commit;
-  - a stray file created during the session (notes, scratch scripts, tool output) → propose adding it to `.gitignore` (precise path or pattern — **never** a blanket `*.md`). The `.gitignore` change is committed in the same PR.
-  - not sure → ask.
+Go through `changes.files` (and `git status --porcelain` if the list is truncated) and sort every path:
 
-Show the employee the short list: **will commit** / **will ignore** / **left as-is**, and wait for their OK.
+- **✅ Will commit**
+  - modified tracked files — mention anything that looks accidental (debug code, local config);
+  - new **source code** and the config files that come with it (`package.json`, `Contents.json`, CI workflows …);
+  - new files on the project's `"commitPaths"` list.
+- **⏸️ Stays out** (default for everything else that's new): `.md`, `.json`, `.yaml`, `.txt`, `.log`, `.html` … — notes, drafts, tool output, and the documents the Ono plugins write while they work (bug work plans, task state, planning docs, reviews, spec drafts, inspector reports — `routing/committed-artifacts.json` lists where they land). They stay on disk for the next session.
+- **⛔ Never**: anything on a `neverCommit` list (`.env`, keys, `*.bak` …) — point it out.
 
-A PreToolUse guard (`hooks/pre-tool-use.sh`) backs this up on every `git add` / `git commit`: new files on a `neverCommit` list are blocked, and new working files (`.md`, `.txt`, `.log`, `.html` … not on any `commit` list) trigger a permission prompt. If it blocks or the employee declines, add those paths to `.gitignore` and stage the rest — never work around it (e.g. `git add -f` on a blocked file).
+Show the short list — **✅ will commit** / **⏸️ stays out** — and wait for their OK. One line under it: "Want any ⏸️ file in the PR? Name it." Only when the employee names a file: stage that exact path with `PG_INCLUDE_FILES=1 git add ‹path›`. Exception — when the file **is** the deliverable of the flow (the spec of a spec session, the inspector's `CLAUDE.md` / `AUDIT.md`), say so and ask about it by name; still only on their yes.
+
+Never `git add -A` / `git add .`; stage the ✅ paths explicitly. Add a `.gitignore` line only if the employee asks (e.g. a file that keeps coming back) — exact path, never a blanket `*.md` / `*.json`.
+
+A PreToolUse guard (`hooks/pre-tool-use.sh`) enforces this on every `git add` / `git commit`, in any flow — also when an Ono plugin's own process commits: new non-code files are denied unless the command carries `PG_INCLUDE_FILES=1` or the project lists them; `neverCommit` files are denied always. If it denies, stage the rest and tell the employee in one line which files stayed out — never work around it (no `git add -f`, no `PG_INCLUDE_FILES=1` the employee didn't ask for).
 
 ### 3. Branch
 
@@ -49,6 +53,30 @@ A PreToolUse guard (`hooks/pre-tool-use.sh`) backs this up on every `git add` / 
 ### 4. Commit
 
 Stage the confirmed paths and commit with a short message in the style of the repo's recent history (`git log --oneline -10`). Nothing to commit → say so and continue.
+
+### 4b. Pre-PR check (automatic, before every push + PR)
+
+Before asking to push, run the **`platform-guardian:pre-pr`** skill on the employee's changes. Many employees see it for the first time here — explain it so they know what it is, why, and what to do. In their language, roughly:
+
+**Before** (then run it):
+
+> 🔍 **Before the PR — a quick safety check.** I'm looking at the code you changed and everything that uses it, to find what it might have broken somewhere else. In a moment a one-page PDF opens with a short list of what to test in the app:
+> - 🔴 **Must test** — check these before you send the PR.
+> - 🟠 **Should test** — worth a quick look.
+> - ⚠️ **Watch out** — spots in the code that look risky.
+>
+> The PDF is just for you — not saved in the project, not part of the PR. (Type **skip** to skip it.)
+
+**After** the PDF opened — one short message, then wait:
+
+> ✅ **Your checklist is open:** ‹N› 🔴 must test · ‹M› 🟠 should test. Most important: ‹the single biggest risk, plain words›.
+> 👉 Test the 🔴 items in the app, then type **push** — or **push now** if you've already tested them.
+
+- No PDF (no Chrome on the machine): show the same list right in the chat instead, and say so.
+- Skip the check when: nothing was committed in this session, only docs / non-code files changed, it's a QA repo (`guards.matrixQa` / `guards.onoQaCommitBlocked`), or the employee types **skip**.
+- Something on the list turns out broken → that's the point: fix it first (back to the plugin's flow), then close again.
+- Their answer (**push** / **push now**) is the go-ahead for step 5's push question — still name the target branch and ask for reviewers there.
+- Mention it in the session-log entry (`pre-PR: N 🔴 / M 🟠` or `skipped`).
 
 ### 5. Push + PR
 
@@ -64,7 +92,7 @@ Stage the confirmed paths and commit with a short message in the style of the re
 - **What we did:** ‹1–2 short sentences›
 - **Where we stopped:** ‹the exact point, e.g. "validation done, API call not started"›
 - **Next step:** ‹the first thing to do next session›
-- **Git:** ‹branch› · ‹committed / pushed / PR link, or "not pushed"›
+- **Git:** ‹branch› · ‹committed / pushed / PR link, or "not pushed"› · pre-PR: ‹N 🔴 / M 🟠, or skipped›
 EOF
 ```
 

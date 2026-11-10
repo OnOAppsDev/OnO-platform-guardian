@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.6] — 2026-11-10
+
+- **Only code goes into a commit, in every flow** (tester bug: two bug fixes pushed MD + JSON files that didn't belong in the PR). The commit guard now leaves new documents, data and plugin working files out — `.json` / `.yaml` included, and the Ono plugins' own documents (bug work plans, task state, planning docs, reviews, spec drafts, inspector reports) too. They stay on disk, never deleted or `.gitignore`d. A file goes in only when the employee asks for it (`PG_INCLUDE_FILES=1 git add <path>`) or the project lists it in `.platform-guardian.json` `"commitPaths"`. The session closer shows ✅ will commit / ⏸️ stays out.
+- **Pre-PR check before every PR:** new `platform-guardian:pre-pr` skill (one-page PDF of what the change could break, outside the repo, never committed). The closer runs it automatically before push + PR; **skip** skips it; not run in QA repos or for docs-only changes. Also on request: "ready for PR", "what could I have broken".
+
 ## [0.2.5] — 2026-11-10
 
 - **First-time welcome no longer buries the tour offer** (first tester bug): the first reply is only the welcome + the tour offer, as its last line, and waits. Git questions, the branch choice and "what are we working on" come after the employee answers yes/later — before, they followed the offer in the same message and the tester almost missed the tour.

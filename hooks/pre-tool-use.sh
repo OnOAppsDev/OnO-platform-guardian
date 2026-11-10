@@ -4,12 +4,15 @@
 # When a Bash command runs `git add` / `git stage` / `git commit`, works out
 # which NEW files (not yet tracked) it would put into git — `git add --dry-run`
 # with the same arguments, plus new files already staged for a commit — and
-# checks them against routing/committed-artifacts.json:
-#   - on a `neverCommit` list (secrets, plugin scratch)        → deny
-#   - not on any `commit` list and looks like a working file
-#     (.md / .txt / .log / .html …, not a frontmatter planning
-#     doc, not README / CHANGELOG / …)                         → ask the employee
-#   - anything else (new source code, allowlisted artifacts)   → no output
+# checks them against routing/committed-artifacts.json and the project's
+# .platform-guardian.json "commitPaths":
+#   - on a `neverCommit` list (secrets, plugin scratch)        → deny, always
+#   - a document / data / working file (.md .json .yaml .txt .log .html …),
+#     or a file an Ono plugin writes (plugin `commit` lists, frontmatter
+#     planning docs)                                            → deny: it stays OUT of
+#     the commit unless the employee asked for it in chat (the command then
+#     carries PG_INCLUDE_FILES=1) or the project lists it in "commitPaths"
+#   - anything else (new source code, README / CHANGELOG, known config files) → no output
 # Fails open: anything it can't parse → no output, exit 0. Never writes stderr.
 #
 # Env: PG_COMMIT_GUARD=off disables it; PG_ALLOWLIST overrides the allowlist path.
@@ -98,24 +101,37 @@ EOF
   return 1
 }
 
-# classify PATH (repo-relative; FILE = absolute) → never | commit | stray | ok
+# project_paths TOPLEVEL → the project's .platform-guardian.json "commitPaths" globs, one per line
+# (read without jq: keep the array on one line).
+project_paths() {
+  [ -f "$1/.platform-guardian.json" ] || return 0
+  sed -n 's/.*"commitPaths"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p' "$1/.platform-guardian.json" \
+    | head -n 1 | tr ',' '\n' | sed -n 's/^[[:space:]]*"\([^"]*\)"[[:space:]]*$/\1/p'
+}
+
+# classify PATH FILE TOPLEVEL (PATH repo-relative; FILE absolute) → never | stray | ok
 classify() {
-  local path="$1" file="$2" base="${1##*/}"
+  local path="$1" file="$2" base="${1##*/}" g
   if ! rule_match except "$path" && rule_match never "$path"; then echo never; return; fi
-  rule_match commit "$path" && { echo commit; return; }
+  while IFS= read -r g; do
+    [ -n "$g" ] && glob_match "$path" "$g" && { echo ok; return; }
+  done <<PATHS
+$(project_paths "$3")
+PATHS
   case "$base" in
-    README*|CHANGELOG*|LICENSE*|CONTRIBUTING*|CODEOWNERS|SECURITY*) echo ok; return ;;
+    README*|CHANGELOG*|LICENSE*|CONTRIBUTING*|CODEOWNERS|SECURITY*|.platform-guardian.json) echo ok; return ;;
+    # config files a code change legitimately adds
+    .env.example|package.json|package-lock.json|tsconfig*.json|jsconfig*.json|app.json|eas.json|babel.config.json|\
+    .eslintrc*|.prettierrc*|Contents.json|pubspec.yaml|pnpm-workspace.yaml|\
+    docker-compose*.yml|docker-compose*.yaml) echo ok; return ;;
   esac
+  case "$path" in .github/*|.gitlab-ci.yml|.circleci/*) echo ok; return ;; esac
+  rule_match commit "$path" && { echo stray; return; }
   case "$base" in
-    *.md|*.markdown|*.txt|*.log|*.html|*.htm|*.csv|*.tsv|*.tmp|*.out|*.orig|*.rej|*.patch|*.diff|*.swp) ;;
-    *) echo ok; return ;;
+    *.md|*.markdown|*.txt|*.log|*.html|*.htm|*.csv|*.tsv|*.tmp|*.out|*.orig|*.rej|*.patch|*.diff|*.swp|\
+    *.json|*.jsonl|*.yaml|*.yml) echo stray ;;
+    *) echo ok ;;
   esac
-  # dev-plugin planning docs have no fixed name: YAML frontmatter with doc_schema_version + feature
-  if [ -f "$file" ] && head -n 30 "$file" | grep -q '^doc_schema_version:' \
-     && head -n 30 "$file" | grep -q '^feature:'; then
-    echo commit; return
-  fi
-  echo stray
 }
 
 # --- walk the command: `cd X`, `git [-C X] add|stage|commit …` -------------------------
@@ -139,7 +155,8 @@ segments="$(printf '%s\n' "$cmd" | sed -e 's/&&/\
 /g')"
 
 while IFS= read -r seg; do
-  seg="$(printf '%s' "$seg" | sed 's/^[[:space:]]*//')"
+  # leading VAR=value assignments (e.g. PG_INCLUDE_FILES=1 git add …) don't hide the git command
+  seg="$(printf '%s' "$seg" | sed -e 's/^[[:space:]]*//' -e 's/^\([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]][[:space:]]*\)*//')"
   case "$seg" in
     cd|cd\ *|git|git\ *) ;;
     *) continue ;;
@@ -197,14 +214,16 @@ EOF
 
 [ -n "$new_files" ] || exit 0
 
+# the employee asked in chat to include specific files → Claude re-runs with PG_INCLUDE_FILES=1
+include=""; case "$cmd" in *PG_INCLUDE_FILES=1*) include=1 ;; esac
 never="" stray="" seen="$nl"
 while IFS="	" read -r top p; do
   [ -n "$p" ] || continue
   case "$seen" in *"$nl$top/$p$nl"*) continue ;; esac
   seen="$seen$top/$p$nl"
-  case "$(classify "$p" "$top/$p")" in
+  case "$(classify "$p" "$top/$p" "$top")" in
     never) never="$never$p$nl" ;;
-    stray) stray="$stray$p$nl" ;;
+    stray) [ -n "$include" ] || stray="$stray$p$nl" ;;
   esac
 done <<EOF
 $new_files
@@ -227,7 +246,7 @@ if [ -n "$never" ]; then
   emit deny "[platform-guardian] Blocked: these new files must never be committed — secrets or plugin scratch files (routing/committed-artifacts.json): $(list "$never").
 Stage only the other files (list paths explicitly, not \`git add .\`) and add these to .gitignore. If the employee really needs one of them in git, they run the git command themselves."
 elif [ -n "$stray" ]; then
-  emit ask "[platform-guardian] These new files look like working files (notes, drafts, tool output) and are not on the Ono committed-artifacts list: $(list "$stray").
-Commit them only if you want them in the repo. Otherwise decline, and Claude will add them to .gitignore (exact paths, never a blanket *.md) and stage the rest."
+  emit deny "[platform-guardian] Left out of the commit: these new files are documents, data or plugin working files, not code: $(list "$stray").
+Ono rule: only code goes into a commit unless the employee asks for a file. Stage only the other files (list paths explicitly, not \`git add .\` / \`-A\`) and keep these on disk — don't delete them and don't add them to .gitignore. Then tell the employee in one line which files stayed out. If they explicitly want one in, re-run with that path only: \`PG_INCLUDE_FILES=1 git add <path>\`. A project can always commit some paths by listing them in .platform-guardian.json \"commitPaths\"."
 fi
 exit 0

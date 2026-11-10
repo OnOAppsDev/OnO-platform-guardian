@@ -1,6 +1,6 @@
 ---
 name: work-router
-description: Platform Guardian router. Run after the session opener asks "what are we working on", or whenever an Ono employee states what they want to do — build a feature, fix a bug, continue a task, review code, hand off to QA, write a test plan or run QA, write a spec (HLD / LLD / SPAC), onboard to or inspect a repo, prepare a release — or asks "where was I / what's next". Classifies the intent, confirms it, resumes in-progress work from the Ono plugins' own state, and starts the right Ono plugin command. Never runs human-only approval steps.
+description: Platform Guardian router. Run after the session opener asks "what are we working on", or whenever an Ono employee states what they want to do — build a feature, fix a bug, continue a task, review code, hand off to QA, write a test plan or run QA, write a spec (HLD / LLD / SPAC), onboard to or inspect a repo, prepare a release — or asks "where was I / what's next", or wants a pre-PR regression check ("ready for PR", "what could I have broken"). Classifies the intent, confirms it, resumes in-progress work from the Ono plugins' own state, and starts the right Ono plugin command. Never runs human-only approval steps.
 ---
 
 # Work router
@@ -13,7 +13,7 @@ The routing map is data: `${CLAUDE_PLUGIN_ROOT}/routing/routes.json` — read it
 
 ### 1. Classify
 
-Match what the employee said to one intent in `routes.json` (`feature`, `continue-task`, `bug`, `review`, `qa-handoff`, `release`, `figma-theme`, `qa-mobile`, `qa-web-matrix`, `spec`, `design-system`, `onboard-repo`). If two fit, or none, ask one short question with the likely options. If the request is itself a human-only step ("approve the plan", "sign off", "resolve this bug") → don't classify or ask; answer as in **Human-only steps** below, with the command for this repo's plugin.
+Match what the employee said to one intent in `routes.json` (`feature`, `continue-task`, `bug`, `review`, `qa-handoff`, `release`, `figma-theme`, `qa-mobile`, `qa-web-matrix`, `spec`, `design-system`, `onboard-repo`). If two fit, or none, ask one short question with the likely options. **Guardian's own intent — not in `routes.json`:** "ready for PR", "pre-PR", "what could I have broken", "regression checklist" → run the `platform-guardian:pre-pr` skill directly (no confirmation needed; it changes nothing). The session closer also runs it automatically before every PR. If the request is itself a human-only step ("approve the plan", "sign off", "resolve this bug") → don't classify or ask; answer as in **Human-only steps** below, with the command for this repo's plugin.
 
 **QA has two plugins** — the QA team uses both. Decide from the nature of the task and the repo (each intent's `pickWhen`): mobile / TV app, Appium, a QA workspace → `qa-mobile` (ono-plugin-qa); web project, Playwright, an LLD in `qa/lld/`, `matrix-qa.config.json` → `qa-web-matrix` (matrix-qa-plugin). Ask what they're testing only when you can't tell on your own.
 
