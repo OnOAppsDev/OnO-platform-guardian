@@ -39,7 +39,6 @@ One plugin to install. One place to start. The right Ono process every time.
 ## Good to know
 
 - Tired of the "which branch is the main one?" question in a project? Add `.platform-guardian.json` to that project with `{"centralBranch": "<its main branch>"}` and commit it — the whole team stops getting asked.
-
 - 🎉 Your **first** session after installing opens with a welcome and a 3-minute tour — say yes.
 - 🎓 Type **onboarding** any time to see the tour again.
 - Guardian never pushes to the main branch, never updates your branch without asking, never commits secrets.
