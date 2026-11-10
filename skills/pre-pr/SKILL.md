@@ -123,5 +123,7 @@ python3 "<skill base directory>/scripts/md_to_pdf_open.py" "$OUT_DIR/regression-
 
 (If there is no PDF, open the `.md` instead: `open` on macOS, `xdg-open` on Linux.)
 
-Then reply in chat with **at most 5 lines**: the scope used, the count of 🔴/🟠 items, the single most important risk, that the PDF was opened (with its path), and exactly this line:
+**Called from the Guardian session closer?** Don't write the reply below — hand the counts (🔴 / 🟠) and the single biggest risk back to the closer; it explains the result to the employee in plain words (closer step 4b).
+
+Otherwise reply in chat with **at most 5 lines**, in plain words (many employees see this for the first time — say what 🔴 / 🟠 mean if it's their first run): the scope used, the count of 🔴/🟠 items, the single most important risk, that the PDF was opened (with its path), and exactly this line:
 `Regression checklist created locally only — not staged, not committed, and not part of the PR.`

@@ -56,10 +56,26 @@ Stage the confirmed paths and commit with a short message in the style of the re
 
 ### 4b. Pre-PR check (automatic, before every push + PR)
 
-Before asking to push, run the **`platform-guardian:pre-pr`** skill on the employee's changes: it traces what those changes could break and opens a one-page PDF checklist (written outside the repo, never committed). Say it in one line first: "Before the PR, a quick check of what your change could affect — the PDF opens in a moment (type **skip** to skip it)."
+Before asking to push, run the **`platform-guardian:pre-pr`** skill on the employee's changes. Many employees see it for the first time here — explain it so they know what it is, why, and what to do. In their language, roughly:
 
-- Skip it when: nothing was committed in this session, only docs / non-code files changed, it's a QA repo (`guards.matrixQa` / `guards.onoQaCommitBlocked`), or the employee types **skip**.
-- After it opens: "Test the 🔴 items before the PR goes to review." Then go to step 5 — the employee decides whether to push now or after testing.
+**Before** (then run it):
+
+> 🔍 **Before the PR — a quick safety check.** I'm looking at the code you changed and everything that uses it, to find what it might have broken somewhere else. In a moment a one-page PDF opens with a short list of what to test in the app:
+> - 🔴 **Must test** — check these before you send the PR.
+> - 🟠 **Should test** — worth a quick look.
+> - ⚠️ **Watch out** — spots in the code that look risky.
+>
+> The PDF is just for you — not saved in the project, not part of the PR. (Type **skip** to skip it.)
+
+**After** the PDF opened — one short message, then wait:
+
+> ✅ **Your checklist is open:** ‹N› 🔴 must test · ‹M› 🟠 should test. Most important: ‹the single biggest risk, plain words›.
+> 👉 Test the 🔴 items in the app, then type **push** — or **push now** if you've already tested them.
+
+- No PDF (no Chrome on the machine): show the same list right in the chat instead, and say so.
+- Skip the check when: nothing was committed in this session, only docs / non-code files changed, it's a QA repo (`guards.matrixQa` / `guards.onoQaCommitBlocked`), or the employee types **skip**.
+- Something on the list turns out broken → that's the point: fix it first (back to the plugin's flow), then close again.
+- Their answer (**push** / **push now**) is the go-ahead for step 5's push question — still name the target branch and ask for reviewers there.
 - Mention it in the session-log entry (`pre-PR: N 🔴 / M 🟠` or `skipped`).
 
 ### 5. Push + PR

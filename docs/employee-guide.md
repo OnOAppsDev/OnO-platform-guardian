@@ -36,6 +36,17 @@ One plugin to install. One place to start. The right Ono process every time.
 4. **Approvals are yours.** When a step needs a human (approving a plan, QA sign-off), Guardian stops and tells you exactly what to type.
 5. **Done** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian shows what goes into the commit (**only code** — notes and plugin documents stay out unless you ask), runs a quick **pre-PR check** (a one-page PDF of what to test; type **skip** to skip), then pushes and opens a PR — never straight to the main branch, and it asks before each step. Then type **`/clear`** to start fresh. Nothing is lost.
 
+## Before every PR — the pre-PR check 🔍
+
+When you close a session with changes, Guardian runs a quick safety check **before** it opens the PR. It looks at the code you changed and everything that uses it, and opens a **one-page PDF** with what to test in the app:
+
+- 🔴 **Must test** — check these before you send the PR.
+- 🟠 **Should test** — worth a quick look.
+- ⚠️ **Watch out** — spots in the code that look risky.
+
+Test the 🔴 items, then type **push**. Found something broken? Great catch — fix it first, then close again.
+The PDF is just for you: it's not saved in the project and never goes into the PR. In a hurry? Type **skip**. You can also ask for it any time: "what could I have broken?"
+
 ## Good to know
 
 - Want a document in the PR (e.g. a spec)? Just say so — "put docs/specs/login/hld.md in the PR". A project that always commits some paths lists them in `.platform-guardian.json`: `"commitPaths": ["docs/specs/**"]`.
