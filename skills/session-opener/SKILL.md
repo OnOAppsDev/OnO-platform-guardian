@@ -82,6 +82,6 @@ When nothing needs a decision, a single line is enough: "✅ You're on `‹branc
 
 If the first message was already a task, skip this question — hand it straight to the router, which confirms once.
 
-If unfinished work was found, offer it first: "Continue *login* (`/implement-task login T3`), or something new?" If its next step is "your step", say what they need to do first (e.g. approve the analysis) — don't offer to run the following command until they've done it.
+If unfinished work was found, offer it first: "Continue *login* (`/implement-task login T3`), or something new?" If its next step is "your step", say what they need to do first (e.g. approve the analysis) — any command they type is given with its full name, `/‹plugin›:‹command›` — don't offer to run the following command until they've done it.
 
 Then hand over to the `platform-guardian:work-router` skill with their answer — it picks the right Ono plugin command (or resumes the work named in the last session-log entry).

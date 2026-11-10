@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.7] — 2026-11-10
+
+- **Commands the employee types are given with their full name** — `/ono-mobile-dev-plugin:verify-fix-cycle bug:KEY`, not `/verify-fix-cycle` (tester bug: the short form didn't run, so the employee hit an unknown command on a human-only approval step).
+
 ## [0.2.6] — 2026-11-10
 
 - **Only code goes into a commit, in every flow** (tester bug: two bug fixes pushed MD + JSON files that didn't belong in the PR). The commit guard now leaves new documents, data and plugin working files out — `.json` / `.yaml` included, and the Ono plugins' own documents (bug work plans, task state, planning docs, reviews, spec drafts, inspector reports) too. They stay on disk, never deleted or `.gitignore`d. A file goes in only when the employee asks for it (`PG_INCLUDE_FILES=1 git add <path>`) or the project lists it in `.platform-guardian.json` `"commitPaths"`. The session closer shows ✅ will commit / ⏸️ stays out.
