@@ -85,6 +85,10 @@ Before asking to push, run the **`platform-guardian:pre-pr`** skill on the emplo
 - PR: check for an existing one first (`gh pr view --json url,state 2>/dev/null`). If none, use the target branch and reviewers from that answer (target default: the central branch from the report), then `gh pr create --base ‹target› --fill` (add `--reviewer` if given). If `gh` isn't installed or authenticated, give the compare link from the push output and tell them to open the PR there.
 - The employee may choose to stop before pushing (e.g. work not ready to share) — fine; record it in the log.
 
+### 5b. Tool bug during the session?
+
+If something in Guardian, an Ono plugin or Claude Code misbehaved this session and no bug report was written yet, offer it once before the log: "🐞 Earlier ‹what broke›. Want a bug report for Tom first? (type **report**)" — yes → `platform-guardian:report-bug`, then continue here.
+
 ### 6. Write the session-log entry (local, never in git)
 
 ```bash
