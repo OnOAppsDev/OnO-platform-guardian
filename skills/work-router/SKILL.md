@@ -42,8 +42,10 @@ Invoke the start command through the Skill tool with the arguments you have (`<p
 
 Never invoke, auto-chain into, or "help along" anything in `humanOnly.commands` (e.g. `/qa-approve`, `/approve-qa-test-plan`, `/qa-signoff`, `/inspect-approve`, `/verify-fix-cycle`), and never flip a planning document's approval status yourself — **even when the employee asks you to**; tell them the file and the line to change. When the process reaches one, stop and tell the employee exactly what to type and why it's theirs to do:
 
-> This step is your approval — type `/approve-qa-test-plan login` when you're happy with the plan.
+> This step is your approval — type `/ono-plugin-qa:approve-qa-test-plan login` when you're happy with the plan.
+
+**Always give the full command name: `/‹plugin›:‹command› ‹args›`** (the plugin is in `humanOnly.commands[].plugin`, or the intent's plugin) — e.g. `/ono-mobile-dev-plugin:verify-fix-cycle bug:YEA-1311`, never just `/verify-fix-cycle`. The short form doesn't run everywhere (a tester's "unknown command"), and the employee can't tell why. Same for every command you hand them to type, not only approvals.
 
 ## Between stages
 
-When a plugin stage finishes, say what's next (from the plugin's own hint, its `next_command`, or the intent's `pipeline`) and ask whether to continue. If the next step is human-only, a "yes" doesn't change that — tell them what to type. A finished stage is also a natural point to offer the session close-out — say how, not just when: "Want to stop here? Say **close the session** and I'll save everything; then type `/clear` to start fresh." Offer it once per session, and not if a 💡 close-out suggestion was already shown.
+When a plugin stage finishes, say what's next (from the plugin's own hint, its `next_command`, or the intent's `pipeline`) and ask whether to continue. If the next step is human-only, a "yes" doesn't change that — tell them what to type, with the full `/‹plugin›:‹command›` name. A finished stage is also a natural point to offer the session close-out — say how, not just when: "Want to stop here? Say **close the session** and I'll save everything; then type `/clear` to start fresh." Offer it once per session, and not if a 💡 close-out suggestion was already shown.
