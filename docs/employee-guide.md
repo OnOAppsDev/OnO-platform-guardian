@@ -55,4 +55,4 @@ The PDF is just for you: it's not saved in the project and never goes into the P
 - 🎓 Type **onboarding** any time to see the tour again.
 - Guardian never pushes to the main branch, never updates your branch without asking, never commits secrets.
 - In QA repos the QA plugins block Claude from committing — Guardian gives you the commands to run yourself.
-- Something looks wrong? Tell Tom — a screenshot of the Claude message is the most useful thing.
+- 🐞 **Something broken in the tools** (Guardian, a plugin command, an error that isn't your code)? Say **"report a bug"**. Claude writes an organized report — what happened, the exact error, versions — opens it in Finder, and you send the file to Tom. Claude also offers it by itself when it spots a tool bug.

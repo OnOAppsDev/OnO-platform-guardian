@@ -124,6 +124,13 @@ Clean up: `git reset -q && rm -rf notes.md .env.test src/Foo.kt docs/bugs/T-1`.
 | 5.4 | `/clear`, then `let's start` | Opener starts with "Last time you stopped at …" | |
 | 5.5 | Session-length signal: start with `PG_CLOSEOUT_TOKENS=20000 claude`, work a few turns | After ~20k tokens: answer first, then the 💡 close-out suggestion with 3 steps — once, not every turn | |
 
+## 5c. Bug report (new — 0.2.8)
+
+| # | Step | Expected | Result |
+|---|---|---|---|
+| 5c.1 | In any session say **"report a bug"** — describe something odd you saw (or make one up) | A short report written without a long interview · Finder opens with the file selected · file is under `~/.claude/platform-guardian/bug-reports/`, **not** in the repo (`git status` clean) | |
+| 5c.2 | Open the file | Sections: summary · what you were doing · exact error · expected · steps · findings · workaround · Environment with Guardian + Ono plugin versions | |
+
 ## 5b. Resume — "where was I" (new — G2.3)
 
 On `pg/clean`, create a planning doc the way the dev plugin writes it (or use a repo where `/analyze-feature` already ran):

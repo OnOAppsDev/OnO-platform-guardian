@@ -68,6 +68,7 @@ When you're done (or the session gets long — I'll tell you 💡), say **"close
 > - ❓ "Where was I?" — I find your next step
 > - ✋ Approvals — you type them, I tell you what
 > - 👋 "Close the session" → then `/clear`
+> - 🐞 Something broken in the tools? Say **"report a bug"** — I write a report for Tom
 > - 🎓 "Onboarding" — this tour again, any time
 >
 > ⚙️ **One-time setup** so you always have the latest version: `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update**

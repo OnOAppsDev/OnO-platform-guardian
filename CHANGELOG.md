@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.8] — 2026-11-11
+
+- **Bug reports:** new `platform-guardian:report-bug` skill. When something breaks in Guardian, an Ono plugin or Claude Code ("report a bug", or Claude offers it after spotting a tool bug), it writes one organized report — summary, exact error, expected, steps, findings with `file:line`, workaround, suspected component — plus an Environment section from `scripts/bug-report.sh` (Claude Code, Guardian and every Ono plugin's version, macOS, repo, branch, git state). Saved under `~/.claude/platform-guardian/bug-reports/`, never in the repo; Finder opens with it selected so the employee can send it to the maintainer. The closer offers it once if a tool bug happened and no report was written.
+
 ## [0.2.7] — 2026-11-10
 
 - **Commands the employee types are given with their full name** — `/ono-mobile-dev-plugin:verify-fix-cycle bug:KEY`, not `/verify-fix-cycle` (tester bug: the short form didn't run, so the employee hit an unknown command on a human-only approval step).
