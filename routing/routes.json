@@ -2,7 +2,7 @@
   "schema": 1,
   "verifiedAt": "2026-11-08",
   "verifiedAgainst": {
-    "ono-mobile-dev-plugin": "0.7.0",
+    "ono-mobile-dev-plugin": "0.7.1",
     "ono-plugin-qa": "0.11.0",
     "matrix-qa-plugin": "0.1.0",
     "spec-team-toolkit": "0.5.0",
