@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.9] — 2026-11-12
+
+- Routes re-verified against `ono-mobile-dev-plugin` 0.7.1 (its fix for `REPOSITORY_UNAVAILABLE` in large repos, found in Guardian testing) — no route changes.
+
 ## [0.2.8] — 2026-11-11
 
 - **Bug reports:** new `platform-guardian:report-bug` skill. When something breaks in Guardian, an Ono plugin or Claude Code ("report a bug", or Claude offers it after spotting a tool bug), it writes one organized report — summary, exact error, expected, steps, findings with `file:line`, workaround, suspected component — plus an Environment section from `scripts/bug-report.sh` (Claude Code, Guardian and every Ono plugin's version, macOS, repo, branch, git state). Saved under `~/.claude/platform-guardian/bug-reports/`, never in the repo; Finder opens with it selected so the employee can send it to the maintainer. The closer offers it once if a tool bug happened and no report was written.

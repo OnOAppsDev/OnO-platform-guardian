@@ -1,7 +1,7 @@
 {
   "name": "platform-guardian",
   "description": "Single entry point for Ono employees in Claude Code: opens every session with a git-hygiene check against the project's central branch, asks what you're working on (bug, feature, QA, spec), routes you into the right Ono plugin process, closes the session with commit / PR / clear guidance, and welcomes first-time users with an interactive onboarding tour.",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "author": {
     "name": "Ono Apps",
     "email": "tom@onoapps.com"
