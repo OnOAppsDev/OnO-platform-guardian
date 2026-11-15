@@ -150,6 +150,30 @@ run "$C2"
 check '.central.branch == "main" and .central.confidence == "medium"'
 check ".central.candidates == [\"develop\",\"main\"] and $(has_warning central-ambiguous)"
 
+case_ "origin/HEAD = unusual branch (staging) while dev exists → low, ask (tester bug)"
+R6="$(new_remote odd dev Back-key-on-Webos-stg)"
+git -C "$R6" symbolic-ref HEAD refs/heads/Back-key-on-Webos-stg
+C6="$(clone "$R6" odd)"
+run "$C6"
+check '.central.branch == "Back-key-on-Webos-stg" and .central.confidence == "low"'
+check "(.central.candidates | index(\"dev\")) != null and (.central.candidates | index(\"Back-key-on-Webos-stg\")) != null and $(has_warning central-ambiguous)"
+
+case_ "origin/HEAD = main, dev exists → medium ambiguous (dev counts like develop)"
+R7="$(new_remote devb dev)"
+C7="$(clone "$R7" devb)"
+run "$C7"
+check ".central.branch == \"main\" and .central.confidence == \"medium\" and $(has_warning central-ambiguous)"
+
+case_ "thousands of commits ahead of central → suspect, low"
+g -C "$C7" checkout -b feature/huge
+i=0; while [ $i -lt 6 ]; do commit "$C7" big.txt; i=$((i + 1)); done
+OUT="$(PG_NO_FETCH=1 PG_SUSPECT_AHEAD=5 "$SCRIPT" "$C7")"; RC=$?
+check '.ahead == 6 and .central.confidence == "low"'
+printf '{"centralBranch": "main"}\n' >"$C7/.platform-guardian.json"
+OUT="$(PG_NO_FETCH=1 PG_SUSPECT_AHEAD=5 "$SCRIPT" "$C7")"; RC=$?
+check '.central.source == "override" and .central.confidence == "high"' "an override is never second-guessed"
+rm -f "$C7/.platform-guardian.json"
+
 case_ "no origin/HEAD, develop + main on remote → develop, low"
 g -C "$C2" remote set-head origin -d
 # git >= 2.48 re-creates a missing origin/HEAD on fetch (followRemoteHEAD=create); keep it gone.

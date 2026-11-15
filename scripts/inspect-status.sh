@@ -3,6 +3,8 @@
 # bash 3.2, no jq; always exits 0 and prints ONE line: "<status><TAB><detail>".
 #
 #   inspect-status.sh check [dir]     → status of the repo at dir
+#   inspect-status.sh elsewhere [dir] → "<ref>" of the most recently updated remote branch that
+#                                       holds a complete, current-model inspection (or nothing)
 #   inspect-status.sh override [dir]  → record today's manager-approved override for this repo
 #
 # Status:
@@ -33,6 +35,20 @@ top="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)" || out skip
 state_dir="$(dirname "$("$here/session-log.sh" path "$top" 2>/dev/null)")"
 [ -n "$state_dir" ] && [ "$state_dir" != "." ] || state_dir="${PG_LOG_DIR:-$HOME/.claude/platform-guardian}/$(basename "$top")"
 override_file="$state_dir/inspect-override"
+
+if [ "$cmd" = "elsewhere" ]; then   # FYI only — merging another branch is a human decision
+  remote="$(git -C "$top" remote 2>/dev/null | head -n 1)"
+  [ -n "$remote" ] || exit 0
+  git -C "$top" for-each-ref --sort=-committerdate --count=200 --format='%(refname:short)' "refs/remotes/$remote" 2>/dev/null |
+  while IFS= read -r r; do
+    case "$r" in */HEAD) continue ;; esac
+    git -C "$top" cat-file -e "$r:AUDIT.md" 2>/dev/null &&
+      git -C "$top" cat-file -e "$r:docs/project/overview.md" 2>/dev/null &&
+      git -C "$top" cat-file -e "$r:docs/project/capabilities.md" 2>/dev/null &&
+      { printf '%s\n' "$r"; break; }
+  done
+  exit 0
+fi
 
 if [ "$cmd" = "override" ]; then
   mkdir -p "$state_dir" 2>/dev/null &&

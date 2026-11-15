@@ -53,12 +53,15 @@ fi
 inspect="$("$scripts/inspect-status.sh" check "$dir" 2>/dev/null)"
 case "${inspect%%	*}" in
   missing|partial|on-central)
+    newer="$("$scripts/inspect-status.sh" elsewhere "$dir" 2>/dev/null)"
+    [ -n "$newer" ] && printf '\nINSPECT: FYI — a complete inspection exists on %s (never merged into this branch).\n' "$newer"
     printf '\nINSPECT GATE: %s (%s) — this project has NOT been through the Ono Project Inspector. The inspect-gate hook blocks the employee'"'"'s messages and Ono plugin commands with a red ⛔ banner until they run /ono-project-inspector:inspect or type the manager-approval sentence. If a message reaches you anyway (they started the inspector, or typed the sentence), follow session-opener step 0b.\n' \
       "${inspect%%	*}" "${inspect#*	}" ;;
   done)
     case "${inspect#*	}" in refresh-recommended:*)
-      printf '\nINSPECT: complete, but made with an older inspector knowledge model (missing:%s). Not a block. Mention once, in one line, after the git report: "💡 The project inspection is from an older inspector version — when you have a few minutes: /ono-project-inspector:inspect → Refresh Project Knowledge."\n' \
-        "${inspect#*refresh-recommended:}" ;;
+      newer="$("$scripts/inspect-status.sh" elsewhere "$dir" 2>/dev/null)"
+      printf '\nINSPECT: complete, but made with an older inspector knowledge model (missing:%s)%s. Not a block — follow session-opener step 0b (offer the refresh).\n' \
+        "${inspect#*refresh-recommended:}" "${newer:+; a current-model inspection exists on $newer (never merged into this branch)}" ;;
     esac ;;
   override)
     printf '\nINSPECT GATE: override — not inspected; the employee typed the manager-approval sentence today. Open with one ⚠️ line: working without the inspection today, with manager approval — run /ono-project-inspector:inspect as soon as possible.\n' ;;

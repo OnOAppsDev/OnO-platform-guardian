@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4] — 2026-11-15
+
+Guardian now handles two situations itself that used to need the maintainer (both from the YesPlusSmartTV report):
+
+- **Suspect main-branch detection → asks once, saves for the team.** `git-status.sh` no longer trusts the remote's default blindly: an unusual default (a feature / staging branch such as `Back-key-on-Webos-stg`) while `develop` / `dev` / `main` / `master` exists, or a branch more than 1000 commits ahead of the detected central (`PG_SUSPECT_AHEAD`), is reported low-confidence + `central-ambiguous`. The opener says why, asks once which branch is the main one, and offers (recommended) to write `.platform-guardian.json` so nobody on the team is asked again. `dev` is now a recognized main-branch name. An override is never second-guessed.
+- **Older-model inspection → Guardian offers the refresh itself.** When the inspection is complete but predates the current knowledge model, the opener offers to run `/ono-project-inspector:inspect` → Refresh Project Knowledge right away (yes / later); the outputs go into the employee's next PR so the whole team gets the current model. `inspect-status.sh elsewhere` finds a complete current-model inspection sitting on another remote branch and mentions it as FYI (merging another branch stays a human decision) — also in the gate's context when a project is blocked.
+
 ## [0.3.3] — 2026-11-15
 
 - **Every commit and push needs the employee's OK** (tester bug: after the employee picked an inspector option, Claude committed on its own — the guard denied the non-code files, then Claude re-ran with `PG_INCLUDE_FILES=1` by itself). The commit guard now returns a permission prompt (`ask`) for every `git commit` and `git push` ("approve only if you asked for it"), and for every `PG_INCLUDE_FILES=1` add of non-code files — the flag alone no longer lets files in; the employee confirms them. Denials (secrets, non-code files without the flag) still win. None of the Ono plugins commit on their own (dev plugin: "never creates a git commit"), so the only prompts are Guardian's close-out and Claude-initiated commits.
