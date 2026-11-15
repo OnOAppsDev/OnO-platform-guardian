@@ -47,6 +47,8 @@ It creates `~/pg-test/app` (on `develop`, plus the branches `pg/behind` and `pg/
 
 ---
 
+> **From 0.3.0 — inspect gate:** the test folders (`app`, `scratch`) aren't inspected, so Claude blocks them with a red ⛔ banner (that's §5d). For every other section, type once per day in each folder: `I have manager approval to work without inspect`.
+
 ## 0b. First session — welcome + onboarding tour (new)
 
 Do this **first**, before §1 — the offer appears only once per computer. After the setup script: `cd ~/pg-test/app && git switch pg/clean`, start `claude`, type `let's start`.
@@ -123,6 +125,23 @@ Clean up: `git reset -q && rm -rf notes.md .env.test src/Foo.kt docs/bugs/T-1`.
 | 5.3 | `cat ~/.claude/platform-guardian/*/pg_clean.md` | Entry with what we did / where we stopped / next step | |
 | 5.4 | `/clear`, then `let's start` | Opener starts with "Last time you stopped at …" | |
 | 5.5 | Session-length signal: start with `PG_CLOSEOUT_TOKENS=20000 claude`, work a few turns | After ~20k tokens: answer first, then the 💡 close-out suggestion with 3 steps — once, not every turn | |
+
+## 5d. Inspect gate (new — 0.3.0)
+
+Use `scratch` (never inspected) unless noted. Each row: start `claude` in the folder, type what the row says.
+
+| # | Type | Expected | Result |
+|---|---|---|---|
+| 5d.1 | `hi` | **Blocked** — red ⛔🚨 banner: project not inspected · `/ono-project-inspector:inspect` · the manager-approval sentence. Claude doesn't answer | |
+| 5d.2 | `/ono-mobile-dev-plugin:analyze-bug X-1` | **Blocked**, same banner | |
+| 5d.3 | `/clear`, `/plugin` | Work normally (not blocked) | |
+| 5d.4 | `I have manager approval` (half the sentence) | Still blocked | |
+| 5d.5 | `I have manager approval to work without inspect` | Claude answers: ⚠️ OK for today with manager approval · reminds to run the inspection · continues | |
+| 5d.6 | `/exit`, start again, `hi` | Not blocked today; opener has one ⚠️ "working without inspection" line | |
+| 5d.7 | In `app` (or another never-inspected clone): `/ono-project-inspector:inspect` | Inspector starts; answering its questions isn't blocked | |
+| 5d.8 | After it finishes stages 1–2, "close the session" | `AUDIT.md`, `CLAUDE.md`, `docs/project/*` are under ✅ will commit | |
+
+Reset an override: `rm ~/.claude/platform-guardian/*/inspect-override`.
 
 ## 5c. Bug report (new — 0.2.8)
 

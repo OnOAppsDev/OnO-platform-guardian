@@ -33,6 +33,15 @@ Key fields: `repo`, `branch`, `detached`, `fetch` (`ok` | `failed` | `timeout` |
 
 If the session-start context has the **FIRST TIME WITH GUARDIAN** notice: your first reply is **only** the emoji welcome and the tour offer it describes, with the offer as the last line — then stop and wait. No git summary, no git or branch questions, no "what are we working on" in that reply: a second question gets answered instead and the tour is missed. A git situation that needs attention, or a task in their first message, gets at most one line ("I'll get to it right after"). Yes → run `platform-guardian:onboarding` — it replaces steps 1–4 (it shows the git state and asks what we're working on itself). Later → "Type **onboarding** any time 🎓", then steps 1–4 as usual and back to their first message. The notice appears once; never re-offer on your own.
 
+### 0b. Inspect gate (Ono rule)
+
+Every project goes through the Ono Project Inspector before work starts. The `inspect-gate` hook enforces it: while the project isn't inspected (`INSPECT GATE:` line in the session-start context), the employee's messages and Ono plugin commands are blocked with a red ⛔ banner that tells them to run `/ono-project-inspector:inspect` — or, **only with their manager's approval**, to type the exact sentence `I have manager approval to work without inspect` (Hebrew: `יש לי אישור מנהל לעבוד בלי inspect`), which opens the repo for that day.
+
+- A message reached you and the gate line says `missing` / `partial` / `on-central` → the employee is inside the inspector flow: help them through `/ono-project-inspector:inspect` (for `on-central`: update the branch from the central branch first). No other work until it's done.
+- `override` → one ⚠️ line in the opener: "Working without the project inspection today, with manager approval — run `/ono-project-inspector:inspect` as soon as you can." Then continue normally.
+- Never type, suggest wording around, or shorten the approval sentence yourself, and never tell them how to bypass the gate — the sentence is for when a manager actually approved.
+- The inspector's outputs (`AUDIT.md`, `CLAUDE.md`, `docs/project/**`, `audits/**`, `.ono/state.json`) are committed with the work so the whole team shares one inspection.
+
 ### 1. Greet + where we stopped
 
 One warm line. If there is a session-log entry, follow with one line: "Last time (‹date›) you stopped at ‹where we stopped› — next step was ‹next step›." Don't paste the entry.

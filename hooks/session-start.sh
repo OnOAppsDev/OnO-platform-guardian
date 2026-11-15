@@ -50,6 +50,15 @@ else
 fi
 [ -n "$others" ] && printf 'Other branches of this repo with session logs (newest first): %s\n' "$others"
 
+inspect="$("$scripts/inspect-status.sh" check "$dir" 2>/dev/null)"
+case "${inspect%%	*}" in
+  missing|partial|on-central)
+    printf '\nINSPECT GATE: %s (%s) — this project has NOT been through the Ono Project Inspector. The inspect-gate hook blocks the employee'"'"'s messages and Ono plugin commands with a red ⛔ banner until they run /ono-project-inspector:inspect or type the manager-approval sentence. If a message reaches you anyway (they started the inspector, or typed the sentence), follow session-opener step 0b.\n' \
+      "${inspect%%	*}" "${inspect#*	}" ;;
+  override)
+    printf '\nINSPECT GATE: override — not inspected; the employee typed the manager-approval sentence today. Open with one ⚠️ line: working without the inspection today, with manager approval — run /ono-project-inspector:inspect as soon as possible.\n' ;;
+esac
+
 resume="$("$scripts/resume-state.sh" "$dir" 2>/dev/null)"
 if [ -n "$resume" ]; then
   printf '\nUnfinished work found in the Ono plugins'"'"' documents (scripts/resume-state.sh — apparent stage; the plugin confirms when it runs):\n%s\n' "$resume"

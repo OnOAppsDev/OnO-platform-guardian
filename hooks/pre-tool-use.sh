@@ -126,6 +126,9 @@ PATHS
     docker-compose*.yml|docker-compose*.yaml) echo ok; return ;;
   esac
   case "$path" in .github/*|.gitlab-ci.yml|.circleci/*) echo ok; return ;; esac
+  # the Ono Project Inspector's outputs are mandatory project infrastructure (the inspect gate
+  # reads them) — committed so the whole team shares one inspection
+  case "$path" in AUDIT.md|CLAUDE.md|docs/project/*|audits/*|.ono/state.json|.ono/repo-knowledge.json) echo ok; return ;; esac
   rule_match commit "$path" && { echo stray; return; }
   case "$base" in
     *.md|*.markdown|*.txt|*.log|*.html|*.htm|*.csv|*.tsv|*.tmp|*.out|*.orig|*.rej|*.patch|*.diff|*.swp|\

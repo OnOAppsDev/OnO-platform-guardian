@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.0] — 2026-11-15
+
+- **⛔ Inspect gate (Ono rule: every project is inspected first).** New `hooks/inspect-gate.sh` on `UserPromptSubmit` and `UserPromptExpansion` + `scripts/inspect-status.sh`. If the project hasn't been through the Ono Project Inspector (stages 1–2: `AUDIT.md`, `CLAUDE.md`, `docs/project/*`), every message and Ono plugin command is **blocked** with a red ⛔🚨 banner: run `/ono-project-inspector:inspect`, or — only with a manager's approval — type the exact sentence `I have manager approval to work without inspect` (Hebrew: `יש לי אישור מנהל לעבוד בלי inspect`), which opens the repo for that day (recorded locally, never in git). Started-but-unfinished inspections and branches older than an inspected central branch get their own instruction. The inspector's own commands, Guardian's and built-ins stay open. `.platform-guardian.json` `"inspectRequired": false` exempts a repo (committed → reviewed).
+- The inspector's outputs (`AUDIT.md`, `CLAUDE.md`, `docs/project/**`, `audits/**`, `.ono/state.json`, `.ono/repo-knowledge.json`) are now **committed** by default (exception to "only code") — the gate reads them, so the team must share one inspection.
+- Routes re-verified against `ono-mobile-dev-plugin` 0.7.2 (fix for the deferred-reproduction QA-handoff block found in Guardian testing) — no route changes.
+
 ## [0.2.9] — 2026-11-12
 
 - Routes re-verified against `ono-mobile-dev-plugin` 0.7.1 (its fix for `REPOSITORY_UNAVAILABLE` in large repos, found in Guardian testing) — no route changes.
