@@ -47,7 +47,7 @@ mkdir -p "$state_dir" 2>/dev/null && printf '%s' "$band" >"$state" 2>/dev/null
 k=$(( tokens / 1000 ))
 cat <<MSG
 [platform-guardian] This session's context is about ${k}k tokens — long sessions get slower and less accurate.
-Answer the user's message first. **Timing:** if an Ono plugin step is in the middle of running and hasn't saved its result yet (e.g. a bug analysis whose platform was detected / confirmed but whose plan file isn't written, a task half implemented), don't suggest closing now — closing mid-step makes the next session redo it (re-detect the platform, re-run the analysis). Hold the suggestion and show it once, right after that step saves its result. Otherwise, end your reply with a short close-out suggestion that tells the employee exactly what to do — never just "it's a good time to stop". Use this shape (in their language):
+Answer the user's message first. **Timing:** if an Ono plugin step is in the middle of running and hasn't saved its result yet (e.g. a bug analysis whose platform was detected / confirmed but whose plan file isn't written, a task half implemented), don't suggest closing now — closing mid-step makes the next session redo it (re-run the analysis, re-do a half-implemented task). Hold the suggestion and show it once, right after that step saves its result. Otherwise, end your reply with a short close-out suggestion that tells the employee exactly what to do — never just "it's a good time to stop". Use this shape (in their language):
 
 ---
 💡 This session is getting long. Good moment to save and start fresh:

@@ -201,6 +201,13 @@ dev_bugs() {
     fi
     m="$(fm "$plan")"; st="$(get "$m" status)"; cyc="$(get "$m" fix_cycle)"; acyc="$(get "$m" approved_cycle)"
     case "$cyc" in ''|*[!0-9]*) cyc=1 ;; esac
+    # dev plugin ≥ 0.7.4 scaffolds the plan right after the routing confirmation: a cycle-1 draft
+    # with no task rows yet is an analysis in progress (routing kept), not a plan awaiting approval
+    if [ "$st" != "approved" ] && [ "$cyc" = 1 ] && [ -z "$(task_ids "$plan" 1)" ]; then
+      local pf dv; pf="$(get "$m" platform)"; dv="$(get "$m" device_type)"
+      emit ono-mobile-dev-plugin "bug $key" "analysis in progress${pf:+, platform $pf${dv:+ / $dv} already confirmed}" \
+        "/analyze-bug $key — it continues the analysis, no new detection" "$plan"; continue
+    fi
     if [ "$st" != "approved" ] || [ "$acyc" != "$cyc" ]; then
       emit ono-mobile-dev-plugin "bug $key" "work plan (cycle $cyc) waiting for approval" \
         "/analyze-bug $key — it resumes at the approval step, which is yours" "$plan"; continue

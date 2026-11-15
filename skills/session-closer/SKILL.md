@@ -20,7 +20,7 @@ You close the session so nothing is lost and the next session can pick up exactl
 
 If an Ono plugin step is still running and hasn't saved its result (an analysis before its plan file is written, a task mid-implementation, a verification half done), tell the employee plainly before closing, in their language:
 
-> ⚠️ ‹step› isn't saved yet — if we close now, next session it starts over (‹what repeats, e.g. "the platform detection (~1 min) and the analysis run again"›). Finish it first? (recommended) — or say **close anyway**.
+> ⚠️ ‹step› isn't saved yet — if we close now, next session it starts over (‹what repeats, e.g. "the analysis runs again from where it was saved"›). Finish it first? (recommended) — or say **close anyway**.
 
 Wait for the answer. On **close anyway**: in step 6's log entry, write in **Where we stopped** the exact point *and* anything the employee already confirmed that the plugin hasn't saved (e.g. "routing confirmed: ios / tv — not in a plan yet"), so the next session can tell them.
 

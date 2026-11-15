@@ -218,6 +218,25 @@ approved_cycle: $3
 | C2-T1 | reopen fix |
 EOF
 }
+w "$B/docs/bugs/BUG-7/bug-work-plan.md" <<EOF
+# Bug Work Plan
+
+\`\`\`yaml
+work_type: bug
+bug_key: BUG-7
+status: draft
+fix_cycle: 1
+approved_cycle: null
+platform: ios
+device_type: tv
+\`\`\`
+
+## Tasks
+
+| id | description |
+|----|-------------|
+EOF
+expect "0.7.4 scaffold, no tasks yet → analysis in progress, routing kept" "$B" "bug BUG-7 · analysis in progress, platform ios / tv already confirmed · next: /analyze-bug BUG-7 — it continues the analysis, no new detection"
 plan draft 1 null
 expect "plan draft → approval via /analyze-bug" "$B" "work plan (cycle 1) waiting for approval · next: /analyze-bug BUG-7"
 plan approved 2 1
