@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.1] — 2026-11-15
+
+- **No close-out in the middle of a plugin step** (tester bug: closing mid-analysis made the next session re-detect the platform and re-run the analysis). The 💡 session-length suggestion now waits until the running Ono plugin step has saved its result. If the employee closes mid-step anyway, the closer first says plainly what would be redone and recommends finishing; on "close anyway" the log records what was already confirmed (e.g. platform / device type) so the next session can tell them. The plugin-side fix (persisting a confirmed routing before the plan exists) is with the dev-plugin owner.
+
 ## [0.3.0] — 2026-11-15
 
 - **⛔ Inspect gate (Ono rule: every project is inspected first).** New `hooks/inspect-gate.sh` on `UserPromptSubmit` and `UserPromptExpansion` + `scripts/inspect-status.sh`. If the project hasn't been through the Ono Project Inspector (stages 1–2: `AUDIT.md`, `CLAUDE.md`, `docs/project/*`), every message and Ono plugin command is **blocked** with a red ⛔🚨 banner: run `/ono-project-inspector:inspect`, or — only with a manager's approval — type the exact sentence `I have manager approval to work without inspect` (Hebrew: `יש לי אישור מנהל לעבוד בלי inspect`), which opens the repo for that day (recorded locally, never in git). Started-but-unfinished inspections and branches older than an inspected central branch get their own instruction. The inspector's own commands, Guardian's and built-ins stay open. `.platform-guardian.json` `"inspectRequired": false` exempts a repo (committed → reviewed).
