@@ -68,14 +68,18 @@ inspector_audit() { # the inspector's AUDIT.md, not just any file with that name
 }
 
 missing=""
-# stage artifacts (registry `produces` minus `knowledgeModel` artifacts) — these decide completion
-for f in CLAUDE.md docs/project/overview.md docs/project/components.md docs/project/patterns.md \
-         docs/project/integrations.md; do
+# Kept in step with the inspector's skills/registry.json by scripts/check-routes.sh (CI + daily):
+# stage artifacts = `produces` of the artifact-completed inspection stages minus `knowledgeModel`
+# artifacts (AUDIT.md is checked separately); model artifacts = `knowledgeModel` paths without "#".
+STAGE_ARTIFACTS="CLAUDE.md docs/project/overview.md docs/project/components.md docs/project/patterns.md docs/project/integrations.md"
+MODEL_ARTIFACTS="docs/project/capabilities.md"
+
+for f in $STAGE_ARTIFACTS; do
   [ -f "$top/$f" ] || missing="$missing $f"
 done
 # knowledge-model artifacts (registry `knowledgeModel`) — missing → refresh recommended, never a block
 stale=""
-for f in docs/project/capabilities.md; do
+for f in $MODEL_ARTIFACTS; do
   [ -f "$top/$f" ] || stale="$stale $f"
 done
 

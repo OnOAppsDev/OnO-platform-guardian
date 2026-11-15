@@ -65,6 +65,29 @@ for plugin in $(jq -r '.verifiedAgainst | keys[]' "$ROUTES"); do
   done
 done
 
+# Inspect gate vs the inspector's registry: the files Guardian treats as "inspection complete"
+# (scripts/inspect-status.sh STAGE_ARTIFACTS + AUDIT.md) and "older knowledge model"
+# (MODEL_ARTIFACTS) must match skills/registry.json — a new inspector artifact would otherwise
+# block employees (or let incomplete inspections through) until someone notices.
+ipath="$(find_plugin ono-project-inspector)"
+if [ -n "$ipath" ] && [ -f "$ipath/skills/registry.json" ]; then
+  reg="$ipath/skills/registry.json"; status_sh="$(dirname "$0")/inspect-status.sh"
+  want_stage="$(jq -r '[.skills[] | select(.type == "workflow" and ((.workflowRole // "inspection") == "inspection")
+      and ((.completion // "artifacts") == "artifacts"))
+      | (.produces // []) - [(.knowledgeModel // [])[] | select(contains("#") | not)] | .[]] | .[]' "$reg" | sort -u | tr '\n' ' ')"
+  want_model="$(jq -r '[.skills[] | (.knowledgeModel // [])[] | select(contains("#") | not)] | .[]' "$reg" | sort -u | tr '\n' ' ')"
+  have_stage="$( { sed -n 's/^STAGE_ARTIFACTS="\(.*\)"$/\1/p' "$status_sh" | tr ' ' '\n'; echo AUDIT.md; } | grep . | sort -u | tr '\n' ' ')"
+  have_model="$(sed -n 's/^MODEL_ARTIFACTS="\(.*\)"$/\1/p' "$status_sh" | tr ' ' '\n' | grep . | sort -u | tr '\n' ' ')"
+  if [ "$want_stage" != "$have_stage" ]; then
+    echo "INSPECT DRIFT   stage artifacts: inspector registry has [${want_stage% }], inspect-status.sh has [${have_stage% }] — update STAGE_ARTIFACTS (resume-state.sh reads the same list)"
+    errors=$((errors + 1))
+  fi
+  if [ "$want_model" != "$have_model" ]; then
+    echo "INSPECT DRIFT   knowledge-model artifacts: inspector registry has [${want_model% }], inspect-status.sh has [${have_model% }] — update MODEL_ARTIFACTS"
+    errors=$((errors + 1))
+  fi
+fi
+
 echo "check-routes: $errors error(s), $drift version drift(s)"
 [ "$errors" -eq 0 ] || exit 1
 $strict && [ "$drift" -gt 0 ] && exit 1

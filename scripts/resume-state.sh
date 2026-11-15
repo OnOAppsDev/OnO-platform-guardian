@@ -249,12 +249,15 @@ dev_bugs() {
 inspector() {
   [ -f AUDIT.md ] || return 0
   head -5 AUDIT.md | grep -q '^# AUDIT\.md' || [ -f .ono/state.json ] || return 0
-  local missing="" p
-  # capabilities.md is a knowledge-model artifact: its absence doesn't reopen stage 2 (inspector registry)
-  for p in overview components patterns integrations; do
-    [ -f "docs/project/$p.md" ] || missing="$missing $p"
+  local missing="" p stage
+  # the stage artifacts are defined once, in inspect-status.sh (kept in step with the inspector's
+  # registry by check-routes.sh); knowledge-model artifacts never reopen stage 2
+  stage="$(sed -n 's/^STAGE_ARTIFACTS="\(.*\)"$/\1/p' "$(dirname "$0")/inspect-status.sh")"
+  [ -n "$stage" ] || stage="CLAUDE.md docs/project/overview.md docs/project/components.md docs/project/patterns.md docs/project/integrations.md"
+  for p in $stage; do
+    [ -f "$p" ] || missing="$missing $p"
   done
-  if [ ! -f CLAUDE.md ] || [ -n "$missing" ]; then
+  if [ -n "$missing" ]; then
     emit ono-project-inspector "repo inspection" "project analysis done, project docs not finished" \
       "your step — /inspect-approve to approve stage 1 and continue (or /inspect → Continue)" "AUDIT.md"
     return 0

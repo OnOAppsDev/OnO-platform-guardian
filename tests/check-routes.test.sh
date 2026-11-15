@@ -26,6 +26,28 @@ out="$("$CHECK" "$WORK/plugins")"; expect "version drift alone → exit 0" "$?" 
 case "$out" in *"VERSION DRIFT"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL drift not reported" ;; esac
 "$CHECK" "$WORK/plugins" --strict >/dev/null; expect "version drift with --strict → exit 1" "$?" "1"
 
+# inspector registry vs inspect-status.sh
+reg="$WORK/plugins/ono-project-inspector/skills/registry.json"
+cat >"$reg" <<'JSON'
+{"skills":[
+ {"id":"inspection-state","type":"internal","produces":[".ono/state.json"]},
+ {"id":"project-analysis","type":"workflow","workflowRole":"inspection","produces":["CLAUDE.md","AUDIT.md"],"completion":"artifacts","knowledgeModel":["CLAUDE.md#targets-and-surfaces"]},
+ {"id":"project-docs","type":"workflow","workflowRole":"inspection","produces":["docs/project/overview.md","docs/project/components.md","docs/project/patterns.md","docs/project/integrations.md","docs/project/capabilities.md"],"completion":"artifacts","knowledgeModel":["docs/project/capabilities.md","docs/project/patterns.md#accessibility"]},
+ {"id":"audit-breakdown","type":"workflow","workflowRole":"inspection","produces":["audits/<topic-slug>/<topic-slug>-audit.md"],"completion":"topics"},
+ {"id":"audit-sync","type":"workflow","workflowRole":"maintenance","produces":[]}
+]}
+JSON
+out="$("$CHECK" "$WORK/plugins")"; expect "registry matches inspect-status.sh → exit 0" "$?" "0"
+cp "$reg" "$WORK/reg.bak"
+jq '(.skills[] | select(.id == "project-docs") | .produces) += ["docs/project/testing.md"]' "$WORK/reg.bak" >"$reg"
+out="$("$CHECK" "$WORK/plugins")"; expect "new required inspector artifact → exit 1" "$?" "1"
+case "$out" in *"INSPECT DRIFT   stage artifacts"*"docs/project/testing.md"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL stage drift not named: $out" ;; esac
+jq '(.skills[] | select(.id == "project-docs") | .produces) += ["docs/project/flows.md"] | (.skills[] | select(.id == "project-docs") | .knowledgeModel) += ["docs/project/flows.md"]' "$WORK/reg.bak" >"$reg"
+out="$("$CHECK" "$WORK/plugins")"; expect "new knowledge-model artifact → exit 1" "$?" "1"
+case "$out" in *"INSPECT DRIFT   knowledge-model artifacts"*"docs/project/flows.md"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL model drift not named: $out" ;; esac
+case "$out" in *"INSPECT DRIFT   stage"*) FAIL=$((FAIL + 1)); echo "FAIL model-only artifact must not count as stage drift" ;; *) PASS=$((PASS + 1)) ;; esac
+cp "$WORK/reg.bak" "$reg"
+
 rm "$WORK/plugins/ono-mobile-dev-plugin/commands/analyze-bug.md"
 out="$("$CHECK" "$WORK/plugins")"; expect "missing command → exit 1" "$?" "1"
 case "$out" in *"MISSING COMMAND ono-mobile-dev-plugin: analyze-bug"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL missing command not named: $out" ;; esac

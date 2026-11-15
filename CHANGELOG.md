@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.5] — 2026-11-15
+
+- **The inspect gate can't drift from the inspector again.** `check-routes.sh` (every PR + the daily drift job, which opens an issue) now compares Guardian's "inspection complete" files and "older knowledge model" files with the inspector's own `skills/registry.json` (`produces` of artifact-completed inspection stages, minus `knowledgeModel` artifacts). A new required or knowledge-model artifact in a future inspector release is reported as `INSPECT DRIFT` before it can wrongly block employees. The lists live in one place (`inspect-status.sh` `STAGE_ARTIFACTS` / `MODEL_ARTIFACTS`); `resume-state.sh` reads the same list.
+
 ## [0.3.4] — 2026-11-15
 
 Guardian now handles two situations itself that used to need the maintainer (both from the YesPlusSmartTV report):
