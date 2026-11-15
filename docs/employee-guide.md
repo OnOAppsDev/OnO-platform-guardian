@@ -21,6 +21,14 @@ One plugin to install. One place to start. The right Ono process every time.
 4. Check: `/plugin` shows **platform-guardian + 6 Ono plugins** that came with it.
 5. Quit Claude Code (`/exit`).
 
+## ⛔ First: the project must be inspected
+
+Every Ono project goes through the **Project Inspector** once, before any work. If it hasn't, Claude shows a red ⛔ banner and won't do anything else in that project.
+
+- 👉 Run it: `/ono-project-inspector:inspect` — follow its steps. The results (`AUDIT.md`, `CLAUDE.md`, `docs/project/…`) go into your next PR, so the whole team gets them.
+- Already done on `develop` but your branch is older? Update your branch from `develop` (the banner shows the command).
+- **Only if your manager approved** working without it for now, type exactly: `I have manager approval to work without inspect` (or in Hebrew: `יש לי אישור מנהל לעבוד בלי inspect`). That opens the project **for today only** — tomorrow it asks again.
+
 ## Every day
 
 1. **Go into your project folder** and start Claude:

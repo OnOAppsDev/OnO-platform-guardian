@@ -81,7 +81,7 @@ mk sub/cert.pem;           run "git add sub/cert.pem";      expect "key at depth
 mk docs/tasks/T-1.md;      run "git add docs/tasks/T-1.md"; expect "dev-plugin task doc → stays out" deny "docs/tasks/T-1.md"
 mk docs/specs/login/hld.md;   run "git add docs/specs/login/hld.md";   expect "spec .md → stays out unless asked" deny
 mk docs/specs/login/hld.html; run "git add docs/specs/login/hld.html"; expect "spec .html preview → deny" deny
-mk AUDIT.md;               run "git add AUDIT.md";          expect "inspector AUDIT.md → stays out unless asked" deny
+mk AUDIT.md;               run "git add AUDIT.md";          expect "inspector AUDIT.md → committed (inspect gate needs it team-wide)" none
 mk CLAUDE.md.bak;          run "git add CLAUDE.md.bak";     expect "inspector .bak → deny" deny
 mk README.md;              run "git add README.md";         expect "README → none" none
 mk docs/login-plan.md "$(printf -- '---\ndoc_schema_version: 1\nfeature: login\n---\n# Plan')"
@@ -100,10 +100,12 @@ mk ios/App/Assets.xcassets/Icon.imageset/Contents.json; run "git add ios"; expec
 mk tsconfig.app.json;      run "git add tsconfig.app.json";  expect "tsconfig → none" none
 mk .github/workflows/ci.yml; run "git add .github";          expect "CI workflow → none" none
 mk docs/specs/login/lld.md; run "PG_INCLUDE_FILES=1 git add docs/specs/login/lld.md"; expect "employee asked → included" none
+mk docs/project/overview.md; run "git add docs/project/overview.md"; expect "inspector project doc → committed" none
+mk .ono/state.json; run "git add .ono/state.json";            expect "inspector state → committed" none
 mk sub/k.pem;              run "PG_INCLUDE_FILES=1 git add sub/k.pem"; expect "include never bypasses secrets" deny "sub/k.pem"
-printf '{"centralBranch": "develop", "commitPaths": ["docs/specs/**", "AUDIT.md"]}\n' >"$R/.platform-guardian.json"
+printf '{"centralBranch": "develop", "commitPaths": ["docs/specs/**", "NOTES.md"]}\n' >"$R/.platform-guardian.json"
 mk docs/specs/pay/hld.md;  run "git add docs/specs/pay/hld.md"; expect "project commitPaths → none" none
-run "git add AUDIT.md";                                       expect "project commitPaths exact file → none" none
+mk NOTES.md; run "git add NOTES.md";                           expect "project commitPaths exact file → none" none
 mk docs/bugs/X-2/plan.md;  run "git add docs/bugs/X-2/plan.md"; expect "not in commitPaths → still out" deny
 rm -f "$R/.platform-guardian.json"
 

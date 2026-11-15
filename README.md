@@ -3,7 +3,7 @@
   <p><strong>One plugin to install. One place to start. The right Ono process every time.</strong></p>
 
   ![Status](https://img.shields.io/badge/status-pilot%20prep-yellow?style=flat-square)
-  ![Version](https://img.shields.io/badge/version-0.2.9-blue?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.3.0-blue?style=flat-square)
   ![Org plugins](https://img.shields.io/badge/org%20plugins%20bundled-6-green?style=flat-square)
   ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-orange?style=flat-square)
 </div>
@@ -67,6 +67,7 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 - **Never updates your branch silently** and never uses force operations.
 - **Offline?** The server check gives up after 5 seconds, and Guardian tells you the numbers may be out of date instead of calling you "up to date".
 - **Only code goes into a commit** — in every flow. Documents, data and plugin working files (`.md`, `.json`, `.yaml` …, bug plans, task state, reports) stay out — on disk, not `.gitignore`d — unless the employee asks for a file or the project lists it in `.platform-guardian.json` `"commitPaths"`. Secrets never. A guard enforces it on every `git add` / `git commit`.
+- **⛔ Inspect gate — every project is inspected first.** If the project hasn't been through the Ono Project Inspector (`AUDIT.md` + `CLAUDE.md` + `docs/project/*`), Claude is blocked in it: a red ⛔ banner on every message and Ono plugin command, until the employee runs `/ono-project-inspector:inspect` — or, only with a manager's approval, types the exact sentence `I have manager approval to work without inspect` (opens the repo for that day). The inspector's outputs are committed so the whole team shares one inspection.
 - **Bug reports:** something broken in the tools? "report a bug" → one organized file (exact error, steps, versions of Guardian + every Ono plugin) for the maintainer to triage — outside the repo, never committed.
 - **Pre-PR check before every PR:** a one-page PDF of what your change could break (`skills/pre-pr`), outside the repo, never committed. Type **skip** to skip it.
 - **QA repos:** both QA plugins block Claude's own commits there by design — Guardian hands you the commands to run instead.
@@ -92,10 +93,11 @@ Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
 
 ```
 .claude-plugin/plugin.json      manifest + dependencies on the six org plugins
-hooks/                          SessionStart (open) · UserPromptSubmit (session length) · PreToolUse (commit guard)
+hooks/                          SessionStart (open) · UserPromptSubmit + UserPromptExpansion (inspect gate, session length) · PreToolUse (commit guard)
 skills/                         session-opener · work-router · session-closer · onboarding · pre-pr · report-bug
 scripts/git-status.sh           JSON git report (bash 3.2, no jq, fails open)
 scripts/session-log.sh          local session notes — ~/.claude/platform-guardian/, never in git
+scripts/inspect-status.sh       inspect gate: done / partial / missing / on-central / override (manager-approved, per day)
 scripts/bug-report.sh           bug-report helper: versions + git facts, report path outside the repo
 scripts/resume-state.sh         unfinished work from the plugins' own documents (docs/resume-state.md)
 scripts/check-routes.sh         drift guard: routes.json vs. the org plugins
