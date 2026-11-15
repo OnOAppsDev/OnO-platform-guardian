@@ -132,6 +132,19 @@ PATHS
   # the Ono Project Inspector's outputs are mandatory project infrastructure (the inspect gate
   # reads them) — committed so the whole team shares one inspection
   case "$path" in AUDIT.md|CLAUDE.md|docs/project/*|audits/*|.ono/state.json|.ono/repo-knowledge.json) echo ok; return ;; esac
+  # …also when the project lives in a subfolder (yestvos/YesTVOS/): <sub>/docs/project/x.md is an
+  # inspector output if <sub> holds the inspector's AUDIT.md or .ono/state.json
+  local sub=""
+  case "$path" in
+    */docs/project/*) sub="${path%%/docs/project/*}" ;;
+    */audits/*)       sub="${path%%/audits/*}" ;;
+    */.ono/state.json|*/.ono/repo-knowledge.json) sub="${path%/.ono/*}" ;;
+    */AUDIT.md|*/CLAUDE.md) sub="${path%/*}" ;;
+  esac
+  if [ -n "$sub" ] && { [ -f "$3/$sub/.ono/state.json" ] ||
+       { [ -f "$3/$sub/AUDIT.md" ] && head -5 "$3/$sub/AUDIT.md" | grep -q '^# AUDIT\.md'; }; }; then
+    echo ok; return
+  fi
   rule_match commit "$path" && { echo stray; return; }
   case "$base" in
     *.md|*.markdown|*.txt|*.log|*.html|*.htm|*.csv|*.tsv|*.tmp|*.out|*.orig|*.rej|*.patch|*.diff|*.swp|\

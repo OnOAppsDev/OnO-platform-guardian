@@ -20,6 +20,7 @@ case "$MAX" in ''|*[!0-9]*) MAX=8 ;; esac
 MAX_DOCS=400   # planning docs scanned per repo — bounds hook latency in huge docs/ trees
 
 start="${1:-${CLAUDE_PROJECT_DIR:-$PWD}}"
+HERE_RS="$(cd "$(dirname "$0")" && pwd)"   # before any cd: $0 may be relative
 start="$(cd "$start" 2>/dev/null && pwd)" || exit 0   # absolute — the upward walks rely on it
 root="$(git -C "$start" rev-parse --show-toplevel 2>/dev/null)" || root=""
 [ -n "$root" ] || root="$(cd "$start" && pwd)"
@@ -247,12 +248,23 @@ dev_bugs() {
 # AUDIT.md is the truth (Status: Pending Breakdown | Draft | Approved); .ono/state.json is a hint.
 
 inspector() {
+  # the inspection may live in a subfolder of the git root (inspect-status.sh root)
+  local pr; pr="$("$HERE_RS/inspect-status.sh" root "$start" 2>/dev/null)"
+  if [ -n "$pr" ] && [ "$pr" != "$(pwd -P)" ] && [ -d "$pr" ]; then
+    local back; back="$(pwd)"
+    cd "$pr" 2>/dev/null && inspector_here   # not a subshell: emit() collects into $OUT
+    cd "$back" 2>/dev/null
+    return 0
+  fi
+  inspector_here
+}
+inspector_here() {
   [ -f AUDIT.md ] || return 0
   head -5 AUDIT.md | grep -q '^# AUDIT\.md' || [ -f .ono/state.json ] || return 0
   local missing="" p stage
   # the stage artifacts are defined once, in inspect-status.sh (kept in step with the inspector's
   # registry by check-routes.sh); knowledge-model artifacts never reopen stage 2
-  stage="$(sed -n 's/^STAGE_ARTIFACTS="\(.*\)"$/\1/p' "$(dirname "$0")/inspect-status.sh")"
+  stage="$(sed -n 's/^STAGE_ARTIFACTS="\(.*\)"$/\1/p' "$HERE_RS/inspect-status.sh")"
   [ -n "$stage" ] || stage="CLAUDE.md docs/project/overview.md docs/project/components.md docs/project/patterns.md docs/project/integrations.md"
   for p in $stage; do
     [ -f "$p" ] || missing="$missing $p"

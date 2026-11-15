@@ -60,6 +60,20 @@ git -C "$R" switch -q feature/old
 out="$("$ST" check "$R")";  eq "central has it → on-central" "${out%%	*}" on-central
 case "$out" in *origin/develop*) ok ;; *) fail "on-central names the ref" "$out" ;; esac
 
+# nested project folder (yestvos/YesTVOS/): the inspection lives in a subfolder of the git root
+fresh; mkdir -p "$R/App/docs/project" "$R/App/.ono" "$R/App/Sources"
+printf '# AUDIT.md\n' >"$R/App/AUDIT.md"; echo c >"$R/App/CLAUDE.md"; echo '{}' >"$R/App/.ono/state.json"
+for p in overview components patterns integrations capabilities; do echo d >"$R/App/docs/project/$p.md"; done
+eq "nested: session in the project folder → done" "$("$ST" check "$R/App" | cut -f1)" done
+eq "nested: session deeper inside → done" "$("$ST" check "$R/App/Sources" | cut -f1)" done
+eq "nested: session at the git root, one inspected subfolder → done" "$("$ST" check "$R" | cut -f1)" done
+eq "nested: root reports the project folder" "$(basename "$("$ST" root "$R/App/Sources")")" App
+rm "$R/App/docs/project/overview.md"
+out="$("$ST" check "$R/App")"; eq "nested: missing doc → partial" "${out%%	*}" partial
+fresh; mkdir -p "$R/A/.ono" "$R/B/.ono"; printf '# AUDIT.md\n' >"$R/A/AUDIT.md"; printf '# AUDIT.md\n' >"$R/B/AUDIT.md"
+echo '{}' >"$R/A/.ono/state.json"; echo '{}' >"$R/B/.ono/state.json"
+eq "two inspected subfolders, session at root → not guessed (missing)" "$("$ST" check "$R" | cut -f1)" missing
+
 # elsewhere: a complete current-model inspection on another remote branch (FYI)
 fresh
 git -C "$R" switch -q -c feature/inspect-v2; inspect_files; git -C "$R" add -A; git -C "$R" commit -qm "inspect v2"

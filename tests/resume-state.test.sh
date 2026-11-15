@@ -186,6 +186,11 @@ status: proposed
 EOF
 expect_none "yaml fence after a ## heading is not frontmatter" "$R2" "feature example"
 
+# ---------- inspector in a nested project folder (yestvos/YesTVOS/) ----------
+N="$WORK/nested"; repo "$N"
+mkdir -p "$N/App/.ono"; echo '{}' >"$N/App/.ono/state.json"; printf '# AUDIT.md\n' >"$N/App/AUDIT.md"
+expect "nested inspection found from the project folder" "$N/App" "project analysis done, project docs not finished"
+
 # ---------- dev bugs ----------
 B="$WORK/bugs"; repo "$B"
 mkdir -p "$B/docs/bugs/BUG-7"

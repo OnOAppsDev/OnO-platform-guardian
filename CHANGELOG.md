@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.6] — 2026-11-15
+
+- **Projects in a subfolder of the git root** (tester bug, `yestvos/YesTVOS/`): Guardian looked for the inspector's outputs only at the git root, so a complete inspection was reported `missing` and its new `docs/project/capabilities.md` was refused as a stray document. The inspect gate, resume and the commit guard now find the project folder — the nearest folder from the session folder up to the git root holding the inspector's `AUDIT.md`, or the single subfolder (≤ 4 levels) holding `.ono/state.json` (`inspect-status.sh root`) — and allow inspector outputs under it. Two inspected subfolders with the session at the root aren't guessed. The empty "missing ()" detail is gone.
+- **Opener: one question per message** (tester report: work-branch name + inspection refresh offer + "what are we working on" arrived together). Git decisions first, one at a time; then the refresh offer (never while still on the central branch — the refresh writes files); then "what are we working on".
+
 ## [0.3.5] — 2026-11-15
 
 - **The inspect gate can't drift from the inspector again.** `check-routes.sh` (every PR + the daily drift job, which opens an issue) now compares Guardian's "inspection complete" files and "older knowledge model" files with the inspector's own `skills/registry.json` (`produces` of artifact-completed inspection stages, minus `knowledgeModel` artifacts). A new required or knowledge-model artifact in a future inspector release is reported as `INSPECT DRIFT` before it can wrongly block employees. The lists live in one place (`inspect-status.sh` `STAGE_ARTIFACTS` / `MODEL_ARTIFACTS`); `resume-state.sh` reads the same list.
