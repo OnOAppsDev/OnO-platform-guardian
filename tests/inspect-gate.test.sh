@@ -60,6 +60,18 @@ git -C "$R" switch -q feature/old
 out="$("$ST" check "$R")";  eq "central has it → on-central" "${out%%	*}" on-central
 case "$out" in *origin/develop*) ok ;; *) fail "on-central names the ref" "$out" ;; esac
 
+# elsewhere: a complete current-model inspection on another remote branch (FYI)
+fresh
+git -C "$R" switch -q -c feature/inspect-v2; inspect_files; git -C "$R" add -A; git -C "$R" commit -qm "inspect v2"
+git -C "$R" switch -q develop
+git clone -q --bare "$R" "$WORK/origin2.git"; git -C "$R" remote add origin "$WORK/origin2.git"; git -C "$R" fetch -q origin
+eq "elsewhere finds the branch with the inspection" "$("$ST" elsewhere "$R")" "origin/feature/inspect-v2"
+git -C "$R" switch -q feature/inspect-v2; rm -f "$R/docs/project/capabilities.md"; git -C "$R" commit -qam "older model"; git -C "$R" push -q origin feature/inspect-v2 2>/dev/null; git -C "$R" fetch -q origin
+git -C "$R" switch -q develop
+eq "older-model inspection elsewhere doesn't count" "$("$ST" elsewhere "$R")" ""
+eq "no remote → nothing" "$(cd "$WORK" && mkdir -p lone && git -c init.defaultBranch=main init -q lone && "$ST" elsewhere "$WORK/lone")" ""
+rm -rf "$WORK/origin2.git" "$WORK/lone"
+
 # override: today only
 fresh
 eq "override recorded" "$(PG_TODAY=2026-11-15 "$ST" override "$R" | cut -f1)" override

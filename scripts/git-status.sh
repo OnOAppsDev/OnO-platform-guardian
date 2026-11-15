@@ -8,7 +8,9 @@
 # outside a repo, or on any git error, it still prints valid JSON.
 #
 # Central-branch detection order (docs/vision.md):
-#   .platform-guardian.json "centralBranch" → origin/HEAD → develop → main → master
+#   .platform-guardian.json "centralBranch" → origin/HEAD → develop → dev → main → master
+#   (origin/HEAD with an unusual name while a conventional branch exists, or a branch thousands of
+#   commits ahead of it, is suspect → confidence low + central-ambiguous: the opener asks once)
 #
 # Environment:
 #   PG_NO_FETCH=1         skip `git fetch` (numbers reflect the last fetch)
@@ -170,9 +172,9 @@ if [ -f .platform-guardian.json ]; then
   fi
 fi
 
-# Fallback candidates that exist (develop/main/master).
+# Fallback candidates that exist (develop/dev/main/master).
 candidates=""
-for name in develop main master; do
+for name in develop dev main master; do
   [ -n "$(ref_for "$name")" ] && candidates="$candidates $name"
 done
 candidates="${candidates# }"
@@ -184,8 +186,17 @@ if [ -z "$central" ] && [ -n "$remote" ]; then
   sym="$(git symbolic-ref -q --short "refs/remotes/$remote/HEAD" 2>/dev/null)"
   if [ -n "$sym" ] && git show-ref -q --verify "refs/remotes/$sym" 2>/dev/null; then
     central="${sym#"$remote"/}"; central_ref="$sym"; source="origin-head"
-    # Default is main/master but a develop branch also exists → ambiguous.
-    if [ "$central" != "develop" ] && printf ' %s ' "$candidates" | grep -q ' develop '; then
+    case "$central" in
+      develop|dev|main|master|trunk) unusual=false ;;
+      *) unusual=true ;;
+    esac
+    if $unusual && [ -n "$candidates" ]; then
+      # e.g. a feature / staging branch set as the remote's default → don't trust it, ask
+      confidence="low"; warn "central-ambiguous"
+      printf ' %s ' "$candidates" | grep -q " $central " || candidates="$candidates $central"
+    # Default is main/master but a develop / dev branch also exists → ambiguous.
+    elif [ "$central" != "develop" ] && [ "$central" != "dev" ] &&
+         printf ' %s ' "$candidates" | grep -Eq ' (develop|dev) '; then
       confidence="medium"; warn "central-ambiguous"
     else
       confidence="high"
@@ -218,6 +229,13 @@ if [ -n "$central_ref" ] && ! $unborn; then
   ahead="${counts%%[[:space:]]*}"
   behind="${counts##*[[:space:]]}"
   case "$behind" in ''|*[!0-9]*) ;; 0) ;; *) warn "behind-central" ;; esac
+  # thousands of commits ahead of the "central" branch: almost surely the wrong central → ask
+  case "$ahead" in ''|*[!0-9]*) ;; *)
+    if [ "$source" != "override" ] && [ "$ahead" -gt "${PG_SUSPECT_AHEAD:-1000}" ] && [ "$confidence" != "low" ]; then
+      confidence="low"
+      case "$WARNINGS" in *central-ambiguous*) ;; *) warn "central-ambiguous" ;; esac
+    fi ;;
+  esac
 fi
 
 upstream="" up_ahead="" up_behind=""
