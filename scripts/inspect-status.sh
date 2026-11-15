@@ -7,7 +7,11 @@
 #
 # Status:
 #   done        stages 1–2 complete: AUDIT.md (inspector's) + CLAUDE.md + docs/project/{overview,
-#               components,patterns,integrations,capabilities}.md — audit topics may still be open
+#               components,patterns,integrations}.md — audit topics may still be open.
+#               detail "refresh-recommended: <files>" when a knowledge-model artifact is missing
+#               (docs/project/capabilities.md): the inspection predates the current knowledge
+#               model. The inspector's registry: such an absence "never reopens an otherwise
+#               complete stage" (inspection-state.ts skips knowledgeModel artifacts) → not a block.
 #   partial     inspection started (AUDIT.md) but not finished          detail: missing files
 #   on-central  not on this branch, but the central branch has it       detail: central ref
 #   missing     never inspected
@@ -48,12 +52,18 @@ inspector_audit() { # the inspector's AUDIT.md, not just any file with that name
 }
 
 missing=""
+# stage artifacts (registry `produces` minus `knowledgeModel` artifacts) — these decide completion
 for f in CLAUDE.md docs/project/overview.md docs/project/components.md docs/project/patterns.md \
-         docs/project/integrations.md docs/project/capabilities.md; do
+         docs/project/integrations.md; do
   [ -f "$top/$f" ] || missing="$missing $f"
 done
+# knowledge-model artifacts (registry `knowledgeModel`) — missing → refresh recommended, never a block
+stale=""
+for f in docs/project/capabilities.md; do
+  [ -f "$top/$f" ] || stale="$stale $f"
+done
 
-if inspector_audit && [ -z "$missing" ]; then out done; fi
+if inspector_audit && [ -z "$missing" ]; then out done "${stale:+refresh-recommended:$stale}"; fi
 
 # not done here — a manager-approved override for today?
 if [ -f "$override_file" ] && tail -n 1 "$override_file" | grep -q "^$today	"; then out override "$today"; fi

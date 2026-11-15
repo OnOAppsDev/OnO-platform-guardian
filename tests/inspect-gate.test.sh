@@ -42,6 +42,9 @@ inspect_files;              eq "all stage 1–2 files → done" "$(status)" done
 inspect_files docs/project/patterns.md
 out="$("$ST" check "$R")";  eq "a doc missing → partial" "${out%%	*}" partial
 case "$out" in *docs/project/patterns.md*) ok ;; *) fail "partial names the missing file" "$out" ;; esac
+inspect_files docs/project/capabilities.md
+out="$("$ST" check "$R")";  eq "older knowledge model (no capabilities.md) → still done" "${out%%	*}" done
+case "$out" in *"refresh-recommended: docs/project/capabilities.md"*) ok ;; *) fail "done carries the refresh hint" "$out" ;; esac
 fresh; echo "# Audit" >"$R/AUDIT.md"; echo c >"$R/CLAUDE.md"
 eq "someone else's AUDIT.md doesn't count" "$(status)" missing
 fresh; printf '{"centralBranch": "develop", "inspectRequired": false}\n' >"$R/.platform-guardian.json"
@@ -106,6 +109,8 @@ gate UserPromptSubmit "hi";                         eq "partial: blocked" "$DEC"
 case "$(printf '%s' "$OUT" | jq -r .reason)" in *"started but not finished"*) ok ;; *) fail "partial banner" "$OUT" ;; esac
 inspect_files
 gate UserPromptSubmit "hi";                         eq "done: allowed, silent" "$DEC" none
+inspect_files docs/project/capabilities.md
+gate UserPromptSubmit "hi";                         eq "older knowledge model: NOT blocked (tester bug)" "$DEC" none
 fresh
 OUT="$(printf '{"hook_event_name":"UserPromptSubmit","cwd":"%s","user_prompt":"hi"}' "$R" | PG_INSPECT_GATE=off "$GATE")"
 eq "PG_INSPECT_GATE=off" "$OUT" ""

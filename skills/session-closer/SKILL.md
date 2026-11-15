@@ -51,7 +51,7 @@ Show the short list — **✅ will commit** / **⏸️ stays out** — and wait 
 
 Never `git add -A` / `git add .`; stage the ✅ paths explicitly. Add a `.gitignore` line only if the employee asks (e.g. a file that keeps coming back) — exact path, never a blanket `*.md` / `*.json`.
 
-A PreToolUse guard (`hooks/pre-tool-use.sh`) enforces this on every `git add` / `git commit`, in any flow — also when an Ono plugin's own process commits: new non-code files are denied unless the command carries `PG_INCLUDE_FILES=1` or the project lists them; `neverCommit` files are denied always. If it denies, stage the rest and tell the employee in one line which files stayed out — never work around it (no `git add -f`, no `PG_INCLUDE_FILES=1` the employee didn't ask for).
+A PreToolUse guard (`hooks/pre-tool-use.sh`) enforces this on every `git add` / `git commit`, in any flow — also when an Ono plugin's own process commits: new non-code files are denied unless the command carries `PG_INCLUDE_FILES=1` or the project lists them; `neverCommit` files are denied always. If it denies, stage the rest and tell the employee in one line which files stayed out — never work around it (no `git add -f`, no `PG_INCLUDE_FILES=1` the employee didn't name a file for). `PG_INCLUDE_FILES=1` also triggers a permission prompt: the employee confirms those files themselves.
 
 ### 3. Branch
 
@@ -59,6 +59,9 @@ A PreToolUse guard (`hooks/pre-tool-use.sh`) enforces this on every `git add` / 
 - Detached HEAD → create a branch first.
 
 ### 4. Commit
+
+The guard asks the employee to confirm every `git commit` and `git push` in a permission prompt ("approve only if you asked for it"). Say it once before the commit: "Claude Code will ask you to approve the commit — that's Guardian making sure nothing is committed without you." Never commit or push outside this closer unless the employee explicitly asked for it in their own words.
+
 
 Stage the confirmed paths and commit with a short message in the style of the repo's recent history (`git log --oneline -10`). Nothing to commit → say so and continue.
 

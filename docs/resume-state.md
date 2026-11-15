@@ -57,7 +57,7 @@ Only when `AUDIT.md` starts `# AUDIT.md` or `.ono/state.json` exists. `AUDIT.md`
 
 | State | Next |
 |---|---|
-| `CLAUDE.md` or any `docs/project/{overview,components,patterns,integrations,capabilities}.md` missing | your step — `/inspect-approve` (or `/inspect` → Continue) |
+| `CLAUDE.md` or any `docs/project/{overview,components,patterns,integrations}.md` missing (`capabilities.md` is a knowledge-model artifact — its absence never reopens stage 2) | your step — `/inspect-approve` (or `/inspect` → Continue) |
 | no readable topics | `/inspect-status` |
 | a `Draft` topic | your step — review its file, then `/inspect-approve` |
 | `Pending Breakdown` topics | `/inspect-topic` |
