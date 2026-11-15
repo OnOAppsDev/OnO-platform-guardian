@@ -99,9 +99,12 @@ mk package.json;           run "git add package.json";       expect "new package
 mk ios/App/Assets.xcassets/Icon.imageset/Contents.json; run "git add ios"; expect "Xcode Contents.json → none" none
 mk tsconfig.app.json;      run "git add tsconfig.app.json";  expect "tsconfig → none" none
 mk .github/workflows/ci.yml; run "git add .github";          expect "CI workflow → none" none
-mk docs/specs/login/lld.md; run "PG_INCLUDE_FILES=1 git add docs/specs/login/lld.md"; expect "employee asked → included" none
+mk docs/specs/login/lld.md; run "PG_INCLUDE_FILES=1 git add docs/specs/login/lld.md"; expect "PG_INCLUDE_FILES → the EMPLOYEE confirms (ask), never silent" ask "approve only if YOU asked for these files"
 mk docs/project/overview.md; run "git add docs/project/overview.md"; expect "inspector project doc → committed" none
 mk .ono/state.json; run "git add .ono/state.json";            expect "inspector state → committed" none
+run "git push -u origin main";          expect "push → employee confirms (ask)" ask "to the server"
+run "git push --force origin main";     expect "force push → ask too" ask
+run "git log --oneline";                expect "read-only git → none" none
 mk sub/k.pem;              run "PG_INCLUDE_FILES=1 git add sub/k.pem"; expect "include never bypasses secrets" deny "sub/k.pem"
 printf '{"centralBranch": "develop", "commitPaths": ["docs/specs/**", "NOTES.md"]}\n' >"$R/.platform-guardian.json"
 mk docs/specs/pay/hld.md;  run "git add docs/specs/pay/hld.md"; expect "project commitPaths → none" none
@@ -147,10 +150,10 @@ run "git commit -m 'wip'";              expect "commit with staged stray" deny "
 run "git commit -m \"don't stop\"";      expect "commit, apostrophe in msg" deny
 git -C "$R" reset -q
 mk src/A.swift; git -C "$R" add src/A.swift
-run "git commit -m ok";                 expect "commit with staged source" none
+run "git commit -m ok";                 expect "commit → employee confirms (ask)" ask "Commit on main"
 git -C "$R" commit -qm ok
 echo more >>"$R/tracked.md"
-run "git commit -am tracked";           expect "commit -am, tracked only" none
+run "git commit -am tracked";           expect "commit -am → ask" ask "approve only if you asked for a commit"
 mk id_rsa.pem; git -C "$R" add id_rsa.pem
 run "git commit -m x";                  expect "commit with staged key" deny "id_rsa.pem"
 

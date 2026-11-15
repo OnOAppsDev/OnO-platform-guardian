@@ -13,6 +13,9 @@
 #     the commit unless the employee asked for it in chat (the command then
 #     carries PG_INCLUDE_FILES=1) or the project lists it in "commitPaths"
 #   - anything else (new source code, README / CHANGELOG, known config files) → no output
+# On top of that, the EMPLOYEE confirms in a permission prompt ("ask"), never Claude alone:
+#   - every `git commit` and `git push` — no commit or push without the employee's explicit OK;
+#   - every PG_INCLUDE_FILES=1 add of non-code files — the flag alone no longer lets them in.
 # Fails open: anything it can't parse → no output, exit 0. Never writes stderr.
 #
 # Env: PG_COMMIT_GUARD=off disables it; PG_ALLOWLIST overrides the allowlist path.
@@ -139,6 +142,7 @@ PATHS
 
 # --- walk the command: `cd X`, `git [-C X] add|stage|commit …` -------------------------
 new_files=""   # lines "<toplevel><TAB><repo-relative path>"
+commits="" pushes=""   # branch per `git commit` / `git push` in the command
 
 add_new() { # add_new TOPLEVEL PATHS(newline-separated, repo-relative)
   local top="$1" tracked p
@@ -206,7 +210,9 @@ EOF
                | sed -n "s/^add '\(.*\)'\$/\1/p")"
       add_new "$top" "$paths"
       ;;
+    push) pushes="$pushes$(git -C "$top" rev-parse --abbrev-ref HEAD 2>/dev/null)$nl" ;;
     commit)
+      commits="$commits$(git -C "$top" rev-parse --abbrev-ref HEAD 2>/dev/null)$nl"
       staged="$(git -C "$top" -c core.quotepath=false diff --cached --name-only --diff-filter=A)"
       [ -n "$staged" ] && new_files="$new_files$(printf '%s\n' "$staged" | sed "s|^|$top	|")$nl"
       ;;
@@ -215,18 +221,19 @@ done <<EOF
 $segments
 EOF
 
-[ -n "$new_files" ] || exit 0
+[ -n "$new_files$commits$pushes" ] || exit 0
 
-# the employee asked in chat to include specific files → Claude re-runs with PG_INCLUDE_FILES=1
+# the employee asked in chat to include specific files → Claude re-runs with PG_INCLUDE_FILES=1,
+# and the employee still confirms them in the permission prompt below
 include=""; case "$cmd" in *PG_INCLUDE_FILES=1*) include=1 ;; esac
-never="" stray="" seen="$nl"
+never="" stray="" included="" seen="$nl"
 while IFS="	" read -r top p; do
   [ -n "$p" ] || continue
   case "$seen" in *"$nl$top/$p$nl"*) continue ;; esac
   seen="$seen$top/$p$nl"
   case "$(classify "$p" "$top/$p" "$top")" in
     never) never="$never$p$nl" ;;
-    stray) [ -n "$include" ] || stray="$stray$p$nl" ;;
+    stray) if [ -n "$include" ]; then included="$included$p$nl"; else stray="$stray$p$nl"; fi ;;
   esac
 done <<EOF
 $new_files
@@ -250,6 +257,16 @@ if [ -n "$never" ]; then
 Stage only the other files (list paths explicitly, not \`git add .\`) and add these to .gitignore. If the employee really needs one of them in git, they run the git command themselves."
 elif [ -n "$stray" ]; then
   emit deny "[platform-guardian] Left out of the commit: these new files are documents, data or plugin working files, not code: $(list "$stray").
-Ono rule: only code goes into a commit unless the employee asks for a file. Stage only the other files (list paths explicitly, not \`git add .\` / \`-A\`) and keep these on disk — don't delete them and don't add them to .gitignore. Then tell the employee in one line which files stayed out. If they explicitly want one in, re-run with that path only: \`PG_INCLUDE_FILES=1 git add <path>\`. A project can always commit some paths by listing them in .platform-guardian.json \"commitPaths\"."
+Ono rule: only code goes into a commit unless the employee asks for a file. Stage only the other files (list paths explicitly, not \`git add .\` / \`-A\`) and keep these on disk — don't delete them and don't add them to .gitignore. Then tell the employee in one line which files stayed out. Only if the employee explicitly named a file to include, re-run with that path only: \`PG_INCLUDE_FILES=1 git add <path>\` — the employee then confirms it in a permission prompt; never use it on your own. A project can always commit some paths by listing them in .platform-guardian.json \"commitPaths\"."
+else
+  why=""
+  [ -n "$included" ] && why="$why
+• Add non-code files to git: $(list "$included") — approve only if YOU asked for these files."
+  [ -n "$commits" ] && why="$why
+• Commit on $(list "$(printf '%s' "$commits" | sort -u)") — approve only if you asked for a commit (e.g. \"close the session\")."
+  [ -n "$pushes" ] && why="$why
+• Push $(list "$(printf '%s' "$pushes" | sort -u)") to the server — approve only if you asked for it."
+  [ -n "$why" ] && emit ask "[platform-guardian] Claude wants to:$why
+Nothing goes into git or to the server without your OK. Not sure? Choose No and ask Claude why."
 fi
 exit 0

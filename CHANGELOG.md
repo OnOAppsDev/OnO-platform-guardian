@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.3] — 2026-11-15
+
+- **Every commit and push needs the employee's OK** (tester bug: after the employee picked an inspector option, Claude committed on its own — the guard denied the non-code files, then Claude re-ran with `PG_INCLUDE_FILES=1` by itself). The commit guard now returns a permission prompt (`ask`) for every `git commit` and `git push` ("approve only if you asked for it"), and for every `PG_INCLUDE_FILES=1` add of non-code files — the flag alone no longer lets files in; the employee confirms them. Denials (secrets, non-code files without the flag) still win. None of the Ono plugins commit on their own (dev plugin: "never creates a git commit"), so the only prompts are Guardian's close-out and Claude-initiated commits.
+- **Inspect gate: an inspection made with an older inspector knowledge model is complete, not "partial"** (tester bug: `YesPlusSmartTV` blocked for a missing `docs/project/capabilities.md`). Per the inspector's registry, a `knowledgeModel` artifact's absence "never reopens an otherwise complete stage" (`inspection-state.ts` skips it). `inspect-status.sh` now requires only the stage artifacts and returns `done` + `refresh-recommended`; the opener shows a one-line, non-blocking 💡 "Refresh Project Knowledge" hint. Same split in `resume-state.sh`.
+
 ## [0.3.2] — 2026-11-15
 
 - **Resume knows the dev plugin 0.7.4 half-started bug plan.** 0.7.4 writes the Bug Work Plan right after the platform / device-type confirmation, so an interrupted `/analyze-bug` keeps its routing (the fix for the tester's "platform detected again after /clear" bug). Guardian's resume no longer shows that draft as "waiting for approval — your step": it says *analysis in progress, platform ‹p› / ‹d› already confirmed* → `/analyze-bug ‹key›` continues with no new detection.

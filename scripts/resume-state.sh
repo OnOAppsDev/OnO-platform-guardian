@@ -250,7 +250,8 @@ inspector() {
   [ -f AUDIT.md ] || return 0
   head -5 AUDIT.md | grep -q '^# AUDIT\.md' || [ -f .ono/state.json ] || return 0
   local missing="" p
-  for p in overview components patterns integrations capabilities; do
+  # capabilities.md is a knowledge-model artifact: its absence doesn't reopen stage 2 (inspector registry)
+  for p in overview components patterns integrations; do
     [ -f "docs/project/$p.md" ] || missing="$missing $p"
   done
   if [ ! -f CLAUDE.md ] || [ -n "$missing" ]; then

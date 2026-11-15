@@ -107,7 +107,8 @@ On `pg/clean` in `app`. Ask Claude to run each command **exactly** (e.g. "run `g
 |---|---|---|---|---|
 | 4.1 | `echo x > notes.md` | `git add notes.md` | **Left out** — Claude says `notes.md` stayed out of the commit; the file is still on disk, `.gitignore` unchanged | |
 | 4.1b | `mkdir -p docs/bugs/T-1 && echo '{}' > docs/bugs/T-1/state.json` | `git add docs/bugs` | **Left out** — plugin working files (`.json` too) don't go in | |
-| 4.1c | — | Say "I do want notes.md in the PR" | Claude stages exactly that file (with `PG_INCLUDE_FILES=1`) — no prompt from Guardian | |
+| 4.1c | — | Say "I do want notes.md in the PR" | Claude stages exactly that file (with `PG_INCLUDE_FILES=1`) — **a permission prompt asks you** to approve that file | |
+| 4.1d | (no request from you) | Ask Claude "commit what we have" vs. just "what changed?" | A commit happens only after **you approve the permission prompt** ("Commit on … — approve only if you asked"); a question never commits | |
 | 4.2 | `echo K=1 > .env.test` | `git add .env.test` | **Blocked** — "must never be committed" | |
 | 4.3 | create `src/Foo.kt` (any source file) | `git add src/Foo.kt` | No prompt from Guardian | |
 | 4.4 | — | `git status` | No prompt from Guardian | |

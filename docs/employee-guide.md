@@ -42,7 +42,7 @@ Every Ono project goes through the **Project Inspector** once, before any work. 
    - asks: **bug, feature, QA, spec…?**
 3. **Say what you're doing in plain words** — "fix bug ABC-123", "new login screen", "write a QA plan". Guardian starts the right Ono plugin for you. No commands to remember.
 4. **Approvals are yours.** When a step needs a human (approving a plan, QA sign-off), Guardian stops and tells you exactly what to type.
-5. **Done** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian shows what goes into the commit (**only code** — notes and plugin documents stay out unless you ask), runs a quick **pre-PR check** (a one-page PDF of what to test; type **skip** to skip), then pushes and opens a PR — never straight to the main branch, and it asks before each step. Then type **`/clear`** to start fresh. Nothing is lost.
+5. **Done** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian shows what goes into the commit (**only code** — notes and plugin documents stay out unless you ask), runs a quick **pre-PR check** (a one-page PDF of what to test; type **skip** to skip), then pushes and opens a PR — never straight to the main branch. **Every commit and push needs your OK** in a Claude Code permission prompt: approve it only if you asked for it. Then type **`/clear`** to start fresh. Nothing is lost.
 
 ## Before every PR — the pre-PR check 🔍
 

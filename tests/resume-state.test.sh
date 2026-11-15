@@ -306,7 +306,8 @@ Other text
 EOF
 echo "# CLAUDE.md — demo" >"$I/CLAUDE.md"
 expect "docs/project missing → stage 1 approval" "$I" "project analysis done, project docs not finished · next: your step — /inspect-approve"
-mkdir -p "$I/docs/project"; for p in overview components patterns integrations capabilities; do echo x >"$I/docs/project/$p.md"; done
+mkdir -p "$I/docs/project"; for p in overview components patterns integrations; do echo x >"$I/docs/project/$p.md"; done
+# no capabilities.md (older knowledge model): stage 2 still complete → goes on to the topics
 expect "Draft topic → review + /inspect-approve" "$I" "audit topic Player / Media · drafted, waiting for your review (1/3 topics approved) · next: your step — review audits/player-media/player-media-audit.md, then /inspect-approve"
 sed -i.bak 's/| Draft |/| Approved |/' "$I/AUDIT.md"
 expect "pending only → /inspect-topic" "$I" "audit topics in progress (2/3 approved) · next: /inspect-topic"
