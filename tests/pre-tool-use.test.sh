@@ -105,6 +105,10 @@ mk .ono/state.json; run "git add .ono/state.json";            expect "inspector 
 run "git push -u origin main";          expect "push → employee confirms (ask)" ask "to the server"
 run "git push --force origin main";     expect "force push → ask too" ask
 run "git log --oneline";                expect "read-only git → none" none
+mkdir -p "$R/YesTVOS/.ono"; echo '{}' >"$R/YesTVOS/.ono/state.json"; printf '# AUDIT.md\n' >"$R/YesTVOS/AUDIT.md"
+mk YesTVOS/docs/project/capabilities.md; run "git add YesTVOS/docs/project/capabilities.md"; expect "nested inspector output → committed (tester bug)" none
+mk YesTVOS/audits/net/net-audit.md;   run "git add YesTVOS/audits/net/net-audit.md";   expect "nested inspector audit → committed" none
+mk Other/docs/project/x.md;           run "git add Other/docs/project/x.md";           expect "docs/project in a folder with no inspection → stays out" deny
 mk sub/k.pem;              run "PG_INCLUDE_FILES=1 git add sub/k.pem"; expect "include never bypasses secrets" deny "sub/k.pem"
 printf '{"centralBranch": "develop", "commitPaths": ["docs/specs/**", "NOTES.md"]}\n' >"$R/.platform-guardian.json"
 mk docs/specs/pay/hld.md;  run "git add docs/specs/pay/hld.md"; expect "project commitPaths → none" none

@@ -3,6 +3,7 @@
 # bash 3.2, no jq; always exits 0 and prints ONE line: "<status><TAB><detail>".
 #
 #   inspect-status.sh check [dir]     → status of the repo at dir
+#   inspect-status.sh root [dir]      → the project folder the inspection lives in (see below)
 #   inspect-status.sh elsewhere [dir] → "<ref>" of the most recently updated remote branch that
 #                                       holds a complete, current-model inspection (or nothing)
 #   inspect-status.sh override [dir]  → record today's manager-approved override for this repo
@@ -21,6 +22,10 @@
 #   exempt      .platform-guardian.json "inspectRequired": false (a committed, reviewed choice)
 #   skip        not a git repository
 #
+# Project folder: the inspector's outputs (AUDIT.md + .ono/) may live in a subfolder of the git
+# root (e.g. yestvos/YesTVOS/). The project folder is the nearest folder from the session folder
+# up to the git root that holds the inspector's AUDIT.md; if none and exactly one subfolder (≤ 3
+# levels) holds .ono/state.json, that one; else the git root.
 # Override lives outside the repo: ~/.claude/platform-guardian/<repo>/inspect-override
 # (one line: date, branch, git user). Valid for the local day it was written.
 # Env: PG_LOG_DIR (base folder), PG_TODAY (tests only).
@@ -32,6 +37,26 @@ today="${PG_TODAY:-$(date '+%Y-%m-%d')}"
 out() { printf '%s\t%s\n' "$1" "${2:-}"; exit 0; }
 
 top="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)" || out skip
+top="$(cd "$top" 2>/dev/null && pwd -P)" || out skip
+
+inspector_audit_in() { # the inspector's AUDIT.md, not just any file with that name
+  [ -f "$1/AUDIT.md" ] && { head -5 "$1/AUDIT.md" | grep -q '^# AUDIT\.md' || [ -f "$1/.ono/state.json" ]; }
+}
+proj=""
+d="$(cd "$dir" 2>/dev/null && pwd -P)" || d="$top"
+while :; do
+  inspector_audit_in "$d" && { proj="$d"; break; }
+  [ "$d" = "$top" ] && break
+  case "$d" in "$top"/*) d="$(dirname "$d")" ;; *) break ;; esac
+done
+if [ -z "$proj" ]; then
+  found="$(find "$top" -maxdepth 4 \( -name node_modules -o -name Pods -o -name .git -o -name build \) -prune \
+            -o -path '*/.ono/state.json' -print 2>/dev/null | sed 's#/\.ono/state\.json$##')"
+  [ -n "$found" ] && [ "$(printf '%s\n' "$found" | grep -c .)" = 1 ] && inspector_audit_in "$found" && proj="$found"
+fi
+[ -n "$proj" ] || proj="$top"
+prefix="${proj#"$top"}"; prefix="${prefix#/}"; pp="${prefix:+$prefix/}"   # "" or "YesTVOS/"
+[ "$cmd" = "root" ] && { printf '%s\n' "$proj"; exit 0; }
 state_dir="$(dirname "$("$here/session-log.sh" path "$top" 2>/dev/null)")"
 [ -n "$state_dir" ] && [ "$state_dir" != "." ] || state_dir="${PG_LOG_DIR:-$HOME/.claude/platform-guardian}/$(basename "$top")"
 override_file="$state_dir/inspect-override"
@@ -42,9 +67,9 @@ if [ "$cmd" = "elsewhere" ]; then   # FYI only — merging another branch is a h
   git -C "$top" for-each-ref --sort=-committerdate --count=200 --format='%(refname:short)' "refs/remotes/$remote" 2>/dev/null |
   while IFS= read -r r; do
     case "$r" in */HEAD) continue ;; esac
-    git -C "$top" cat-file -e "$r:AUDIT.md" 2>/dev/null &&
-      git -C "$top" cat-file -e "$r:docs/project/overview.md" 2>/dev/null &&
-      git -C "$top" cat-file -e "$r:docs/project/capabilities.md" 2>/dev/null &&
+    git -C "$top" cat-file -e "$r:${pp}AUDIT.md" 2>/dev/null &&
+      git -C "$top" cat-file -e "$r:${pp}docs/project/overview.md" 2>/dev/null &&
+      git -C "$top" cat-file -e "$r:${pp}docs/project/capabilities.md" 2>/dev/null &&
       { printf '%s\n' "$r"; break; }
   done
   exit 0
@@ -63,9 +88,7 @@ if [ -f "$top/.platform-guardian.json" ] &&
   out exempt
 fi
 
-inspector_audit() { # the inspector's AUDIT.md, not just any file with that name
-  [ -f "$top/AUDIT.md" ] && { head -5 "$top/AUDIT.md" | grep -q '^# AUDIT\.md' || [ -f "$top/.ono/state.json" ]; }
-}
+inspector_audit() { inspector_audit_in "$proj"; }
 
 missing=""
 # Kept in step with the inspector's skills/registry.json by scripts/check-routes.sh (CI + daily):
@@ -75,12 +98,12 @@ STAGE_ARTIFACTS="CLAUDE.md docs/project/overview.md docs/project/components.md d
 MODEL_ARTIFACTS="docs/project/capabilities.md"
 
 for f in $STAGE_ARTIFACTS; do
-  [ -f "$top/$f" ] || missing="$missing $f"
+  [ -f "$proj/$f" ] || missing="$missing $f"
 done
 # knowledge-model artifacts (registry `knowledgeModel`) — missing → refresh recommended, never a block
 stale=""
 for f in $MODEL_ARTIFACTS; do
-  [ -f "$top/$f" ] || stale="$stale $f"
+  [ -f "$proj/$f" ] || stale="$stale $f"
 done
 
 if inspector_audit && [ -z "$missing" ]; then out done "${stale:+refresh-recommended:$stale}"; fi
@@ -92,8 +115,8 @@ if inspector_audit; then out partial "${missing# }"; fi
 
 # never inspected on this branch — does the central branch already have it?
 ref="$(PG_NO_FETCH=1 "$here/git-status.sh" "$top" 2>/dev/null | sed -n 's/.*"central":{[^}]*"ref":"\([^"]*\)".*/\1/p')"
-if [ -n "$ref" ] && git -C "$top" cat-file -e "$ref:AUDIT.md" 2>/dev/null &&
-   git -C "$top" cat-file -e "$ref:docs/project/overview.md" 2>/dev/null; then
+if [ -n "$ref" ] && git -C "$top" cat-file -e "$ref:${pp}AUDIT.md" 2>/dev/null &&
+   git -C "$top" cat-file -e "$ref:${pp}docs/project/overview.md" 2>/dev/null; then
   out on-central "$ref"
 fi
 out missing

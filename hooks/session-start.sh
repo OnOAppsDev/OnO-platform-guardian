@@ -55,8 +55,9 @@ case "${inspect%%	*}" in
   missing|partial|on-central)
     newer="$("$scripts/inspect-status.sh" elsewhere "$dir" 2>/dev/null)"
     [ -n "$newer" ] && printf '\nINSPECT: FYI — a complete inspection exists on %s (never merged into this branch).\n' "$newer"
-    printf '\nINSPECT GATE: %s (%s) — this project has NOT been through the Ono Project Inspector. The inspect-gate hook blocks the employee'"'"'s messages and Ono plugin commands with a red ⛔ banner until they run /ono-project-inspector:inspect or type the manager-approval sentence. If a message reaches you anyway (they started the inspector, or typed the sentence), follow session-opener step 0b.\n' \
-      "${inspect%%	*}" "${inspect#*	}" ;;
+    d="${inspect#*	}"
+    printf '\nINSPECT GATE: %s%s — this project has NOT been through the Ono Project Inspector. The inspect-gate hook blocks the employee'"'"'s messages and Ono plugin commands with a red ⛔ banner until they run /ono-project-inspector:inspect or type the manager-approval sentence. If a message reaches you anyway (they started the inspector, or typed the sentence), follow session-opener step 0b.\n' \
+      "${inspect%%	*}" "${d:+ ($d)}" ;;
   done)
     case "${inspect#*	}" in refresh-recommended:*)
       newer="$("$scripts/inspect-status.sh" elsewhere "$dir" 2>/dev/null)"
