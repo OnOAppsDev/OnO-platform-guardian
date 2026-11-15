@@ -3,7 +3,8 @@
 ## [0.3.2] — 2026-11-15
 
 - **Resume knows the dev plugin 0.7.4 half-started bug plan.** 0.7.4 writes the Bug Work Plan right after the platform / device-type confirmation, so an interrupted `/analyze-bug` keeps its routing (the fix for the tester's "platform detected again after /clear" bug). Guardian's resume no longer shows that draft as "waiting for approval — your step": it says *analysis in progress, platform ‹p› / ‹d› already confirmed* → `/analyze-bug ‹key›` continues with no new detection.
-- Routes re-verified against `ono-mobile-dev-plugin` 0.7.3 (better tvOS / React Native detection) and 0.7.4 — no route changes. Close-out timing wording follows 0.7.4 (the analysis resumes; routing is no longer lost).
+- Routes re-verified against `ono-mobile-dev-plugin` 0.7.3 (better tvOS / React Native detection) and 0.7.4 — no route changes.
+- Routes re-verified against `spec-team-toolkit` 0.6.1 (`lld-web-backend-spec`: capabilities, readiness table, source-reading rules) — same skills, no route changes. Close-out timing wording follows 0.7.4 (the analysis resumes; routing is no longer lost).
 
 ## [0.3.1] — 2026-11-15
 
