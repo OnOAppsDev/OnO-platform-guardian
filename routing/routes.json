@@ -6,7 +6,7 @@
     "ono-plugin-qa": "0.11.0",
     "matrix-qa-plugin": "0.1.0",
     "spec-team-toolkit": "0.6.1",
-    "ono-project-inspector": "0.11.0",
+    "ono-project-inspector": "0.11.1",
     "matrix-studio": "0.1.0"
   },
   "humanOnly": {
