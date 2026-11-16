@@ -118,6 +118,8 @@ Every client-side hook can be avoided: by a terminal, by `!`, by a `Bash` write,
 
 ## For Yagil — findings in the other plugins (FYI, no change made)
 
+**Status 2026-11-16 (dev plugin 0.7.6, PR #62):** 1–4 fixed. 5 open (optional). Server-side branch protection still off on `ono-mobile-dev-plugin` `main` itself (API: no protection rule).
+
 1. **Bug report 2026-11-15 (Noam): still open in 0.7.5.** `scripts/edit-approval.ts` `writeRecord` writes into `docs/tasks/bugs/` without `mkdirSync(…, { recursive: true })` (the `fs` import at :48 has no `mkdirSync`), so the first bug in a repo fails with `WRITE_FAILED`/`ENOENT`. Secondary: `task-state.ts` ~:1164 refuses `complete` with one shared message. It should name the failing condition (e.g. "accessibility applies but no Tier 1/2 check recorded").
 2. **The main-branch hook needs `jq`.** Without it `tool_name` is empty and the hook exits 0, so the protection is silently off. macOS 15+ ships `jq`, so the risk is low, but it fails open without a word.
 3. **The main-branch hook blocks by branch, not by path.** On `main` it also blocks writes outside the repo (Claude's memory, scratch files). Low.

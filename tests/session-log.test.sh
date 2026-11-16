@@ -122,6 +122,26 @@ expect_eq "hook outside git exits 0" "$rc" "0"
 expect_contains "hook outside git still reports repo:false" "$out" '"repo":false'
 expect_contains "hook outside git has no-log line" "$out" "No session-log entry"
 
+# --- jq missing → TOOLS line (the dev plugin 0.7.6+ blocks writes without it) ---
+printf '{"plugins":{"ono-mobile-dev-plugin@ono-plugin-marketplace":[{}]}}' >"$WORK/with-dev.json"
+printf '{"plugins":{"spec-team-toolkit@ono-plugin-marketplace":[{}]}}' >"$WORK/no-dev.json"
+out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"; rc=$?
+expect_eq "no jq → still exits 0" "$rc" "0"
+expect_contains "no jq + dev plugin → TOOLS line" "$out" "TOOLS: jq is not installed"
+expect_absent "TOOLS line never says 'Open with'" "$out" "Open with one ⚠️ line: install jq"
+out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_PLUGINS_FILE="$WORK/no-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "no jq, dev plugin not installed → no TOOLS line" "$out" "TOOLS:"
+out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_PLUGINS_FILE="$WORK/nowhere.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "no jq, unknown plugin list → TOOLS line" "$out" "TOOLS: jq is not installed"
+out="$(echo '{}' | PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "jq present → no TOOLS line" "$out" "TOOLS:"
+# first time on the machine: the jq line is part of the welcome (item 3b), not a second opener line
+out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_PLUGINS_FILE="$WORK/with-dev.json" PG_LOG_DIR="$WORK/fresh" CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "first time + no jq → item 3b in the welcome" "$out" "3b. The TOOLS line below"
+out="$(echo '{}' | PG_PLUGINS_FILE="$WORK/with-dev.json" PG_LOG_DIR="$WORK/fresh2" CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "first time + jq → welcome still there" "$out" "FIRST TIME WITH GUARDIAN"
+expect_absent "first time + jq → no item 3b" "$out" "3b."
+
 out="$(echo '{}' | CLAUDE_PLUGIN_ROOT="$WORK/nowhere" CLAUDE_PROJECT_DIR="$R" "$HOOK" 2>&1)"; rc=$?
 expect_eq "hook with broken plugin root fails open" "$rc:$out" "0:"
 

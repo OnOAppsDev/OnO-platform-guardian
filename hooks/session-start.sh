@@ -21,6 +21,15 @@ case "$report" in
   *) "$scripts/protected-branch.sh" forget "$dir" ;;
 esac
 
+# Guardian needs no jq, but the Ono dev plugin's hooks (0.7.6+) read every file change with it and,
+# without it, block every write. Only when that plugin is installed (unknown list → assume it is).
+no_jq=""
+plugins="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
+if ! command -v "${PG_JQ:-jq}" >/dev/null 2>&1 &&
+   { [ ! -f "$plugins" ] || grep -q '"ono-mobile-dev-plugin@' "$plugins" 2>/dev/null; }; then
+  no_jq=1
+fi
+
 last="$("$scripts/session-log.sh" last "$dir" 2>/dev/null)"
 others="$("$scripts/session-log.sh" others "$dir" 2>/dev/null | paste -sd, - | sed 's/,/, /g')"
 
@@ -45,7 +54,8 @@ Your reply to their first message is ONLY the welcome, so the tour offer can't g
 1. An enthusiastic welcome to **OnO Platform Guardian** full of emojis (🎉👋🚀), and one line on what Guardian does for them.
 2. Their first message was a task or a question → one short line that you got it and will get to it right after the tour question (don't start on it).
 3. The git report needs attention (behind central, on central, central unclear) → at most one line that you'll sort it out right after — no question, no options.
-4. Last, on its own line, in bold: "Want a quick 3-minute tour of how to work with me? 👉 Type **yes** for the tour, or **later** to skip it for now."
+${no_jq:+3b. The TOOLS line below (jq missing) → its one ⚠️ line here, before the tour offer.
+}4. Last, on its own line, in bold: "Want a quick 3-minute tour of how to work with me? 👉 Type **yes** for the tour, or **later** to skip it for now."
 Then STOP and wait. No git summary, no git questions, no "what are we working on", nothing after the offer — a second question gets answered instead and the tour is missed.
 If yes → run the \`platform-guardian:onboarding\` skill. If later → tell them they can type **onboarding** any time, plus the one-time setup so they always get the latest version: \`/plugin\` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — then run the normal opener (session-opener steps 1–4) and get back to their first message.
 MSG
@@ -75,6 +85,10 @@ case "${inspect%%	*}" in
   override)
     printf '\nINSPECT GATE: override — not inspected; the employee typed the manager-approval sentence today. Open with one ⚠️ line: working without the inspection today, with manager approval — run /ono-project-inspector:inspect as soon as possible.\n' ;;
 esac
+
+if [ -n "$no_jq" ]; then
+  printf '\nTOOLS: jq is not installed on this computer, and the Ono dev plugin (0.7.6+) checks every file change with it: without jq it blocks file changes on every branch. Add one ⚠️ line (information, not a question) with the fix — see session-opener step 1.\n'
+fi
 
 resume="$("$scripts/resume-state.sh" "$dir" 2>/dev/null)"
 if [ -n "$resume" ]; then

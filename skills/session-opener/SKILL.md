@@ -54,6 +54,8 @@ One warm line. If there is a session-log entry, follow with one line: "Last time
 
 If the hook found **unfinished work in the Ono plugins' documents** (lines `- ‹plugin› · ‹what› · ‹stage› · next: ‹step›  [‹file›]`), list it in plain words — at most the top three, one short line each: "Feature *login* — 2 of 5 tasks done. Next: `/implement-task login T3`." Mark the ones that are the employee's own step ("your step" — an approval or sign-off) as theirs; never do those for them. These stages are read from the documents ("apparent") — the plugin re-checks when it runs. Keep them for step 4.
 
+If the context has a **`TOOLS: jq is not installed`** line, add one ⚠️ line (information, not a question): "⚠️ `jq` is missing on this computer — the Ono dev plugin blocks file changes without it. Install it once in the **Terminal app** (not here): Mac `brew install jq` — no Homebrew? download it from jqlang.org/download, or update to macOS 15+, which includes it · Linux `sudo apt-get install -y jq`. Then restart Claude Code." In the first-time welcome (step 0) it's item 3b of the notice. Never install it yourself, and don't suggest `!` for it (sudo asks for a password, and the inspect gate may block it).
+
 If `repo` is `false`: say this folder isn't a git project, so there are no branch checks, and go to step 4.
 
 ### 2. Git state — handle in this priority order
