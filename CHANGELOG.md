@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.1] — 2026-11-16
+
+- Routes re-verified against `ono-mobile-dev-plugin` 0.7.6 (Bug Flow first-bug fix, hooks fail closed, `NotebookEdit` covered, main/master hook scoped to the project repo). No command, route or resume change (document formats changed only in version strings). Both hooks now allow files outside the project repo (scratch, `/tmp`); they still differ on a sibling repo and on git-ignored files (Guardian judges the file's own repo and allows ignored files).
+- **`jq` missing → the opener says so.** From 0.7.6 the dev plugin's hooks block (secrets, main branch) or ask (approval) on every file change when `jq` isn't installed, on every branch. Guardian itself needs no `jq`; when the dev plugin is installed, the session-start hook adds a `TOOLS:` line and the opener shows one ⚠️ line with how to install it in the Terminal app (Homebrew, jqlang.org, or macOS 15+, which includes it). For first-time users it's part of the welcome (item 3b), not a second opener line.
+
 ## [0.4.0] — 2026-11-16
 
 Protected branches, the inspect gate and plugin independence (Dev Plugin 0.7.5 integration review; design and reasoning in `docs/branch-policy.md`).
