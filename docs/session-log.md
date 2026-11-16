@@ -2,6 +2,18 @@
 
 ---
 
+## Session 13 — 2026-11-16 — Dev Plugin 0.7.6 review + Guardian 0.4.1
+
+- Yagil asked for a review of Dev Plugin 0.7.6 (dev plugin PR #62). The user approved and merged it before the review started. Post-merge check: 39 suites · 4607 checks · 0 failures on Node 24, and our findings 1–4 are fixed (`docs/branch-policy.md` status). Item 5 is still open.
+- Node 20 makes 4 `edit-approval` checks fail (already true in 0.7.5): the approval hook runs `node *.ts`, so on old Node every approved bug edit asks again. That's undocumented, and it's in the message to Yagil along with the missing server-side protection on the plugin repo's `main` (PR #62 merged with no CI or rule).
+- Guardian 0.4.1 (PR #32, merged, CI green on macOS + Linux): routes verified against 0.7.6. 0.7.6 blocks every write without `jq`, so session start now adds a `TOOLS:` line and the opener shows one ⚠️ install line, only when the dev plugin is installed (item 3b for first-time users).
+- Review agent: 5 findings in my first version, all fixed. The worst was a false claim that the QA plugin needs `jq`: its only hook matches `Bash` and fails open.
+- Open: Yagil's reply (minimum Node version, server-side branch protection), live test §5e, deck update.
+- **Process improvement:** before writing anything about another plugin's behavior into Guardian text, read that hook's matcher and its no-jq/error path. Grepping for `jq` isn't evidence (same lesson as Session 11: rules come from the owning plugin's code).
+- **Next session:** Yagil's answers → if he confirms the minimum Node version, add a Node warning next to the jq one; then the deck update and live test §5e.
+
+---
+
 ## Session 12 — 2026-11-16 — Protected branches + inspect-gate deadlock (0.4.0)
 
 - Yagil's email (Dev Plugin 0.7.5 integration): investigated Guardian + dev plugin + inspector code, wrote `docs/branch-policy.md` (findings F1–F6, challenges, who-protects-what table). Key finding: the inspector on `main` gets its `Write` calls blocked but its `bun` writes land, so it leaves a half-written inspection. The block has to be at the command level.
