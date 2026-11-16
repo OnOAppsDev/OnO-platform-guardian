@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0] — 2026-11-16
+
+Protected branches, the inspect gate and plugin independence (Dev Plugin 0.7.5 integration review; design and reasoning in `docs/branch-policy.md`).
+
+- **Work branch before the inspection** (deadlock: the gate blocked the employee's answer to "create a work branch?", and the inspector on `main` had its writes half-blocked by the dev plugin). On a protected branch the gate blocks the inspector's commands, for a first inspection and a refresh alike (read-only `inspect-status` excepted), and the banner starts with ① `! git switch -c chore/project-inspection` ② `/ono-project-inspector:inspect`. The only thing the gate lets through before the inspection is that exact branch command (`git switch -c` / `git checkout -b`, one command, nothing chained, not to a protected name). Plain-language requests stay blocked, so this opens no way around the inspection.
+- **Guardian's own write guard** (`hooks/write-guard.sh`, `Write | Edit | NotebookEdit`): no file changes on a protected branch, meaning `main`, `master`, and the project's central branch when it's certain (`.platform-guardian.json` `centralBranch`, or detection confidence `high`, cached at session start). About 80 ms per write on a work branch. Guardian no longer relies on the dev plugin's `main`/`master` hook; both stay, on purpose.
+- **Commit guard: commit or push on a protected branch → deny** (was: a permission prompt). This includes a push whose target is protected (`HEAD:develop`, `+x:refs/heads/main`, `:develop`). `git switch -c x && git commit` is judged on `x`.
+- **Claude can't start the Inspector on a protected branch either** (`Skill` / `Agent` / `SlashCommand` → deny, except `inspect-status`). The gate only sees what the employee types.
+- **QA plugins keep their own git flow**: the ono-plugin-qa QA repo and matrix-qa's `qa/` folder aren't blocked (the employee reviews and commits there by design). Never blocked either: `~/.claude`, git-ignored files, a brand-new project with no commits yet.
+- Hardened after three independent review agents: push through `heads/main`, `--all`, `--mirror`, subshells, `if`/`env`, line breaks and `checkout -` are all caught; branch names compare case-insensitively (`Main` is `main` on macOS); a commit or push the guard can't read gets the permission prompt. Details: `docs/branch-policy.md` → Review.
+- **Inspector missing or turned off** → the banner gives the install / enable line, and a command that doesn't exist no longer opens the gate.
+- Routes re-verified against `ono-mobile-dev-plugin` 0.7.5 (nested-project knowledge only; no command, hook or document-format change).
+- One definition of "protected branch" for every hook: `scripts/protected-branch.sh`. Router: a work branch for every intent that writes files, not only dev. Opener: `.platform-guardian.json` is written after the work branch exists.
+
 ## [0.3.7] — 2026-11-16
 
 - Routes re-verified against `ono-project-inspector` 0.11.2 — the fixes for the tester report (agent can run its own flow, Bun preflight, project root below the git root, same layout Guardian 0.3.6 already supports). No route changes; inspector registry artifacts unchanged.

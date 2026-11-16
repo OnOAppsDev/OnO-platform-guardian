@@ -6,15 +6,24 @@
 #   - the inspector itself (/ono-project-inspector:…, /inspect…) — and, once it ran in this
 #     session, every following message (answering the inspector's questions);
 #   - the manager-approval sentence (exact, Hebrew or English) → today's override for this repo;
-#   - built-in commands (/clear, /plugin, /exit, …) and Guardian's own (/platform-guardian:…).
+#   - built-in commands (/clear, /plugin, /exit, …) and Guardian's own (/platform-guardian:…);
+#   - creating a work branch: exactly `git switch -c <name> [<start>]` / `git checkout -b …`
+#     (with or without a leading `!`), one command, <name> not a protected branch.
+# Protected branch (scripts/protected-branch.sh — main, master, the central branch when certain):
+# the inspector writes files (also through bun scripts, which no write hook sees), so its
+# commands are blocked there whatever the inspect status — first inspection and refresh alike —
+# except the read-only inspect-status. The banner then starts with "create a work branch".
 # Fails open: anything unexpected → exit 0 with no output. Never writes stderr.
 #
-# Env: PG_INSPECT_GATE=off disables it; PG_LOG_DIR (state dir).
+# Env: PG_INSPECT_GATE=off disables it; PG_LOG_DIR (state dir); PG_PLUGINS_FILE / PG_CLAUDE_DIR
+# (installed-plugins list / user settings — tests).
 
 [ "${PG_INSPECT_GATE:-}" = "off" ] && exit 0
 here="$(cd "$(dirname "$0")" && pwd)"
 scripts="${CLAUDE_PLUGIN_ROOT:-$here/..}/scripts"
 payload="$(cat 2>/dev/null)"
+nl='
+'
 
 # json_str KEY → unescaped value of the first "KEY":"…" in the payload
 json_str() {
@@ -47,12 +56,10 @@ case "$event" in
   *) text="$(json_str user_prompt)"; [ -n "$text" ] || text="$(json_str prompt)" ;;
 esac
 
-status_line="$("$scripts/inspect-status.sh" check "$dir" 2>/dev/null)"
-status="${status_line%%	*}"; detail="${status_line#*	}"
-case "$status" in missing|partial|on-central) ;; *) exit 0 ;; esac
+trimmed="$(printf '%s' "$text" | tr '\n\t' '  ' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+pb="$("$scripts/protected-branch.sh" check "$dir" 2>/dev/null)"
+on_protected=""; [ "${pb%%	*}" = protected ] && { on_protected=1; pb_rest="${pb#*	}"; branch="${pb_rest%%	*}"; }
 
-state="${PG_LOG_DIR:-$HOME/.claude/platform-guardian}/.state"
-flag="$state/inspecting-${session:-none}"
 json_esc() {
   printf '%s' "$1" | tr -d '\000-\011\013-\037' | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
     | awk '{ printf "%s%s", (NR > 1 ? "\\n" : ""), $0 }'
@@ -63,15 +70,78 @@ context() { # allow, and tell Claude something
   exit 0
 }
 
+block() { printf '{"decision":"block","reason":"%s"}\n' "$(json_esc "$1")"; exit 0; }
+is_inspector=""
+case "$trimmed" in
+  /ono-project-inspector:inspect-status|/ono-project-inspector:inspect-status\ *|/inspect-status|/inspect-status\ *) ;;
+  /ono-project-inspector:*|/inspect|/inspect\ *|/inspect-*) is_inspector=1 ;;
+esac
+
+# the inspector writes files → never on a protected branch (first inspection and refresh alike)
+[ -n "$is_inspector" ] && [ -n "$on_protected" ] && block "⛔ STOP — CREATE A WORK BRANCH FIRST ⛔
+
+You're on \`$branch\`, a protected branch. The Ono Project Inspector writes files, so it never runs here.
+
+👉 1. Create a work branch (type this, with the !):   ! git switch -c chore/project-inspection
+👉 2. Then run the inspector:   ${trimmed%% *}
+
+Any branch name works. The inspection then goes into a PR, so the whole team gets it."
+
+status_line="$("$scripts/inspect-status.sh" check "$dir" 2>/dev/null)"
+status="${status_line%%	*}"; detail="${status_line#*	}"
+case "$status" in missing|partial|on-central) ;; *) exit 0 ;; esac
+
+state="${PG_LOG_DIR:-$HOME/.claude/platform-guardian}/.state"
+flag="$state/inspecting-${session:-none}"
+
 # the inspector already started in this session → let the conversation with it flow
 [ -n "$session" ] && [ -f "$flag" ] && exit 0
 
-trimmed="$(printf '%s' "$text" | tr '\n\t' '  ' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+# creating a work branch — allowed while gated; exactly one branch command, nothing rides along
+bc="$(printf '%s' "$trimmed" | sed -e 's/^![[:space:]]*//')"
+case "$bc" in *[\;\&\|\$\`\<\>\(\)\\]*) bc="" ;; esac
+case "$text" in *"$nl"*) bc="" ;; esac       # one line only — nothing rides along on a second line
+set -f; set -- $bc; set +f
+case "${1:-} ${2:-} ${3:-}" in "git switch -c"|"git checkout -b") ;; *) set -- ;; esac
+if [ "$#" -ge 4 ] && [ "$#" -le 5 ]; then
+  name="$4"
+  case "$name ${5:-}" in *[!A-Za-z0-9._/\ -]*|-*|*" -"*) name="" ;; esac
+  # a start point must be a real commit (origin/develop, a tag …), not free text
+  [ -n "${5:-}" ] && ! git -C "$dir" rev-parse -q --verify "${5}^{commit}" >/dev/null 2>&1 && name=""
+  if [ -n "$name" ] && ! "$scripts/protected-branch.sh" is "$name" "$dir"; then
+    context "[platform-guardian] WORK BRANCH — the employee asked for exactly this git command: \`$bc\`. If \`git branch --show-current\` already shows \`$name\` (they ran it with !), run nothing; otherwise run exactly that one command and nothing else. Then tell them in one line that they're on \`$name\`, and that the next step is the project inspection: \`/ono-project-inspector:inspect\`. Nothing else until it's done."
+  fi
+fi
+
+# is the inspector there? A missing or disabled one would leave the employee with a command that
+# doesn't exist (and must not open the gate). Unknown (no plugins list) → assume it is.
+inspector=""
+plugins="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
+if [ -f "$plugins" ] && ! grep -q '"ono-project-inspector@' "$plugins" 2>/dev/null; then inspector=missing
+else
+  top="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)"
+  # user → project → local: the last file that mentions it decides (Claude Code's precedence)
+  for f in "${PG_CLAUDE_DIR:-$HOME/.claude}/settings.json" "$top/.claude/settings.json" "$top/.claude/settings.local.json"; do
+    [ -f "$f" ] || continue
+    grep -Eq '"ono-project-inspector@[^"]*"[[:space:]]*:[[:space:]]*false' "$f" 2>/dev/null && inspector=disabled
+    grep -Eq '"ono-project-inspector@[^"]*"[[:space:]]*:[[:space:]]*true' "$f" 2>/dev/null && inspector=""
+  done
+fi
+
+# on-central: the banner's own fix — exactly `git merge <central ref>` — is let through too
+if [ "$status" = on-central ] && [ "$bc" = "git merge $detail" ]; then
+  context "[platform-guardian] UPDATE BRANCH — the employee asked for exactly: \`$bc\` (the central branch already has the project inspection). If it already ran (they used !), run nothing; otherwise run exactly that one command and nothing else. If it hits conflicts, stop and walk them through it. Then tell them in one line that the inspection is now on their branch and they can start working."
+fi
 
 # commands
 case "$trimmed" in
   /ono-project-inspector:*|/inspect|/inspect\ *|/inspect-*)
-    mkdir -p "$state" 2>/dev/null && : >"$flag" 2>/dev/null
+    [ -z "$inspector" ] || [ -z "$is_inspector" ] || block "⛔ The Ono Project Inspector is $( [ "$inspector" = missing ] && echo "not installed" || echo "turned off" ) on this computer.
+
+👉 $( [ "$inspector" = missing ] && echo "Install it:  /plugin install ono-project-inspector@ono-plugin-marketplace" || echo "Turn it on:  /plugin → Installed → ono-project-inspector → Enable" )
+👉 Then:  /reload-plugins
+👉 Then run:  /ono-project-inspector:inspect"
+    [ -n "$is_inspector" ] && mkdir -p "$state" 2>/dev/null && : >"$flag" 2>/dev/null
     exit 0 ;;
   /platform-guardian:*) exit 0 ;;
   /*:*) ;;                                   # another plugin's command → gated below
@@ -96,6 +166,19 @@ case "$status" in
   on-central) why="${detail#origin/} already has the inspection, but your branch is older and doesn't."
               fix="👉 Update your branch, then start again:  ! git merge $detail" ;;
 esac
+case "$inspector" in
+  missing)  fix="👉 First install the inspector:  /plugin install ono-project-inspector@ono-plugin-marketplace  → then /reload-plugins
+$fix" ;;
+  disabled) fix="👉 First turn the inspector on:  /plugin → Installed → ono-project-inspector → Enable  → then /reload-plugins
+$fix" ;;
+esac
+# the inspector writes files → a work branch first (it's blocked on a protected branch)
+if [ -n "$on_protected" ] && [ "$status" != on-central ]; then
+  fix="You're on \`$branch\`, a protected branch — the inspection is done on a work branch and reaches the team through a PR.
+👉 1. Create a work branch (type this, with the !):   ! git switch -c chore/project-inspection
+👉 2. Then:
+$fix"
+fi
 
 reason="⛔🚨⛔ STOP — PROJECT INSPECTION REQUIRED ⛔🚨⛔
 

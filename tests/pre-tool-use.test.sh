@@ -13,6 +13,7 @@ export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.com
 unset PG_COMMIT_GUARD PG_ALLOWLIST PG_GUARD_DUMP_RULES CLAUDE_PLUGIN_ROOT
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/pg-guard.XXXXXX")"
+export PG_LOG_DIR="$WORK/state"
 trap 'rm -rf "$WORK"' EXIT
 R="$WORK/repo"
 
@@ -26,6 +27,7 @@ fresh() { # fresh repo with one committed file + .gitignore
   printf 'node_modules/\n' >"$R/.gitignore"
   echo old >"$R/tracked.md"
   git -C "$R" add -A && git -C "$R" commit -qm init
+  git -C "$R" switch -q -c work   # commits / pushes on main are denied — see "protected branches"
 }
 mk() { mkdir -p "$(dirname "$R/$1")"; printf '%s\n' "${2:-x}" >"$R/$1"; }
 
@@ -102,8 +104,8 @@ mk .github/workflows/ci.yml; run "git add .github";          expect "CI workflow
 mk docs/specs/login/lld.md; run "PG_INCLUDE_FILES=1 git add docs/specs/login/lld.md"; expect "PG_INCLUDE_FILES → the EMPLOYEE confirms (ask), never silent" ask "approve only if YOU asked for these files"
 mk docs/project/overview.md; run "git add docs/project/overview.md"; expect "inspector project doc → committed" none
 mk .ono/state.json; run "git add .ono/state.json";            expect "inspector state → committed" none
-run "git push -u origin main";          expect "push → employee confirms (ask)" ask "to the server"
-run "git push --force origin main";     expect "force push → ask too" ask
+run "git push -u origin work";          expect "push → employee confirms (ask)" ask "to the server"
+run "git push --force origin work";     expect "force push → ask too" ask
 run "git log --oneline";                expect "read-only git → none" none
 mkdir -p "$R/YesTVOS/.ono"; echo '{}' >"$R/YesTVOS/.ono/state.json"; printf '# AUDIT.md\n' >"$R/YesTVOS/AUDIT.md"
 mk YesTVOS/docs/project/capabilities.md; run "git add YesTVOS/docs/project/capabilities.md"; expect "nested inspector output → committed (tester bug)" none
@@ -154,7 +156,7 @@ run "git commit -m 'wip'";              expect "commit with staged stray" deny "
 run "git commit -m \"don't stop\"";      expect "commit, apostrophe in msg" deny
 git -C "$R" reset -q
 mk src/A.swift; git -C "$R" add src/A.swift
-run "git commit -m ok";                 expect "commit → employee confirms (ask)" ask "Commit on main"
+run "git commit -m ok";                 expect "commit → employee confirms (ask)" ask "Commit on work"
 git -C "$R" commit -qm ok
 echo more >>"$R/tracked.md"
 run "git commit -am tracked";           expect "commit -am → ask" ask "approve only if you asked for a commit"
@@ -162,7 +164,7 @@ mk id_rsa.pem; git -C "$R" add id_rsa.pem
 run "git commit -m x";                  expect "commit with staged key" deny "id_rsa.pem"
 
 # --- unborn repo (no commits yet) ------------------------------------------------------
-rm -rf "$R"; mkdir -p "$R"; git -c init.defaultBranch=main init -q "$R"
+rm -rf "$R"; mkdir -p "$R"; git -c init.defaultBranch=work init -q "$R"
 mk todo.md; mk app.js
 run "git add .";                        expect "unborn: add ." deny "todo.md"
 git -C "$R" add todo.md
@@ -174,6 +176,52 @@ i=1; while [ $i -le 13 ]; do mk "n$i.md"; i=$((i + 1)); done
 run "git add .";                        expect "13 strays → +3 more" deny "(+3 more)"
 n="$(printf "%s" "$OUT" | grep -o "n[0-9]*\.md" | wc -l | tr -d " ")"
 [ "$n" -eq 10 ] && ok || bad "truncation" "listed $n names, want 10"
+
+# --- protected branches: commit / push on main, master, the certain central branch → deny ---
+PB="$HERE/../scripts/protected-branch.sh"
+fresh; mk src/B.swift; git -C "$R" add src/B.swift; git -C "$R" switch -q main
+run "git commit -m x";                  expect "commit on main → deny" deny "commit on main"
+run "git push";                         expect "push on main → deny" deny "push to main"
+run "git switch -c fix/b && git commit -m x"; expect "switch -c then commit → the new branch (ask)" ask "Commit on fix/b"
+git -C "$R" branch -q develop; git -C "$R" switch -q develop
+run "git commit -m x";                  expect "develop, central unknown → ask" ask "Commit on develop"
+"$PB" remember "$R" develop
+run "git commit -m x";                  expect "develop, central certain (cache) → deny" deny "commit on develop"
+"$PB" forget "$R"; printf '{"centralBranch": "develop"}\n' >"$R/.platform-guardian.json"
+run "git commit -m x";                  expect "develop, centralBranch recorded → deny" deny "commit on develop"
+git -C "$R" switch -q work
+run "git push origin HEAD:develop";     expect "push HEAD:develop → deny" deny "push to develop"
+run "git push origin work:refs/heads/main"; expect "push x:refs/heads/main → deny" deny "push to main"
+run "git push origin +work:master";     expect "force refspec to master → deny" deny "push to master"
+run "git push origin :develop";         expect "delete central → deny" deny "push to develop"
+run "git push -o ci.skip origin work";  expect "push option value isn't a refspec → ask" ask "Push work"
+run "git switch develop && git commit -m y"; expect "switch to central then commit → deny" deny "commit on develop"
+run "git checkout src/B.swift && git commit -m y"; expect "checkout of a file isn't a branch switch → ask" ask "Commit on work"
+rm -f "$R/.platform-guardian.json"
+
+# bypass review: forms the parser used to miss
+run "git push origin work:heads/main";  expect "short ref heads/main → deny" deny "push to main"
+run "git push --all origin";            expect "--all includes main → deny" deny "push to main"
+run "git push --mirror origin";         expect "--mirror → deny" deny "push to main"
+run "git push --repo=origin work:main"; expect "--repo= then refspec → deny" deny "push to main"
+run "(git push origin main)";           expect "subshell → deny" deny "push to main"
+run "if true; then git push origin work:main; fi"; expect "if/then → deny" deny "push to main"
+run "{ git push origin main; }";        expect "group → deny" deny "push to main"
+run "env git push origin main";         expect "env → deny" deny "push to main"
+run "(cd $R && git push origin work:main)"; expect "subshell with cd, trailing ) → deny" deny "push to main"
+run "git push origin \\
+work:main";                             expect "line continuation → deny" deny "push to main"
+run "sh -c 'git push origin main'";     expect "sh -c (unreadable) → ask" ask "can't fully read"
+run "git log --grep commit";            expect "the word commit in a read-only command → none" none
+run "git push --tags";                  expect "--tags alone → ask, not deny" ask
+git -C "$R" switch -q main; git -C "$R" switch -q work
+run "git checkout - && git commit -m x"; expect "checkout - → judged on the branch it goes to" deny "commit on main"
+run "git checkout main -- tracked.md && git commit -m x"; expect "checkout <branch> -- <file> isn't a switch → ask" ask "Commit on work"
+run "git checkout main tracked.md && git commit -m x"; expect "checkout <branch> <file> isn't a switch → ask" ask "Commit on work"
+run "git switch --create=feat2 && git commit -m x"; expect "--create=X → judged on X" ask "Commit on feat2"
+run "git switch -c Main && git commit -m x"; expect "Main (case) → deny" deny "commit on Main"
+rm -rf "$WORK/newp"; git -c init.defaultBranch=main init -q "$WORK/newp"; printf 'x\n' >"$WORK/newp/a.swift"; git -C "$WORK/newp" add a.swift
+run "git commit -m first" "$WORK/newp"; expect "first commit of a brand-new project on main → ask" ask "Commit on main"
 
 # --- switches / robustness -------------------------------------------------------------
 fresh; mk notes.md

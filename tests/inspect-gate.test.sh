@@ -15,6 +15,9 @@ unset CLAUDE_PLUGIN_ROOT CLAUDE_PROJECT_DIR PG_INSPECT_GATE PG_TODAY
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/pg-inspect.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 export PG_LOG_DIR="$WORK/state"
+# hermetic: an installed inspector, no user settings (the machine's own lists never leak in)
+mkdir -p "$WORK/claude"; export PG_CLAUDE_DIR="$WORK/claude" PG_PLUGINS_FILE="$WORK/claude/installed.json"
+printf '{"version":2,"plugins":{"ono-project-inspector@ono-plugin-marketplace":[{"version":"0.11.2"}]}}\n' >"$PG_PLUGINS_FILE"
 
 PASS=0 FAIL=0
 ok()   { PASS=$((PASS + 1)); }
@@ -151,6 +154,74 @@ OUT="$(printf '{"session_id":"x","cwd":"%s","hook_event_name":"UserPromptExpansi
 printf '%s' "$OUT" | jq -e '.decision == "block"' >/dev/null && ok || fail "live envelope: plugin command blocked" "$OUT"
 OUT="$(printf '{"session_id":"x","cwd":"%s","hook_event_name":"UserPromptExpansion","command_name":"ono-project-inspector:inspect","command_args":"","command_source":"plugin"}' "$R" | "$GATE")"
 eq "live envelope without prompt: inspector via command_name allowed" "$OUT" ""
+
+# --- protected branches: the inspector writes files → a work branch first ---
+PB="$HERE/../scripts/protected-branch.sh"
+reason() { printf '%s' "$OUT" | jq -r .reason; }
+fresh; git -C "$R" branch -q -m main; rm -rf "$PG_LOG_DIR"
+gate UserPromptSubmit "hi" p1;                      eq "main, not inspected: blocked" "$DEC" block
+case "$(reason)" in *"protected branch"*"1."*"! git switch -c chore/project-inspection"*"2."*"/ono-project-inspector:inspect"*) ok ;; *) fail "banner: ① work branch ② inspect" "$(reason)" ;; esac
+gate UserPromptExpansion "/ono-project-inspector:inspect" p1; eq "main: inspector blocked" "$DEC" block
+case "$(reason)" in *"CREATE A WORK BRANCH FIRST"*"git switch -c"*) ok ;; *) fail "inspector-on-main banner" "$(reason)" ;; esac
+gate UserPromptSubmit "1" p1;                       eq "…and the session isn't opened by the refused inspector" "$DEC" block
+gate UserPromptExpansion "/ono-project-inspector:inspect-status" p1; eq "main: read-only inspect-status allowed" "$DEC" none
+gate UserPromptSubmit "! git switch -c chore/project-inspection" p1; eq "branch command (with !) → allowed" "$DEC" context
+case "$(printf '%s' "$OUT" | jq -r .hookSpecificOutput.additionalContext)" in *"exactly"*"git switch -c chore/project-inspection"*"run nothing"*) ok ;; *) fail "context: exactly that command, or nothing" "$OUT" ;; esac
+gate UserPromptSubmit "git checkout -b feature/inspect main" p1; eq "checkout -b with a real start point → allowed" "$DEC" context
+gate UserPromptSubmit "git switch -c x then/implement/the/login/screen" p1; eq "start point that isn't a commit → blocked" "$DEC" block
+gate UserPromptSubmit "git switch -c x
+implement the login screen" p1;                     eq "branch command + a second line → blocked" "$DEC" block
+gate UserPromptSubmit "git merge origin/develop" p1; eq "merge, not on-central → blocked" "$DEC" block
+gate UserPromptSubmit "git switch -c main" p1;     eq "branch command to a protected name → blocked" "$DEC" block
+gate UserPromptSubmit "git switch -c x; rm -rf ." p1; eq "branch command + more → blocked" "$DEC" block
+gate UserPromptSubmit 'git switch -c $(whoami)' p1; eq "branch command with substitution → blocked" "$DEC" block
+gate UserPromptSubmit "git switch -c x y z" p1;    eq "branch command, extra args → blocked" "$DEC" block
+gate UserPromptSubmit "git switch -c x --force" p1; eq "branch command, extra flag → blocked" "$DEC" block
+gate UserPromptSubmit "please create branch x" p1; eq "plain-language branch request → still blocked" "$DEC" block
+git -C "$R" switch -q -c chore/project-inspection
+gate UserPromptSubmit "hi" p2;                      eq "work branch, not inspected: blocked" "$DEC" block
+case "$(reason)" in *"protected branch"*) fail "work branch: no branch step" "$(reason)" ;; *) ok ;; esac
+gate UserPromptExpansion "/ono-project-inspector:inspect" p2; eq "work branch: inspector allowed" "$DEC" none
+gate UserPromptSubmit "1" p2;                       eq "…then the inspector flow flows" "$DEC" none
+# develop as the certain central branch
+fresh; rm -rf "$PG_LOG_DIR"
+gate UserPromptExpansion "/ono-project-inspector:inspect" p3; eq "develop, central unknown: inspector allowed" "$DEC" none
+rm -rf "$PG_LOG_DIR"; printf '{"centralBranch": "develop"}\n' >"$R/.platform-guardian.json"
+gate UserPromptExpansion "/ono-project-inspector:inspect" p4; eq "develop recorded as central: inspector blocked" "$DEC" block
+gate UserPromptSubmit "hi" p4
+case "$(reason)" in *'`develop`, a protected branch'*) ok ;; *) fail "develop banner names the branch" "$(reason)" ;; esac
+# refresh (inspected, older model) on central → still blocked; on a work branch → allowed
+rm -f "$R/.platform-guardian.json"; git -C "$R" branch -q -m main; inspect_files docs/project/capabilities.md; rm -rf "$PG_LOG_DIR"
+gate UserPromptSubmit "hi" p5;                      eq "main, inspected (older model): messages allowed" "$DEC" none
+gate UserPromptExpansion "/ono-project-inspector:inspect" p5; eq "main, inspected: refresh blocked" "$DEC" block
+git -C "$R" switch -q -c chore/refresh
+gate UserPromptExpansion "/ono-project-inspector:inspect" p5; eq "work branch, inspected: refresh allowed" "$DEC" none
+# on-central: the banner's own `git merge <central ref>` is let through, nothing else
+fresh; git -C "$R" switch -q -c feature/old; git -C "$R" switch -q develop
+inspect_files; git -C "$R" add -A; git -C "$R" commit -qm inspect
+git clone -q --bare "$R" "$WORK/origin.git"; git -C "$R" remote add origin "$WORK/origin.git"; git -C "$R" fetch -q origin
+git -C "$R" remote set-head origin develop >/dev/null 2>&1; git -C "$R" switch -q feature/old; rm -rf "$PG_LOG_DIR"
+gate UserPromptSubmit "hi" oc1;                    eq "on-central: blocked" "$DEC" block
+gate UserPromptSubmit "! git merge origin/develop" oc1; eq "on-central: the banner's exact merge → allowed" "$DEC" context
+gate UserPromptSubmit "git merge origin/develop && rm -rf ." oc1; eq "on-central: merge + more → blocked" "$DEC" block
+gate UserPromptSubmit "git merge origin/feature/old" oc1; eq "on-central: merge of another branch → blocked" "$DEC" block
+
+# the inspector missing / turned off → the banner says how to get it, and the gate stays shut
+fresh; git -C "$R" switch -q -c feature/x; rm -rf "$PG_LOG_DIR"
+printf '{"version":2,"plugins":{}}\n' >"$WORK/claude/none.json"
+PG_PLUGINS_FILE="$WORK/claude/none.json" gate UserPromptSubmit "hi" p6
+case "$(reason)" in *"/plugin install ono-project-inspector@ono-plugin-marketplace"*) ok ;; *) fail "not installed: install line" "$(reason)" ;; esac
+PG_PLUGINS_FILE="$WORK/claude/none.json" gate UserPromptSubmit "/ono-project-inspector:inspect" p6
+eq "not installed: inspector command blocked" "$DEC" block
+PG_PLUGINS_FILE="$WORK/claude/none.json" gate UserPromptSubmit "1" p6
+eq "…and the session isn't opened" "$DEC" block
+printf '{"enabledPlugins":{"ono-project-inspector@ono-plugin-marketplace": false}}\n' >"$WORK/claude/settings.json"
+gate UserPromptSubmit "hi" p7
+case "$(reason)" in *"turn the inspector on"*) ok ;; *) fail "disabled: enable line" "$(reason)" ;; esac
+mkdir -p "$R/.claude"; printf '{"enabledPlugins":{"ono-project-inspector@ono-plugin-marketplace": true}}\n' >"$R/.claude/settings.local.json"
+gate UserPromptSubmit "/ono-project-inspector:inspect" p8; eq "off for the user, on in the project's local settings → allowed" "$DEC" none
+rm -rf "$R/.claude"
+rm -f "$WORK/claude/settings.json"
 
 echo
 echo "inspect-status.sh + inspect-gate.sh: $PASS passed, $FAIL failed"

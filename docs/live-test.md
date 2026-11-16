@@ -144,6 +144,22 @@ Use `scratch` (never inspected) unless noted. Each row: start `claude` in the fo
 
 Reset an override: `rm ~/.claude/platform-guardian/*/inspect-override`.
 
+## 5e. Protected branches (new — 0.4.0)
+
+Use a never-inspected clone checked out on `main` (or on `develop` with `.platform-guardian.json` `{"centralBranch": "develop"}`), with **both** Guardian and the dev plugin enabled.
+
+| # | Type / do | Expected | Result |
+|---|---|---|---|
+| 5e.1 | `hi` | **Blocked**: the banner starts with "protected branch", then ① `! git switch -c chore/project-inspection` ② `/ono-project-inspector:inspect` | |
+| 5e.2 | `/ono-project-inspector:inspect` | **Blocked**: "CREATE A WORK BRANCH FIRST". Nothing is written (`git status` clean) | |
+| 5e.3 | `! git switch -c chore/project-inspection` | The branch is created. **Write down which happened:** (a) it ran directly, with no Claude reply (the `!` skipped the gate), or (b) Claude replied "you're on chore/project-inspection, next: /ono-project-inspector:inspect" | |
+| 5e.4 | `git switch -c x; rm -rf .` (without `!`) | Blocked, nothing runs | |
+| 5e.5 | `/ono-project-inspector:inspect` (now on the work branch) | The inspector starts and runs normally; its files are written | |
+| 5e.6 | In an **already-inspected** repo on `main`: ask "add a comment to README" | Claude can't change the file: Guardian's ⛔ "protected branch" message, plus an offer to create a work branch | |
+| 5e.7 | On `develop` as central: ask Claude to change a file | Blocked by **Guardian** (the dev plugin alone would allow it on `develop`) | |
+| 5e.8 | On a work branch: change a file, "close the session" | The commit and push each ask for your OK (as before) | |
+| 5e.9 | On `main`: ask Claude to "commit this" | **Denied** (no prompt): commit on a protected branch | |
+
 ## 5c. Bug report (new — 0.2.8)
 
 | # | Step | Expected | Result |

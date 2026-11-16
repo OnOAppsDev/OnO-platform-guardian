@@ -25,6 +25,7 @@ One plugin to install. One place to start. The right Ono process every time.
 
 Every Ono project goes through the **Project Inspector** once, before any work. If it hasn't, Claude shows a red ⛔ banner and won't do anything else in that project.
 
+- On `main` / `master` / your project's main branch? The inspector writes files, so it runs on a **work branch**. First type `! git switch -c chore/project-inspection` (any name works; the `!` runs it directly), then run the inspector.
 - 👉 Run it: `/ono-project-inspector:inspect` — follow its steps. The results (`AUDIT.md`, `CLAUDE.md`, `docs/project/…`) go into your next PR, so the whole team gets them.
 - Already done on `develop` but your branch is older? Update your branch from `develop` (the banner shows the command).
 - **Only if your manager approved** working without it for now, type exactly: `I have manager approval to work without inspect` (or in Hebrew: `יש לי אישור מנהל לעבוד בלי inspect`). That opens the project **for today only** — tomorrow it asks again.
@@ -62,5 +63,6 @@ The PDF is just for you: it's not saved in the project and never goes into the P
 - 🎉 Your **first** session after installing opens with a welcome and a 3-minute tour — say yes.
 - 🎓 Type **onboarding** any time to see the tour again.
 - Guardian never pushes to the main branch, never updates your branch without asking, never commits secrets.
+- On `main`, `master` or your project's main branch, Claude can't change files, commit or push: Guardian blocks it and offers to create a work branch. Your changes go in through a PR.
 - In QA repos the QA plugins block Claude from committing — Guardian gives you the commands to run yourself.
 - 🐞 **Something broken in the tools** (Guardian, a plugin command, an error that isn't your code)? Say **"report a bug"**. Claude writes an organized report — what happened, the exact error, versions — opens it in Finder, and you send the file to Tom. Claude also offers it by itself when it spots a tool bug.
