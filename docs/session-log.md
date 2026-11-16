@@ -2,6 +2,18 @@
 
 ---
 
+## Session 12 — 2026-11-16 — Protected branches + inspect-gate deadlock (0.4.0)
+
+- Yagil's email (Dev Plugin 0.7.5 integration): investigated Guardian + dev plugin + inspector code, wrote `docs/branch-policy.md` (findings F1–F6, challenges, who-protects-what table). Key finding: the inspector on `main` gets its `Write` calls blocked but its `bun` writes land, so it leaves a half-written inspection. The block has to be at the command level.
+- 0.4.0 (PR #30, merged, CI green macOS + Linux): gate shows ① `! git switch -c …` ② inspect and lets only that exact command through; new `hooks/write-guard.sh` (writes + Claude-started inspector on main/master/certain central); commit/push on a protected branch → deny; one definition `scripts/protected-branch.sh`; dev-plugin routes re-verified 0.7.5.
+- User asked for challenge, not agreement, plus review by agents: 3 parallel reviewers (bypass / portability / integration) found 7 bypasses, the QA-plugin conflict and Claude starting the inspector. All fixed + tested (~500 checks); declined a per-project write-guard opt-out.
+- Noam's bug (`edit-approval.ts` missing `mkdirSync`) is still in 0.7.5 → it's in the message to Yagil (org admin too), together with server-side branch protection, 3 small hook findings and the QA-exemption sign-off. The user sends it + the MD.
+- Open: live test §5e (incl. whether `!` reaches the gate), QA owners' confirmation, deck update.
+- **Process improvement:** in an integration change, run the "Claude calls it through a tool" path (Skill/Agent) and every other plugin's own git flow before writing the first version. The reviewers caught both, but they should have been in the design.
+- **Next session:** Yagil's answers / live test §5e results → fix any ❌; then deck update (inspect gate, branch step, commit deny).
+
+---
+
 ## Session 11 — 2026-11-09 → 11-16 — Live testing with the team: 0.2.4 → 0.3.7
 
 - First tester + team bug reports drove 13 releases (PRs #17–#28, all merged after green CI): first-run tour not buried; only code goes into commits (plugin docs stay out, `commitPaths` per project); bundled `pre-pr` check before every PR; full `/plugin:command` names; `report-bug` skill + `bug-report.sh` (versions of every Ono plugin) — reports now arrive as files and get triaged here.
