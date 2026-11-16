@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.7] — 2026-11-16
+
+- Routes re-verified against `ono-project-inspector` 0.11.2 — the fixes for the tester report (agent can run its own flow, Bun preflight, project root below the git root, same layout Guardian 0.3.6 already supports). No route changes; inspector registry artifacts unchanged.
+
 ## [0.3.6] — 2026-11-15
 
 - **Projects in a subfolder of the git root** (tester bug, `yestvos/YesTVOS/`): Guardian looked for the inspector's outputs only at the git root, so a complete inspection was reported `missing` and its new `docs/project/capabilities.md` was refused as a stray document. The inspect gate, resume and the commit guard now find the project folder — the nearest folder from the session folder up to the git root holding the inspector's `AUDIT.md`, or the single subfolder (≤ 4 levels) holding `.ono/state.json` (`inspect-status.sh root`) — and allow inspector outputs under it. Two inspected subfolders with the session at the root aren't guessed. The empty "missing ()" detail is gone.

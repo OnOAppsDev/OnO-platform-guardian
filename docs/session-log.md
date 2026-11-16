@@ -2,15 +2,15 @@
 
 ---
 
-## Session 11 — 2026-11-09 → 11-16 — Live testing with the team: 0.2.4 → 0.3.6
+## Session 11 — 2026-11-09 → 11-16 — Live testing with the team: 0.2.4 → 0.3.7
 
 - First tester + team bug reports drove 13 releases (PRs #17–#28, all merged after green CI): first-run tour not buried; only code goes into commits (plugin docs stay out, `commitPaths` per project); bundled `pre-pr` check before every PR; full `/plugin:command` names; `report-bug` skill + `bug-report.sh` (versions of every Ono plugin) — reports now arrive as files and get triaged here.
 - ⛔ Inspect gate (0.3.0, user rule): un-inspected projects blocked on every prompt + slash command (`UserPromptSubmit` + `UserPromptExpansion`) unless the exact manager-approval sentence (today only); inspector outputs committed. Follow-ups: older-model inspection = done + refresh offer (inspector registry `knowledgeModel` carve-out), registry drift check in CI, nested project folders (`yestvos/YesTVOS`), Guardian finds an inspection on another branch.
 - Guard hardening: every `git commit` / `git push` and every `PG_INCLUDE_FILES=1` needs the employee's permission prompt (Claude had committed on its own and used the flag itself). Suspect main branch (unusual `origin/HEAD`, >1000 ahead, `dev`) → ask once, save `.platform-guardian.json` for the team. Close-out never mid-plugin-step; resume knows dev-plugin 0.7.4 half-started plans.
 - Plugin bugs triaged to Yagil, all fixed + version-bumped: maxBuffer `REPOSITORY_UNAVAILABLE` (0.7.1), deferred reproduction QA-handoff block (0.7.2), routing lost on interrupted `/analyze-bug` (0.7.4). Routes verified: dev 0.7.4, spec 0.6.1, inspector 0.11.1. Deck: 17-slide PDF/PPTX on the user's Desktop (pre-PR, report-a-bug, 3 example screens); employee guide `docs/employee-guide.md`.
-- Open: Yagil — inspector agent `tools: Read, Skill` can't run `bun` / write files, no `bun` check, nested-root question (`resolve-repo-root.ts` = git root); coworker test of dev-plugin 0.7.4; deck not yet updated for the inspect gate + commit approval prompts.
+- Yagil fixed the inspector report overnight (0.11.2: agent tools, Bun preflight, project root below the git root) → routes verified, Guardian 0.3.7. Open: coworker test of dev-plugin 0.7.4; deck not yet updated for the inspect gate + commit approval prompts.
 - **Process improvement:** before shipping any new opener/hook behavior, read it as the employee (one question per message — the stacked-question bug came back in step 0b) and derive rules from the owning plugin's contract (registry / code), never from file names.
-- **Next session:** user's new items → then deck update (inspect gate, commit approval) → Yagil's inspector fix when released (verify version bump, re-run `check-routes`).
+- **Next session:** user's new items → then deck update (inspect gate, commit approval) → field-check inspector 0.11.2 with the yestvos team (nested project).
 
 ---
 
