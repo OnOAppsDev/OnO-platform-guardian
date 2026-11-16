@@ -31,7 +31,7 @@ The stage is "apparent": the plugin's own command re-checks approvals and finger
 ### 3. Check preconditions
 
 - **Plugin available?** The command must appear in your available skills / commands (e.g. `ono-mobile-dev-plugin:analyze-feature`). If it's missing, stop and give the exact install line: `/plugin install <plugin>@ono-plugin-marketplace`, then `/reload-plugins`. If it's installed but disabled, tell them to open `/plugin`, enable it, then `/reload-plugins`. Don't substitute a similar skill from elsewhere.
-- **Work branch** for every `ono-mobile-dev-plugin` intent — its hook blocks all file writes on `main` / `master`. If on the central branch, offer to create a work branch first (see session-opener).
+- **Work branch** for every intent that writes files: dev, spec, QA, design system, onboarding / inspection. Guardian's own write guard blocks file changes on a protected branch (`main`, `master`, and the project's central branch when it's certain), and its commit guard blocks commits and pushes there. This doesn't depend on any plugin's hook; the dev plugin also guards `main` / `master` on its own, and both stay. If on a protected branch, offer to create a work branch first (see session-opener), before starting the plugin, so it doesn't fail halfway.
 - Anything in the intent's `requires` (e.g. the QA workspace layout, `matrix-qa.config.json`, approved upstream documents). Missing → say what's missing and the step that produces it.
 
 ### 4. Start

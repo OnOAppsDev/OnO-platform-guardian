@@ -13,6 +13,14 @@ dir="${CLAUDE_PROJECT_DIR:-$PWD}"
 report="$("$scripts/git-status.sh" "$dir" 2>/dev/null)"
 [ -z "$report" ] && exit 0
 
+# the write guard / commit guard / inspect gate protect the central branch only when it's certain
+case "$report" in
+  *'"confidence":"high"'*)
+    central="$(printf '%s' "$report" | sed -n 's/.*"central":{"branch":"\([^"]*\)".*/\1/p')"
+    "$scripts/protected-branch.sh" remember "$dir" "$central" ;;
+  *) "$scripts/protected-branch.sh" forget "$dir" ;;
+esac
+
 last="$("$scripts/session-log.sh" last "$dir" 2>/dev/null)"
 others="$("$scripts/session-log.sh" others "$dir" 2>/dev/null | paste -sd, - | sed 's/,/, /g')"
 

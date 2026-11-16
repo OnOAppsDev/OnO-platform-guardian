@@ -1,5 +1,5 @@
 {
-  "description": "Platform Guardian: session opener on startup or /clear (git report + last local session-log entry → session-opener skill), an inspect gate on every prompt and slash command (Ono rule: no work in a project the Ono Project Inspector hasn't inspected, unless the employee types the manager-approval sentence), a session-length signal that suggests the close-out once the context grows large, and a commit-hygiene guard on git add / commit (only code goes in unless the employee asks; secrets never).",
+  "description": "Platform Guardian: session opener on startup or /clear (git report + last local session-log entry → session-opener skill), an inspect gate on every prompt and slash command (Ono rule: no work in a project the Ono Project Inspector hasn't inspected, unless the employee types the manager-approval sentence), a session-length signal that suggests the close-out once the context grows large, a write guard (no file changes on a protected branch: main, master, the project's central branch), and a commit-hygiene guard on git add / commit / push (only code goes in unless the employee asks; secrets never; no commit or push on a protected branch).",
   "hooks": {
     "SessionStart": [
       {
@@ -41,6 +41,16 @@
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Skill|SlashCommand|Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/write-guard.sh\"",
+            "timeout": 10
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [

@@ -16,6 +16,8 @@
 # On top of that, the EMPLOYEE confirms in a permission prompt ("ask"), never Claude alone:
 #   - every `git commit` and `git push` — no commit or push without the employee's explicit OK;
 #   - every PG_INCLUDE_FILES=1 add of non-code files — the flag alone no longer lets them in.
+# Protected branches (scripts/protected-branch.sh: main, master, the project's central branch when
+# certain): a `git commit` on one, or a `git push` whose target is one → deny, before anything else.
 # Fails open: anything it can't parse → no output, exit 0. Never writes stderr.
 #
 # Env: PG_COMMIT_GUARD=off disables it; PG_ALLOWLIST overrides the allowlist path.
@@ -156,6 +158,9 @@ PATHS
 # --- walk the command: `cd X`, `git [-C X] add|stage|commit …` -------------------------
 new_files=""   # lines "<toplevel><TAB><repo-relative path>"
 commits="" pushes=""   # branch per `git commit` / `git push` in the command
+blocked=""             # "commit on X" / "push to X" where X is a protected branch
+switched=""            # `git switch -c X` / `checkout -b X` earlier in the same command → later
+                       # commits / pushes happen on X, not on today's branch
 
 add_new() { # add_new TOPLEVEL PATHS(newline-separated, repo-relative)
   local top="$1" tracked p
@@ -170,13 +175,17 @@ $2
 EOF
 }
 
-segments="$(printf '%s\n' "$cmd" | sed -e 's/&&/\
+segments="$(printf '%s\n' "$cmd" | awk '{ if (sub(/\\$/, "")) printf "%s ", $0; else print }' | sed -e 's/&&/\
 /g' -e 's/[;|]/\
 /g')"
 
 while IFS= read -r seg; do
   # leading VAR=value assignments (e.g. PG_INCLUDE_FILES=1 git add …) don't hide the git command
-  seg="$(printf '%s' "$seg" | sed -e 's/^[[:space:]]*//' -e 's/^\([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]][[:space:]]*\)*//')"
+  # …nor do shell wrappers: ( { if/then/do/else, env, command; and a trailing ) or }
+  seg="$(printf '%s' "$seg" | sed -E -e 's/^[[:space:]]+//' \
+    -e 's/^(([({][[:space:]]*)|((if|then|do|else|env|command|exec|time)[[:space:]]+))*//' \
+    -e 's/^([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*//' \
+    -e 's/[[:space:]]*[)}]+[[:space:]]*$//')"
   case "$seg" in
     cd|cd\ *|git|git\ *) ;;
     *) continue ;;
@@ -212,7 +221,24 @@ EOF
   sub="$1"; shift
   top="$(git -C "$gdir" rev-parse --show-toplevel)" || continue
 
+  branch_now() { [ -n "$switched" ] && printf '%s' "$switched" ||
+    git -C "$top" symbolic-ref --short -q HEAD 2>/dev/null || git -C "$top" rev-parse --abbrev-ref HEAD 2>/dev/null; }
   case "$sub" in
+    switch|checkout)
+      while [ "$#" -gt 0 ]; do
+        case "$1" in
+          -c|-C|-b|-B|--create|--force-create) [ -n "${2:-}" ] && switched="$2"; break ;;
+          --create=*|--force-create=*) switched="${1#*=}"; break ;;
+          -c?*|-C?*|-b?*|-B?*) switched="${1#-?}"; break ;;
+          --detach|-d|--) break ;;
+          -) switched="$(git -C "$top" rev-parse --abbrev-ref '@{-1}' 2>/dev/null)"; break ;;
+          -*) ;;
+          *) # the last argument and an existing local branch (`checkout <branch> -- <file>` is a file)
+             [ "$#" -eq 1 ] && git -C "$top" show-ref --verify -q "refs/heads/$1" && switched="$1"; break ;;
+        esac
+        shift
+      done
+      ;;
     add|stage)
       case "$seg" in *'$'*|*'`'*) continue ;; esac
       # interactive modes would wait for input (and -i ignores --dry-run)
@@ -223,9 +249,43 @@ EOF
                | sed -n "s/^add '\(.*\)'\$/\1/p")"
       add_new "$top" "$paths"
       ;;
-    push) pushes="$pushes$(git -C "$top" rev-parse --abbrev-ref HEAD 2>/dev/null)$nl" ;;
+    push)
+      cur="$(branch_now)"
+      pushes="$pushes$cur$nl"
+      # targets: refspec destinations (src:dst, or a bare name), none given → the current branch
+      remote="" targets="" skip="" every="" tags=""
+      for a in "$@"; do
+        [ -n "$skip" ] && { skip=""; continue; }
+        case "$a" in
+          --repo) remote="(repo)"; skip=1; continue ;;
+          --repo=*) remote="(repo)"; continue ;;
+          -o|--push-option|--receive-pack|--exec) skip=1; continue ;;
+          --all|--mirror|--branches) every=1; continue ;;
+          --tags) tags=1; continue ;;
+          -*) continue ;;
+        esac
+        [ -z "$remote" ] && { remote="$a"; continue; }
+        t="${a#+}"; t="${t##*:}"; t="${t#refs/}"; t="${t#heads/}"
+        [ "$t" = HEAD ] || [ "$t" = @ ] || [ -z "$t" ] && t="$cur"
+        targets="$targets$t$nl"
+      done
+      # --all / --mirror push every local branch; --tags alone pushes no branch
+      [ -n "$every" ] && targets="$targets$(git -C "$top" for-each-ref --format='%(refname:short)' refs/heads)$nl"
+      [ -n "$targets" ] || [ -n "$tags" ] || targets="$cur$nl"
+      while IFS= read -r t; do
+        [ -n "$t" ] && "$here/../scripts/protected-branch.sh" is "$t" "$top" &&
+          blocked="${blocked}push to $t$nl"
+      done <<EOF
+$targets
+EOF
+      ;;
     commit)
-      commits="$commits$(git -C "$top" rev-parse --abbrev-ref HEAD 2>/dev/null)$nl"
+      cur="$(branch_now)"
+      commits="$commits$cur$nl"
+      # a first commit in a brand-new project (no commits yet) isn't guarded — nothing to protect
+      if [ -n "$switched" ] || git -C "$top" rev-parse -q --verify HEAD >/dev/null; then
+        "$here/../scripts/protected-branch.sh" is "$cur" "$top" && blocked="${blocked}commit on $cur$nl"
+      fi
       staged="$(git -C "$top" -c core.quotepath=false diff --cached --name-only --diff-filter=A)"
       [ -n "$staged" ] && new_files="$new_files$(printf '%s\n' "$staged" | sed "s|^|$top	|")$nl"
       ;;
@@ -234,7 +294,11 @@ done <<EOF
 $segments
 EOF
 
-[ -n "$new_files$commits$pushes" ] || exit 0
+if [ -z "$commits$pushes" ] && printf '%s' "$cmd" | grep -Eq \
+   '(^|[^[:alnum:]_./-])git([[:space:]]+(-[Cc][[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+(commit|push)([^[:alnum:]_-]|$)'; then
+  unparsed=1
+fi
+[ -n "$new_files$commits$pushes${unparsed:-}" ] || exit 0
 
 # the employee asked in chat to include specific files → Claude re-runs with PG_INCLUDE_FILES=1,
 # and the employee still confirms them in the permission prompt below
@@ -265,7 +329,10 @@ emit() { # emit DECISION REASON
     "$1" "$(json_esc "$2")"
 }
 
-if [ -n "$never" ]; then
+if [ -n "$blocked" ]; then
+  emit deny "[platform-guardian] Blocked: $(list "$(printf '%s' "$blocked" | sort -u)") — a protected branch (main, master or this project's central branch). Ono rule: work goes into a PR, never straight onto a protected branch.
+Tell the employee in one line. If the work is on the protected branch, offer to move it to a work branch: ask for a short name, then \`git switch -c <name>\` (uncommitted changes move with it), commit there and open a PR. If they really need it, they run the git command themselves."
+elif [ -n "$never" ]; then
   emit deny "[platform-guardian] Blocked: these new files must never be committed — secrets or plugin scratch files (routing/committed-artifacts.json): $(list "$never").
 Stage only the other files (list paths explicitly, not \`git add .\`) and add these to .gitignore. If the employee really needs one of them in git, they run the git command themselves."
 elif [ -n "$stray" ]; then
@@ -279,6 +346,8 @@ else
 • Commit on $(list "$(printf '%s' "$commits" | sort -u)") — approve only if you asked for a commit (e.g. \"close the session\")."
   [ -n "$pushes" ] && why="$why
 • Push $(list "$(printf '%s' "$pushes" | sort -u)") to the server — approve only if you asked for it."
+  [ -n "${unparsed:-}" ] && why="$why
+• Run a git commit or push (inside a command Guardian can't fully read) — approve only if you asked for it, and never onto main, master or the project's main branch."
   [ -n "$why" ] && emit ask "[platform-guardian] Claude wants to:$why
 Nothing goes into git or to the server without your OK. Not sure? Choose No and ask Claude why."
 fi
