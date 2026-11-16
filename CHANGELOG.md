@@ -11,6 +11,7 @@ Protected branches, the inspect gate and plugin independence (Dev Plugin 0.7.5 i
 - **QA plugins keep their own git flow**: the ono-plugin-qa QA repo and matrix-qa's `qa/` folder aren't blocked (the employee reviews and commits there by design). Never blocked either: `~/.claude`, git-ignored files, a brand-new project with no commits yet.
 - Hardened after three independent review agents: push through `heads/main`, `--all`, `--mirror`, subshells, `if`/`env`, line breaks and `checkout -` are all caught; branch names compare case-insensitively (`Main` is `main` on macOS); a commit or push the guard can't read gets the permission prompt. Details: `docs/branch-policy.md` → Review.
 - **Inspector missing or turned off** → the banner gives the install / enable line, and a command that doesn't exist no longer opens the gate.
+- Routes re-verified against `ono-mobile-dev-plugin` 0.7.5 (nested-project knowledge only; no command, hook or document-format change).
 - One definition of "protected branch" for every hook: `scripts/protected-branch.sh`. Router: a work branch for every intent that writes files, not only dev. Opener: `.platform-guardian.json` is written after the work branch exists.
 
 ## [0.3.7] — 2026-11-16
