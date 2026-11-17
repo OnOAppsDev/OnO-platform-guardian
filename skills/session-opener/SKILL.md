@@ -56,6 +56,8 @@ If the hook found **unfinished work in the Ono plugins' documents** (lines `- �
 
 If the context has a **`TOOLS: jq is not installed`** line, add one ⚠️ line (information, not a question): "⚠️ `jq` is missing on this computer — the Ono dev plugin blocks file changes without it. Install it once in the **Terminal app** (not here): Mac `brew install jq` — no Homebrew? download it from jqlang.org/download, or update to macOS 15+, which includes it · Linux `sudo apt-get install -y jq`. Then restart Claude Code." In the first-time welcome (step 0) it's item 3b of the notice. Never install it yourself, and don't suggest `!` for it (sudo asks for a password, and the inspect gate may block it).
 
+If the context has a **`TOOLS: … Node.js …`** line, add one ⚠️ line (information, not a question), naming what it found: "⚠️ This computer's Node.js (v20.19.4) isn't supported by the Ono dev plugin — its commands stop until you move to Node 24 (or 22.18+). Fix it once in the **Terminal app** (not here): the LTS installer from nodejs.org, or with nvm `nvm install 24 && nvm alias default 24`. Then quit Claude Code and start it again from a **new** Terminal window. Check inside Claude Code with `! node -v`." With "no Node.js was found", say Node.js isn't installed; with "gave no version", say Node.js looks broken; same fix. In the first-time welcome it's item 3c. Never install it yourself. Both TOOLS lines → two ⚠️ lines, jq first.
+
 If `repo` is `false`: say this folder isn't a git project, so there are no branch checks, and go to step 4.
 
 ### 2. Git state — handle in this priority order
