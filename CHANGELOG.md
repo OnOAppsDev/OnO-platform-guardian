@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.2] — 2026-11-17
+
+- Routes re-verified against `ono-mobile-dev-plugin` 0.7.7 (Node.js preflight in every command, complete JSON output from its scripts). No command, route or resume change (document formats changed only in version strings).
+- **Node.js too old → the opener says so.** From 0.7.7 the dev plugin needs Node.js 22.18+ on the 22 line, or 24+. On anything older (or no Node at all) every dev-plugin command stops at its Node check, and an approved Bug Fix Cycle no longer skips the code-edit approval prompt. When the dev plugin is installed, the session-start hook checks the `node` on Claude Code's PATH (with a 2-second watchdog) and adds a `TOOLS:` line; the opener shows one ⚠️ line with the version found, how to upgrade in the Terminal app (nodejs.org LTS installer, or nvm, then restart Claude Code from a new Terminal window) and how to check inside Claude Code (`! node -v`). For first-time users it's part of the welcome (item 3c). Guardian itself still needs no Node.
+
 ## [0.4.1] — 2026-11-16
 
 - Routes re-verified against `ono-mobile-dev-plugin` 0.7.6 (Bug Flow first-bug fix, hooks fail closed, `NotebookEdit` covered, main/master hook scoped to the project repo). No command, route or resume change (document formats changed only in version strings). Both hooks now allow files outside the project repo (scratch, `/tmp`); they still differ on a sibling repo and on git-ignored files (Guardian judges the file's own repo and allows ignored files).

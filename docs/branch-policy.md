@@ -118,7 +118,9 @@ Every client-side hook can be avoided: by a terminal, by `!`, by a `Bash` write,
 
 ## For Yagil — findings in the other plugins (FYI, no change made)
 
-**Status 2026-11-16 (dev plugin 0.7.6, PR #62):** 1–4 fixed. 5 open (optional). Server-side branch protection still off on `ono-mobile-dev-plugin` `main` itself (API: no protection rule).
+**Status 2026-11-16 (dev plugin 0.7.6, PR #62):** 1–4 fixed. 5 open (optional).
+
+**Correction 2026-11-17 (dev plugin 0.7.7, PR #63):** the 0.7.6 note "server-side branch protection off" was wrong. We only asked the classic protection API (404); `ono-mobile-dev-plugin` `main` has had a **ruleset** since 2026-07-09 (PR required, 1 approval, no force-push, no deletion). The real gap: 0.7.7's new CI (`Strict suite` on Node 22.18.0 and 24) is **not a required status check**, so a red build can still be merged. Lesson: check `gh api repos/<o>/<r>/rulesets` as well as `…/branches/<b>/protection`.
 
 1. **Bug report 2026-11-15 (Noam): still open in 0.7.5.** `scripts/edit-approval.ts` `writeRecord` writes into `docs/tasks/bugs/` without `mkdirSync(…, { recursive: true })` (the `fs` import at :48 has no `mkdirSync`), so the first bug in a repo fails with `WRITE_FAILED`/`ENOENT`. Secondary: `task-state.ts` ~:1164 refuses `complete` with one shared message. It should name the failing condition (e.g. "accessibility applies but no Tier 1/2 check recorded").
 2. **The main-branch hook needs `jq`.** Without it `tool_name` is empty and the hook exits 0, so the protection is silently off. macOS 15+ ships `jq`, so the risk is low, but it fails open without a word.

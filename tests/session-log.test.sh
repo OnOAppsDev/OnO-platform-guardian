@@ -16,6 +16,9 @@ unset CLAUDE_PROJECT_DIR CLAUDE_PLUGIN_ROOT GIT_SSH_COMMAND PG_FETCH_TIMEOUT
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/pg-session-log.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 export PG_LOG_DIR="$WORK/logs" PG_NO_FETCH=1
+# The machine's own node must not decide the TOOLS lines: default to a supported one.
+printf '#!/bin/sh\necho v24.0.0\n' >"$WORK/node-ok"; chmod +x "$WORK/node-ok"
+export PG_NODE="$WORK/node-ok"
 
 PASS=0 FAIL=0
 ok()   { PASS=$((PASS + 1)); }
@@ -141,6 +144,44 @@ expect_contains "first time + no jq → item 3b in the welcome" "$out" "3b. The 
 out="$(echo '{}' | PG_PLUGINS_FILE="$WORK/with-dev.json" PG_LOG_DIR="$WORK/fresh2" CLAUDE_PROJECT_DIR="$R" "$HOOK")"
 expect_contains "first time + jq → welcome still there" "$out" "FIRST TIME WITH GUARDIAN"
 expect_absent "first time + jq → no item 3b" "$out" "3b."
+
+# --- Node.js too old for the dev plugin (0.7.7+: 22.18+ on 22, or 24+) → TOOLS line ---
+mk_node() { printf '#!/bin/sh\necho %s\n' "$2" >"$WORK/$1"; chmod +x "$WORK/$1"; }
+for v in v20.19.4 v22.17.1 v23.11.0 v18.0.0 v8.17.0; do
+  mk_node "node-$v" "$v"
+  out="$(echo '{}' | PG_NODE="$WORK/node-$v" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+  expect_contains "node $v + dev plugin → Node TOOLS line" "$out" "this computer's Node.js is $v (unsupported)"
+done
+for v in v22.18.0 v22.20.1 v24.0.0 v24.18.0 v25.1.0 v100.0.0; do
+  mk_node "node-$v" "$v"
+  out="$(echo '{}' | PG_NODE="$WORK/node-$v" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+  expect_absent "node $v → no Node TOOLS line" "$out" "Node.js 22.18 or later"
+done
+out="$(echo '{}' | PG_NODE=pg-no-such-node PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"; rc=$?
+expect_eq "no node → still exits 0" "$rc" "0"
+expect_contains "no node + dev plugin → TOOLS line" "$out" "TOOLS: no Node.js was found"
+printf '#!/bin/sh\nprintf "v24.1.0\\r\\n"\n' >"$WORK/node-crlf"; chmod +x "$WORK/node-crlf"
+out="$(echo '{}' | PG_NODE="$WORK/node-crlf" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "CRLF v24 → no Node TOOLS line" "$out" "Node.js 22.18 or later"
+printf '#!/bin/sh\nexec sleep 30\n' >"$WORK/node-hang"; chmod +x "$WORK/node-hang"
+t0=$(date +%s)
+out="$(echo '{}' | PG_NODE="$WORK/node-hang" PG_NODE_TIMEOUT=1 PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"; rc=$?
+t1=$(date +%s)
+expect_eq "hanging node → exits 0" "$rc" "0"
+if [ $((t1 - t0)) -lt 10 ]; then ok; else fail "hanging node → watchdog stops it" "$((t1 - t0)) s"; fi
+expect_contains "hanging node → opener still there" "$out" "session-opener"
+expect_contains "hanging node → gave no version" "$out" "gave no version"
+mk_node node-junk "garbage"
+out="$(echo '{}' | PG_NODE="$WORK/node-junk" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "unreadable node version → TOOLS line" "$out" "gave no version"
+out="$(echo '{}' | PG_NODE="$WORK/node-v20.19.4" PG_PLUGINS_FILE="$WORK/no-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "old node, dev plugin not installed → no TOOLS line" "$out" "TOOLS:"
+out="$(echo '{}' | PG_NODE="$WORK/node-v20.19.4" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_LOG_DIR="$WORK/fresh3" CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "first time + old node → item 3c in the welcome" "$out" "3c. The TOOLS line below"
+expect_absent "first time + old node, jq present → no item 3b" "$out" "3b."
+out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_NODE="$WORK/node-v20.19.4" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "no jq + old node → jq line" "$out" "TOOLS: jq is not installed"
+expect_contains "no jq + old node → node line" "$out" "this computer's Node.js is v20.19.4 (unsupported)"
 
 out="$(echo '{}' | CLAUDE_PLUGIN_ROOT="$WORK/nowhere" CLAUDE_PROJECT_DIR="$R" "$HOOK" 2>&1)"; rc=$?
 expect_eq "hook with broken plugin root fails open" "$rc:$out" "0:"
