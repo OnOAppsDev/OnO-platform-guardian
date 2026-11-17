@@ -4,19 +4,11 @@
   "verifiedAgainst": {
     "ono-mobile-dev-plugin": "0.7.7",
     "ono-plugin-qa": "0.11.0",
-    "matrix-qa-plugin": "0.1.0",
-    "spec-team-toolkit": "0.6.1",
-    "ono-project-inspector": "0.11.3",
-    "matrix-studio": "0.1.0"
+    "ono-project-inspector": "0.11.3"
   },
   "humanOnly": {
-    "note": "Guardian never runs these and never auto-chains into them; it tells the employee exactly what to type. Only matrix-qa-plugin enforces this with disable-model-invocation — everywhere else it is a text-level rule, so Guardian enforces it.",
+    "note": "Guardian never runs these and never auto-chains into them; it tells the employee exactly what to type. None of these plugins enforces it (no disable-model-invocation), so Guardian enforces it as a text-level rule.",
     "commands": [
-      {
-        "plugin": "matrix-qa-plugin",
-        "command": "/qa-approve",
-        "why": "QA engineer approves the test plan (enforced: disable-model-invocation)"
-      },
       {
         "plugin": "ono-plugin-qa",
         "command": "/approve-qa-test-plan",
@@ -188,93 +180,6 @@
       "pickWhen": "Mobile or TV app under test (iOS, Android, React Native, tvOS, Android TV), Appium automation, a QA workspace with a code repo + QA repo."
     },
     {
-      "id": "qa-web-matrix",
-      "label": "QA for web projects (LLD → plan → Playwright)",
-      "audience": "QA team — web projects",
-      "plugin": "matrix-qa-plugin",
-      "start": "/qa-plan",
-      "args": "<qa/lld/<feature>.md> [--with-source] [--figma <url>]",
-      "requires": [
-        "matrix-qa.config.json in the repo (else start with /qa-init to set the repo up)"
-      ],
-      "pipeline": [
-        "/qa-init",
-        "/qa-plan",
-        "/qa-review",
-        "/qa-approve (human)",
-        "/qa-sync",
-        "/qa-automate",
-        "/qa-run"
-      ],
-      "pickWhen": "Web project under test, Playwright automation, an LLD in qa/lld/, or matrix-qa.config.json in the repo."
-    },
-    {
-      "id": "spec",
-      "label": "Write a spec (HLD / LLD / SPAC)",
-      "examples": [
-        "customer HLD",
-        "mobile SPAC",
-        "web LLD from Figma",
-        "backend API LLD"
-      ],
-      "plugin": "spec-team-toolkit",
-      "start": "ask which document",
-      "choices": [
-        {
-          "doc": "HLD (customer, Hebrew)",
-          "skill": "spec-team-toolkit:hld-builder"
-        },
-        {
-          "doc": "Mobile LLD / SPAC",
-          "skill": "spec-team-toolkit:lld-mobile-spec"
-        },
-        {
-          "doc": "Web LLD — frontend + backend + QA in one (from Figma / screenshots)",
-          "skill": "spec-team-toolkit:lld-web-backend-spec"
-        },
-        {
-          "doc": "Backend API / data-model LLD",
-          "skill": "spec-team-toolkit:lld-backend-spec"
-        }
-      ],
-      "notes": "Interview-style, one question per turn. Invoke the spec-team-toolkit skill explicitly — \"write a SPAC\" also matches other spec skills. The toolkit has no repo location of its own (MGA-68/81): in a work repo, tell it to save the documents to docs/specs/<feature-slug>/ (spac_<f>.md, dd_<f>.md, hld-draft.md, scope-list.md, lld-<kind>-<f>.md). The .html preview is not committed. Outside a repo, keep the toolkit default.",
-      "saveTo": "docs/specs/<feature-slug>/"
-    },
-    {
-      "id": "design-system",
-      "label": "Generate a Figma design system (colors, spacing, typography)",
-      "examples": [
-        "build a design system from our brand color",
-        "color palette in Figma",
-        "typography styles"
-      ],
-      "audience": "Designers",
-      "plugin": "matrix-studio",
-      "start": "ask which part",
-      "choices": [
-        {
-          "doc": "Complete design system (colors → spacing → typography)",
-          "skill": "matrix-studio:generate-design-system"
-        },
-        {
-          "doc": "Color palette only",
-          "skill": "matrix-studio:figma-color-palette-generator"
-        },
-        {
-          "doc": "Spacing / scale tokens only",
-          "skill": "matrix-studio:figma-space-scale-generator"
-        },
-        {
-          "doc": "Typography only",
-          "skill": "matrix-studio:figma-type-system-generator"
-        }
-      ],
-      "requires": [
-        "Figma MCP connected (/mcp), Full Figma seat with edit access to the target file"
-      ],
-      "notes": "Writes only to Figma — no repo files, no git."
-    },
-    {
       "id": "onboard-repo",
       "label": "Understand / onboard to this repo, generate CLAUDE.md and project docs",
       "examples": [
@@ -302,12 +207,6 @@
     },
     "ono-plugin-qa": {
       "feature": "In the QA repo: no <slug>/test-plan.md → not started · status in the fenced ```yaml block at the top (draft|approved) · approved without coverage-report.md → waiting for dev handoff · then node \"<plugin>/scripts/qa-ledger.mjs\" view execution|bugs|regression|readiness --scope feature:<slug> --qa-repo <path> (read-only JSON). Never call readiness render/signoff."
-    },
-    "matrix-qa-plugin": {
-      "feature": "Glob qa/test-cases/*.md (skip .lld-baseline/) → node \"<plugin>/scripts/mqa.mjs\" plan state <feature> → {status, effectiveApproval, reason}. DRAFT/CHANGES_REQUIRED → /qa-review · REVIEWED → /qa-approve (human) · reason LLD_CHANGED → /qa-sync · effectiveApproval → /qa-automate then /qa-run."
-    },
-    "spec-team-toolkit": {
-      "spec": "Look in docs/specs/*/ (Guardian convention; older specs may be elsewhere — ask). spac_<f>.md \"**Status:**\" DRAFT|READY; dd_<f>.md present → SPAC is READY; hld-draft.md per-section [סטטוס: …] tags; web/backend LLDs: exists or not."
     },
     "ono-project-inspector": {
       "repo": "AUDIT.md topic statuses + CLAUDE.md / docs/project/ existence are the truth; .ono/state.json resume.nextAction is a hint (often stale — its agent can't run bun). Or route to /inspect-status."

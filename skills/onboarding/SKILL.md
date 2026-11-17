@@ -38,7 +38,7 @@ Show **their own** state in one line (branch · central branch · up to date / b
 
 ### 2. 🧭 Just tell me what you're doing
 
-No commands to memorize. Say it in your own words — I pick the right Ono plugin and command, confirm with you, and start it. Show **3** examples that fit their role if you can tell it (dev → bug / feature / review; QA → test plan / run; spec writer → SPAC / HLD; designer → design system), e.g. "the app crashes on the player screen 🐞 → `/analyze-bug`".
+No commands to memorize. Say it in your own words — I pick the right Ono plugin and command, confirm with you, and start it. Show **3** examples that fit their role if you can tell it (dev → bug / feature / review; QA → test plan / run), e.g. "the app crashes on the player screen 🐞 → `/analyze-bug`".
 
 **Try it** — end the step with: "👉 Write one thing you'll work on this week, in your own words." Then reply with the intent, the command and the one-line confirm you'd show; if it needs something they didn't say (a bug key, a feature name), show the question you'd ask — and for a bug without a ticket mention the `--external` route. Say "In a real session I'd start it now ✨" — **don't start it** — and end with the usual 👉 Type **next** line.
 

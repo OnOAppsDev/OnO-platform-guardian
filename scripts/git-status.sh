@@ -294,8 +294,12 @@ fi
 
 # Matrix QA's guard hook denies every git write and `gh pr create` from Claude
 # inside a repo that has matrix-qa.config.json at or above the session dir.
+# Guardian no longer brings that plugin (0.5.0): report it only while it's
+# installed (unknown plugin list → assume it is).
 matrix_qa=false
+plugins_file="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
 d="$start_dir"
+[ -f "$plugins_file" ] && ! grep -q '"matrix-qa-plugin@' "$plugins_file" 2>/dev/null && d=""
 while [ -n "$d" ]; do
   [ -f "$d/matrix-qa.config.json" ] && { matrix_qa=true; break; }
   [ "$d" = "/" ] && break

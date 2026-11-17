@@ -300,48 +300,6 @@ EOF
   fi
 }
 
-# ---------- spec-team-toolkit ----------
-# Only documents saved into the repo (Guardian convention docs/specs/<feature-slug>/) — the
-# toolkit itself writes outside the repo (MGA-68).
-
-specs() {
-  [ -d docs/specs ] || return 0
-  local f s open total
-  for f in docs/specs/*/spac_*.md docs/specs/spac_*.md; do
-    [ -f "$f" ] || continue
-    s="$(grep -m1 '^\*\*Status:\*\*' "$f" 2>/dev/null)"
-    case "$s" in
-      *READY*) [ -f "$(dirname "$f")/dd_$(basename "$f" | sed 's/^spac_//')" ] || \
-                 emit spec-team-toolkit "SPAC $(basename "$f" .md | sed 's/^spac_//')" "READY, DD starter not generated" \
-                   "spec-team-toolkit:lld-mobile-spec — generate the DD starter" "$f" ;;
-      *DRAFT*) emit spec-team-toolkit "SPAC $(basename "$f" .md | sed 's/^spac_//')" "draft — reviewers approve, then mark it ready" \
-                 "spec-team-toolkit:lld-mobile-spec (continue the draft)" "$f" ;;
-    esac
-  done
-  for f in docs/specs/*/hld-draft.md docs/specs/hld-draft.md; do
-    [ -f "$f" ] || continue
-    set -- $(awk '
-      /\[סטטוס: [^]]+\]/ {
-        t++; s = $0; sub(/.*\[סטטוס: /, "", s); sub(/\].*/, "", s)
-        if (s != "הושלם" && index(s, "לא רלוונטי") != 1) o++
-      }
-      END { print o + 0, t + 0 }' "$f")
-    open=$1 total=$2
-    [ "$total" -gt 0 ] || continue
-    if [ "$open" -gt 0 ]; then
-      emit spec-team-toolkit "HLD $(basename "$(dirname "$f")")" "draft — $open of $total sections still open" \
-        "spec-team-toolkit:hld-builder (continue the draft)" "$f"
-    fi
-  done
-  for f in docs/specs/*/*.md; do
-    [ -f "$f" ] || continue
-    head -3 "$f" | grep -q '^# LLD:' || continue
-    grep -m1 -q '^\*\*Status:\*\* DRAFT' "$f" && \
-      emit spec-team-toolkit "LLD $(basename "$f" .md)" "draft — open questions to resolve" \
-        "spec-team-toolkit:lld-backend-spec (continue the draft)" "$f"
-  done
-}
-
 # ---------- ono-plugin-qa (mobile / TV QA repo) ----------
 # The QA repo: .claude/qa-workspace.json qaRepoPath (next to the repo or in the session folder),
 # else this repo when its folder name contains "qa". Per feature: <qa>/<slug>/test-plan.md.
@@ -407,93 +365,10 @@ fm_fence_anywhere() {
   awk '/^```ya?ml[ \t]*$/ { on = 1; next } on { if (/^```/) exit; print }' "$1" 2>/dev/null
 }
 
-# ---------- matrix-qa-plugin (web QA repo) ----------
-# Exact port of mqa.mjs fingerprints (verified byte-identical against node on examples/login).
-
-sha() { if command -v shasum >/dev/null 2>&1; then shasum -a 256; else sha256sum; fi | cut -d' ' -f1; }
-mqa_norm() {
-  local bom; bom="$(printf '\357\273\277')"
-  LC_ALL=C sed -e "1s/^$bom//" -e "s/$(printf '\r')\$//" | LC_ALL=C tr '\r' '\n' \
-    | LC_ALL=C sed -e "s/[ $(printf '\t')]*\$//" \
-    | LC_ALL=C awk '{ l[NR] = $0 } END { s = 1; while (s <= NR && l[s] == "") s++; e = NR; while (e >= s && l[e] == "") e--
-        for (i = s; i <= e; i++) { x = l[i]; if (i == s) sub(/^[ \t\f\v]+/, "", x); printf "%s%s", x, (i < e ? "\n" : "") } }'
-}
-mqa_fp_file() { echo "sha256:$(mqa_norm <"$1" | sha)"; }
-mqa_content_fp() {
-  local bom; bom="$(printf '\357\273\277')"
-  echo "sha256:$(LC_ALL=C sed -e "1s/^$bom//" -e "s/$(printf '\r')\$//" "$1" | LC_ALL=C tr '\r' '\n' | LC_ALL=C awk '
-    NR == 1 { if ($0 == "---") { f = 1; next } }
-    f == 1 { if ($0 ~ /^---/) f = 0; next }
-    { t = $0; gsub(/^[ \t]+|[ \t]+$/, "", t)
-      if (t ~ /^<!--[ \t]*mqa:section[ \t]+[a-z-]+[ \t]*-->$/) {
-        n = t; sub(/^<!--[ \t]*mqa:section[ \t]+/, "", n); sub(/[ \t]*-->$/, "", n); skip = (n == "change-log" || n == "approval") }
-      if (!skip) print }' | mqa_norm | sha)"
-}
-
-mqa_path() { # mqa_path <config> <key> <default>
-  local v; v="$(sed -n "s/.*\"$2\"[ \t]*:[ \t]*\"\([^\"]*\)\".*/\1/p" "$1" | head -1)"
-  echo "${v:-$3}"
-}
-
-matrix_qa() {
-  local d="$start" cfg="" up=0 stop; stop="$(dirname "$root")"
-  while [ "$up" -lt 32 ]; do   # bounded: from the session folder up to the repo's parent
-    [ -f "$d/matrix-qa.config.json" ] && { cfg="$d/matrix-qa.config.json"; break; }
-    { [ "$d" = "/" ] || [ "$d" = "$stop" ]; } && break
-    d="$(dirname "$d")"; up=$((up + 1))
-  done
-  [ -n "$cfg" ] || return 0
-  local q; q="$(dirname "$cfg")"
-  local lld_dir tc_dir test_dir; lld_dir="$(mqa_path "$cfg" lldDir qa/lld)"
-  tc_dir="$(mqa_path "$cfg" testCasesDir qa/test-cases)"; test_dir="$(mqa_path "$cfg" testDir tests/e2e)"
-  local lld f plan m st lp lfp fid
-  for lld in "$q/$lld_dir"/*.md; do
-    [ -f "$lld" ] || continue
-    f="$(basename "$lld" .md)"
-    [ -f "$q/$tc_dir/$f.md" ] || emit matrix-qa-plugin "feature $f" "LLD ready, no test plan yet" \
-      "/qa-plan $lld_dir/$f.md" "$lld_dir/$f.md"
-  done
-  for plan in "$q/$tc_dir"/*.md; do
-    [ -f "$plan" ] || continue
-    f="$(basename "$plan" .md)"; m="$(fm "$plan")"
-    st="$(get "$m" status)"; lfp="$(get "$m" lld_fingerprint)"; lp="$(get "$m" lld_path)"
-    lld="$q/${lp:-$lld_dir/$f.md}"
-    if [ -f "$lld" ] && [ -n "$lfp" ] && [ "$(mqa_fp_file "$lld")" != "$lfp" ]; then
-      emit matrix-qa-plugin "feature $f" "the LLD changed since the plan was written ($st)" "/qa-sync $f" "$tc_dir/$f.md"; continue
-    fi
-    case "$st" in
-      DRAFT|CHANGES_REQUIRED)
-        emit matrix-qa-plugin "feature $f" "test plan $st" "/qa-review $f" "$tc_dir/$f.md"; continue ;;
-      REVIEWED)
-        if [ "$(get "$m" reviewed_fingerprint)" != "$(mqa_content_fp "$plan")" ]; then
-          emit matrix-qa-plugin "feature $f" "plan changed after review" "/qa-review $f" "$tc_dir/$f.md"
-        else
-          emit matrix-qa-plugin "feature $f" "test plan reviewed, waiting for QA approval" \
-            "your step — /qa-approve $f" "$tc_dir/$f.md"
-        fi
-        continue ;;
-      APPROVED)
-        if [ "$(get "$m" approved_fingerprint)" != "$(mqa_content_fp "$plan")" ]; then
-          emit matrix-qa-plugin "feature $f" "plan changed after approval" \
-            "/qa-review $f, then your /qa-approve $f" "$tc_dir/$f.md"; continue
-        fi
-        [ -f "$lld" ] || { emit matrix-qa-plugin "feature $f" "approved, but its LLD is missing" \
-          "restore ${lp:-$lld_dir/$f.md} or re-plan" "$tc_dir/$f.md"; continue; }
-        fid="$(get "$m" feature_id)"
-        if [ -n "$fid" ] && ! grep -rEqs --include='*.spec.*' --include='*.test.*' \
-             "test(\.(only|skip|fixme|fail|slow))?[[:space:]]*\([[:space:]]*['\"\`]$fid-TC-[0-9]{3,}" "$q/$test_dir"; then
-          emit matrix-qa-plugin "feature $f" "test plan approved, not automated yet" "/qa-automate $f" "$tc_dir/$f.md"
-        fi ;;
-    esac
-  done
-}
-
 dev_features
 dev_bugs
 inspector
-specs
 ono_qa
-matrix_qa
 
 [ "$COUNT" -gt 0 ] || exit 0
 printf '%s' "$OUT" | head -n "$MAX"

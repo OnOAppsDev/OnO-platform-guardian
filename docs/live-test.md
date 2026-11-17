@@ -22,7 +22,7 @@ Fill the **Result** column as you go (✅ / ❌ + one line of what you saw), the
 | 0.1 | `claude --version` | 2.1.140 or newer | |
 | 0.2 | The install above | Succeeds with no GitHub sign-in or error | |
 | 0.2b | `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** | The option exists and turns on | |
-| 0.3 | `/plugin` → installed plugins | `platform-guardian` **plus all six** Ono plugins (ono-project-inspector, ono-mobile-dev-plugin, ono-plugin-qa, spec-team-toolkit, matrix-qa-plugin, matrix-studio) — the six came with Guardian | |
+| 0.3 | `/plugin` → installed plugins | `platform-guardian` **plus the three** Ono plugins (ono-project-inspector, ono-mobile-dev-plugin, ono-plugin-qa) — the three came with Guardian | |
 
 Quit Claude Code, then download the test kit (the setup script and this checklist — not loaded as a plugin):
 
@@ -95,7 +95,7 @@ On `pg/clean` in `app`. After the opener asks what we're doing:
 |---|---|---|---|
 | 3.1 | "new feature: dark mode" | Confirms "a new feature" + `/analyze-feature` · asks OK before starting | |
 | 3.2 | "write a test plan for login" | Picks `qa-mobile` or asks mobile vs web (doesn't guess wrong) | |
-| 3.3 | "write a SPAC" | Starts the spec toolkit's SPAC skill, saves to `docs/specs/<slug>/` | |
+| 3.3 | "write a SPAC" | No Ono route (spec-team-toolkit removed in 0.5.0): Claude just helps as usual, no plugin named | |
 | 3.4 | "approve the QA plan" | **Refuses to run it** · tells you the exact command to type yourself | |
 | 3.5 | Disable one Ono plugin (`/plugin`), ask for its intent | Gives the exact `/plugin install …@ono-plugin-marketplace` line | |
 
@@ -191,7 +191,7 @@ Clean up: `rm -rf docs`.
 |---|---|---|---|
 | 6.1 | Hook time — already measured by the setup script (§0 table) | < 3 s with the real remote (fetch is capped at 5 s) | see §0 |
 | 6.2 | Re-run the setup script with Wi-Fi off (hook-time row) | Still returns (≤ ~6 s); opener says the numbers may be outdated | |
-| 6.3 | Startup of a session with all six Ono plugins | `/mcp` shows **one** active Figma server (the other three listed as duplicates / hidden) and at most **one** Figma sign-in — the four plugins use the same URL, which Claude Code connects once. Count what you see | |
+| 6.3 | Startup of a session with the three Ono plugins | `/mcp` shows **one** active Figma server (the other one listed as duplicates / hidden) and at most **one** Figma sign-in — the four plugins use the same URL, which Claude Code connects once. Count what you see | |
 | 6.4 | Startup feels slow? | Note seconds from `claude` to the first prompt | |
 
 ---

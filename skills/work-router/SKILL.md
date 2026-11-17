@@ -1,6 +1,6 @@
 ---
 name: work-router
-description: Platform Guardian router. Run after the session opener asks "what are we working on", or whenever an Ono employee states what they want to do — build a feature, fix a bug, continue a task, review code, hand off to QA, write a test plan or run QA, write a spec (HLD / LLD / SPAC), onboard to or inspect a repo, prepare a release — or asks "where was I / what's next", or wants a pre-PR regression check ("ready for PR", "what could I have broken"). Classifies the intent, confirms it, resumes in-progress work from the Ono plugins' own state, and starts the right Ono plugin command. Never runs human-only approval steps.
+description: Platform Guardian router. Run after the session opener asks "what are we working on", or whenever an Ono employee states what they want to do — build a feature, fix a bug, continue a task, review code, hand off to QA, write a test plan or run QA, onboard to or inspect a repo, prepare a release — or asks "where was I / what's next", or wants a pre-PR regression check ("ready for PR", "what could I have broken"). Classifies the intent, confirms it, resumes in-progress work from the Ono plugins' own state, and starts the right Ono plugin command. Never runs human-only approval steps.
 ---
 
 # Work router
@@ -13,34 +13,32 @@ The routing map is data: `${CLAUDE_PLUGIN_ROOT}/routing/routes.json` — read it
 
 ### 1. Classify
 
-Match what the employee said to one intent in `routes.json` (`feature`, `continue-task`, `bug`, `review`, `qa-handoff`, `release`, `figma-theme`, `qa-mobile`, `qa-web-matrix`, `spec`, `design-system`, `onboard-repo`). If two fit, or none, ask one short question with the likely options. **Guardian's own intent — not in `routes.json`:** "ready for PR", "pre-PR", "what could I have broken", "regression checklist" → run the `platform-guardian:pre-pr` skill directly (no confirmation needed; it changes nothing). The session closer also runs it automatically before every PR. "Report a bug", "this is a bug in the tool", "tell Tom" → run `platform-guardian:report-bug` (bugs in Guardian / the Ono plugins / Claude Code — not in the employee's app, that's the `bug` intent). If the request is itself a human-only step ("approve the plan", "sign off", "resolve this bug") → don't classify or ask; answer as in **Human-only steps** below, with the command for this repo's plugin.
+Match what the employee said to one intent in `routes.json` (`feature`, `continue-task`, `bug`, `review`, `qa-handoff`, `release`, `figma-theme`, `qa-mobile`, `onboard-repo`). If two fit, or none, ask one short question with the likely options. **Guardian's own intent — not in `routes.json`:** "ready for PR", "pre-PR", "what could I have broken", "regression checklist" → run the `platform-guardian:pre-pr` skill directly (no confirmation needed; it changes nothing). The session closer also runs it automatically before every PR. "Report a bug", "this is a bug in the tool", "tell Tom" → run `platform-guardian:report-bug` (bugs in Guardian / the Ono plugins / Claude Code — not in the employee's app, that's the `bug` intent). If the request is itself a human-only step ("approve the plan", "sign off", "resolve this bug") → don't classify or ask; answer as in **Human-only steps** below, with the command for this repo's plugin.
 
-**QA has two plugins** — the QA team uses both. Decide from the nature of the task and the repo (each intent's `pickWhen`): mobile / TV app, Appium, a QA workspace → `qa-mobile` (ono-plugin-qa); web project, Playwright, an LLD in `qa/lld/`, `matrix-qa.config.json` → `qa-web-matrix` (matrix-qa-plugin). Ask what they're testing only when you can't tell on your own.
-
-Check the plugin is available (step 3) before confirming, so the employee doesn't say OK to something that can't start. Confirm in one line: "Got it — a new feature. I'll start it with `/analyze-feature`. OK?" If the start command needs something you don't have (a bug key, a feature name — for `spec` it names the folder), ask for it in the same line; never invent one.
+Check the plugin is available (step 3) before confirming, so the employee doesn't say OK to something that can't start. Confirm in one line: "Got it — a new feature. I'll start it with `/analyze-feature`. OK?" If the start command needs something you don't have (a bug key, a feature name), ask for it in the same line; never invent one.
 
 ### 2. Resume instead of restarting
 
 If the employee says continue / where was I, or the last session-log entry names work in progress, find the current stage:
 
-1. **Scripted first.** Use the "Unfinished work found" lines from the session start, or run `"${CLAUDE_PLUGIN_ROOT}/scripts/resume-state.sh"` — one line per unfinished item across the dev plugin (features, bugs), both QA plugins, the inspector and saved specs, with the next step. Finished work isn't listed.
-2. **Probe when the script is silent or unsure** about that piece of work (e.g. a spec saved outside `docs/specs/`, a QA repo it couldn't locate, smoke / regression detail): use the plugin's `resume` probe in `routes.json` — documents are the truth, tool state files are hints.
+1. **Scripted first.** Use the "Unfinished work found" lines from the session start, or run `"${CLAUDE_PLUGIN_ROOT}/scripts/resume-state.sh"` — one line per unfinished item across the dev plugin (features, bugs), the QA plugin and the inspector, with the next step. Finished work isn't listed.
+2. **Probe when the script is silent or unsure** about that piece of work (e.g. a QA repo it couldn't locate, smoke / regression detail): use the plugin's `resume` probe in `routes.json` — documents are the truth, tool state files are hints.
 
 The stage is "apparent": the plugin's own command re-checks approvals and fingerprints when it runs, so start it and let it decide. Tell them in plain words: "Feature *login* — design approved, tasks not broken down yet. Next: `/dev-feature-start login`." A "your step" item is an approval or sign-off — tell them what to type, never run it (see below).
 
 ### 3. Check preconditions
 
 - **Plugin available?** The command must appear in your available skills / commands (e.g. `ono-mobile-dev-plugin:analyze-feature`). If it's missing, stop and give the exact install line: `/plugin install <plugin>@ono-plugin-marketplace`, then `/reload-plugins`. If it's installed but disabled, tell them to open `/plugin`, enable it, then `/reload-plugins`. Don't substitute a similar skill from elsewhere.
-- **Work branch** for every intent that writes files: dev, spec, QA, design system, onboarding / inspection. Guardian's own write guard blocks file changes on a protected branch (`main`, `master`, and the project's central branch when it's certain), and its commit guard blocks commits and pushes there. This doesn't depend on any plugin's hook; the dev plugin also guards `main` / `master` on its own, and both stay. If on a protected branch, offer to create a work branch first (see session-opener), before starting the plugin, so it doesn't fail halfway.
-- Anything in the intent's `requires` (e.g. the QA workspace layout, `matrix-qa.config.json`, approved upstream documents). Missing → say what's missing and the step that produces it.
+- **Work branch** for every intent that writes files: dev, QA, onboarding / inspection. Guardian's own write guard blocks file changes on a protected branch (`main`, `master`, and the project's central branch when it's certain), and its commit guard blocks commits and pushes there. This doesn't depend on any plugin's hook; the dev plugin also guards `main` / `master` on its own, and both stay. If on a protected branch, offer to create a work branch first (see session-opener), before starting the plugin, so it doesn't fail halfway.
+- Anything in the intent's `requires` (e.g. the QA workspace layout, approved upstream documents). Missing → say what's missing and the step that produces it.
 
 ### 4. Start
 
-Invoke the start command through the Skill tool with the arguments you have (`<plugin>:<command>`, e.g. `ono-mobile-dev-plugin:analyze-feature`), or for `spec` the chosen `spec-team-toolkit:<skill>` — invoke that one explicitly, since "write a SPAC" also matches other spec skills — and tell it to save into `docs/specs/<feature-slug>/` (the toolkit has no repo location of its own). From here the plugin's own process runs; follow it.
+Invoke the start command through the Skill tool with the arguments you have (`<plugin>:<command>`, e.g. `ono-mobile-dev-plugin:analyze-feature`). From here the plugin's own process runs; follow it.
 
 ## Human-only steps — never run them
 
-Never invoke, auto-chain into, or "help along" anything in `humanOnly.commands` (e.g. `/qa-approve`, `/approve-qa-test-plan`, `/qa-signoff`, `/inspect-approve`, `/verify-fix-cycle`), and never flip a planning document's approval status yourself — **even when the employee asks you to**; tell them the file and the line to change. When the process reaches one, stop and tell the employee exactly what to type and why it's theirs to do:
+Never invoke, auto-chain into, or "help along" anything in `humanOnly.commands` (e.g. `/approve-qa-test-plan`, `/qa-signoff`, `/inspect-approve`, `/verify-fix-cycle`), and never flip a planning document's approval status yourself — **even when the employee asks you to**; tell them the file and the line to change. When the process reaches one, stop and tell the employee exactly what to type and why it's theirs to do:
 
 > This step is your approval — type `/ono-plugin-qa:approve-qa-test-plan login` when you're happy with the plan.
 

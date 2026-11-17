@@ -3,8 +3,8 @@
   <p><strong>One plugin to install. One place to start. The right Ono process every time.</strong></p>
 
   ![Status](https://img.shields.io/badge/status-pilot%20prep-yellow?style=flat-square)
-  ![Version](https://img.shields.io/badge/version-0.4.3-blue?style=flat-square)
-  ![Org plugins](https://img.shields.io/badge/org%20plugins%20bundled-6-green?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.5.0-blue?style=flat-square)
+  ![Org plugins](https://img.shields.io/badge/org%20plugins%20bundled-3-green?style=flat-square)
   ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-orange?style=flat-square)
 </div>
 
@@ -16,7 +16,7 @@
 
 ## 🤔 Why
 
-The org has six Claude Code plugins — dev pipeline, two QA plugins, specs, repo inspection, Figma design systems — each with its own commands, prerequisites and approval steps. Employees had to know which plugin to install, which command starts what, and what state their branch was in. Guardian removes that guesswork.
+The org's Claude Code plugins — dev pipeline, QA, repo inspection — each have their own commands, prerequisites and approval steps. Employees had to know which plugin to install, which command starts what, and what state their branch was in. Guardian removes that guesswork.
 
 ## 🔄 A session with Guardian
 
@@ -26,7 +26,7 @@ claude ──► 1. OPEN       on your first message (any message): git report v
              │           ⚠️🚨 behind central? → you choose: merge / rebase / continue
              │           on the central branch? → create a work branch
              ▼
-           2. ROUTE      "Bug, feature, tests, spec? Tell me what we're doing."
+           2. ROUTE      "Bug, feature, tests? Tell me what we're doing."
              │           → the right Ono plugin command (or resume where you stopped)
              ▼
            3. WORK       the org plugin's own process, as its owners designed it
@@ -50,15 +50,12 @@ Long session? Once the context passes ~120k tokens, Guardian suggests closing at
 | review my code | `ono-mobile-dev-plugin` | `/review-code`, `/review-security` |
 | hand off to QA · release | `ono-mobile-dev-plugin` | `/create-dev-qa-notes` · `/prepare-mobile-release` |
 | QA — mobile / TV | `ono-plugin-qa` | `/create-qa-test-plan` |
-| QA — web | `matrix-qa-plugin` | `/qa-plan` (`/qa-init` first in a new repo) |
-| write a spec (HLD / LLD / SPAC) | `spec-team-toolkit` | the matching spec skill → saved to `docs/specs/<feature>/` |
 | sync the app theme from Figma | `ono-mobile-dev-plugin` | `/rn-sync-figma-theme <figma-url>` |
-| Figma design system | `matrix-studio` | the matching skill — full system, colors, spacing or typography |
 | onboard me to this repo | `ono-project-inspector` | `/inspect` |
 
 The full map — pipelines, prerequisites, resume probes — is data: [`routing/routes.json`](routing/routes.json).
 
-**Human-only steps** (`/approve-qa-test-plan`, `/qa-approve`, `/qa-signoff`, `/inspect-approve`, `/verify-fix-cycle`, approval status edits, …): Guardian stops and tells you exactly what to type. It never runs them for you.
+**Human-only steps** (`/approve-qa-test-plan`, `/qa-signoff`, `/inspect-approve`, `/verify-fix-cycle`, approval status edits, …): Guardian stops and tells you exactly what to type. It never runs them for you.
 
 ## 🔐 Git rules Guardian follows
 
@@ -79,9 +76,9 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 /plugin install platform-guardian@ono-plugin-marketplace
 ```
 
-Then, once: `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — so Guardian and the six plugins update by themselves (auto-update is off by default for org marketplaces). Org-wide, the Owners turn it on for everyone: [`docs/org-setup.md`](docs/org-setup.md).
+Then, once: `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — so Guardian and the three plugins update by themselves (auto-update is off by default for org marketplaces). Org-wide, the Owners turn it on for everyone: [`docs/org-setup.md`](docs/org-setup.md).
 
-Installing Guardian installs the six org plugins it depends on. Needs Claude Code **2.1.140 or newer** (`claude --version`; `claude update`). For org-wide rollout, admins enable it through Claude for Organizations managed settings — exact JSON and steps in [`docs/rollout.md`](docs/rollout.md).
+Installing Guardian installs the three org plugins it depends on. Needs Claude Code **2.1.140 or newer** (`claude --version`; `claude update`). For org-wide rollout, admins enable it through Claude for Organizations managed settings — exact JSON and steps in [`docs/rollout.md`](docs/rollout.md).
 
 **New here?** The one-page employee guide — install + everyday use: [`docs/employee-guide.md`](docs/employee-guide.md).
 
@@ -92,7 +89,7 @@ Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
 ## 🗂️ Repository
 
 ```
-.claude-plugin/plugin.json      manifest + dependencies on the six org plugins
+.claude-plugin/plugin.json      manifest + dependencies on the three org plugins
 hooks/                          SessionStart (open) · UserPromptSubmit + UserPromptExpansion (inspect gate, session length) · PreToolUse (commit guard)
 skills/                         session-opener · work-router · session-closer · onboarding · pre-pr · report-bug
 scripts/git-status.sh           JSON git report (bash 3.2, no jq, fails open)
@@ -130,7 +127,7 @@ claude plugin validate .
 |---|---|
 | G0 Reset — vision, skeleton, feasibility | ✅ |
 | G1 Session opener | ✅ built · simulated end-to-end · live test on a tester's machine pending (G1.7) |
-| G2 Router | ✅ built · scripted resume across all six plugins (G2.3) |
+| G2 Router | ✅ built · scripted resume across the org plugins (G2.3) |
 | G3 Session closer | ✅ built · commit guard (G3.5) |
 | G4 Rollout — marketplace, managed settings, pilot | ✅ in the org marketplace · ⏳ live test, managed settings, pilot |
 

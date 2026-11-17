@@ -36,7 +36,7 @@ If `repo` is `false`, skip to step 6. If `operation` is set (merge/rebase in pro
 
 ### 2. Commit hygiene — only code goes in, unless the employee asks
 
-**Ono rule, every flow (bugs, features, reviews, specs, QA, inspections):** a commit holds the code change. Documents, data and working files stay **out** — not deleted, not `.gitignore`d, just not committed — unless the employee explicitly asks for a file or the project lists it in `.platform-guardian.json` `"commitPaths"`.
+**Ono rule, every flow (bugs, features, reviews, QA, inspections):** a commit holds the code change. Documents, data and working files stay **out** — not deleted, not `.gitignore`d, just not committed — unless the employee explicitly asks for a file or the project lists it in `.platform-guardian.json` `"commitPaths"`.
 
 Go through `changes.files` (and `git status --porcelain` if the list is truncated) and sort every path:
 
@@ -44,10 +44,10 @@ Go through `changes.files` (and `git status --porcelain` if the list is truncate
   - modified tracked files — mention anything that looks accidental (debug code, local config);
   - new **source code** and the config files that come with it (`package.json`, `Contents.json`, CI workflows …);
   - new files on the project's `"commitPaths"` list.
-- **⏸️ Stays out** (default for everything else that's new): `.md`, `.json`, `.yaml`, `.txt`, `.log`, `.html` … — notes, drafts, tool output, and the documents the Ono plugins write while they work (bug work plans, task state, planning docs, reviews, spec drafts, inspector reports — `routing/committed-artifacts.json` lists where they land). They stay on disk for the next session.
+- **⏸️ Stays out** (default for everything else that's new): `.md`, `.json`, `.yaml`, `.txt`, `.log`, `.html` … — notes, drafts, tool output, and the documents the Ono plugins write while they work (bug work plans, task state, planning docs, reviews, inspector reports — `routing/committed-artifacts.json` lists where they land). They stay on disk for the next session.
 - **⛔ Never**: anything on a `neverCommit` list (`.env`, keys, `*.bak` …) — point it out.
 
-Show the short list — **✅ will commit** / **⏸️ stays out** — and wait for their OK. One line under it: "Want any ⏸️ file in the PR? Name it." Only when the employee names a file: stage that exact path with `PG_INCLUDE_FILES=1 git add ‹path›`. Exception — the Ono Project Inspector's outputs (`AUDIT.md`, `CLAUDE.md`, `docs/project/**`, `audits/**`, `.ono/state.json`, `.ono/repo-knowledge.json`) are mandatory project infrastructure: list them under ✅ will commit (the inspect gate reads them, and the whole team needs the same inspection). When another file **is** the deliverable of the flow (the spec of a spec session), say so and ask about it by name; still only on their yes.
+Show the short list — **✅ will commit** / **⏸️ stays out** — and wait for their OK. One line under it: "Want any ⏸️ file in the PR? Name it." Only when the employee names a file: stage that exact path with `PG_INCLUDE_FILES=1 git add ‹path›`. Exception — the Ono Project Inspector's outputs (`AUDIT.md`, `CLAUDE.md`, `docs/project/**`, `audits/**`, `.ono/state.json`, `.ono/repo-knowledge.json`) are mandatory project infrastructure: list them under ✅ will commit (the inspect gate reads them, and the whole team needs the same inspection). When another file **is** the deliverable of the flow, say so and ask about it by name; still only on their yes.
 
 Never `git add -A` / `git add .`; stage the ✅ paths explicitly. Add a `.gitignore` line only if the employee asks (e.g. a file that keeps coming back) — exact path, never a blanket `*.md` / `*.json`.
 

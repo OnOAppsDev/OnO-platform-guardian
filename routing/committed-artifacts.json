@@ -54,48 +54,6 @@
         "readiness/**"
       ],
       "evidence": "docs/qa-ledger-contract.md (hash-chained, 'QA reviews and commits ledger files by hand')."
-    },
-    "matrix-qa-plugin": {
-      "repo": "Matrix QA repo (matrix-qa.config.json). The QA engineer does all git writes.",
-      "commit": [
-        "matrix-qa.config.json",
-        "qa/lld/**",
-        "qa/test-cases/**",
-        "qa/test-cases/.lld-baseline/**",
-        "tests/**",
-        "playwright.config.ts",
-        "tsconfig.json",
-        "package.json",
-        ".env.example",
-        "scripts/open-report.mjs"
-      ],
-      "neverCommit": [
-        "node_modules/",
-        "test-results/",
-        "playwright-report/",
-        "blob-report/",
-        "playwright/.cache/",
-        "playwright/.auth/",
-        ".env",
-        ".env.*"
-      ],
-      "doNotTouch": [
-        "qa/test-cases/.lld-baseline/**"
-      ],
-      "evidence": "templates/project/gitignore; /qa-init merges these into .gitignore itself."
-    },
-    "spec-team-toolkit": {
-      "commit": [
-        "docs/specs/**/*.md"
-      ],
-      "neverCommit": [
-        "docs/specs/**/*.html"
-      ],
-      "note": "Guardian convention (decided 2026-11-08): the toolkit has no repo location of its own, so in a work repo specs are saved to docs/specs/<feature-slug>/ and committed. The .html preview is scratch."
-    },
-    "matrix-studio": {
-      "commit": [],
-      "note": "Writes only to Figma (variables, text styles, reference frames); nothing lands in the repo."
     }
   },
   "always": {
@@ -106,8 +64,9 @@
       "*.pem",
       "*.p12",
       "*.keystore",
-      "*.jks"
+      "*.jks",
+      "node_modules/"
     ],
-    "note": "Secrets are never committed regardless of plugin."
+    "note": "Never committed regardless of plugin: secrets, and node_modules/ (was only on matrix-qa-plugin's list until 0.5.0)."
   }
 }
