@@ -23,23 +23,15 @@ esac
 
 # Guardian needs neither jq nor Node, but the Ono dev plugin does. Its hooks (0.7.6+) read every
 # file change with jq and, without it, block every write; its scripts (0.7.7+) need Node 22.18+ on
-# the 22 line or Node 24+, and every command stops on anything older. The Matrix QA plugin (0.1.0)
-# starts `node` for its guard before almost every tool call, in every repo: with no node, or one
-# that crashes, every call shows "PreToolUse:… hook failed" and, inside QA repos, its guard is off
-# (a crashing hook doesn't block). Checked only when one of them is installed (unknown list →
-# assume both are). This sees the node on Claude Code's own PATH; the dev plugin's commands run
-# node through the Bash tool, which can load a different one (nvm set up only in the shell), so
-# the opener line also says how to check inside Claude Code.
+# the 22 line or Node 24+, and every command stops on anything older. Checked only when that
+# plugin is installed (unknown list → assume it is). This sees the node on Claude Code's own PATH;
+# the plugin's commands run node through the Bash tool, which can load a different one (nvm set up
+# only in the shell), so the opener line also says how to check inside Claude Code.
 no_jq=""
 old_node=""
 plugins="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
-has_dev="" has_mqa=""
-if [ ! -f "$plugins" ]; then has_dev=1 has_mqa=1; else
-  grep -q '"ono-mobile-dev-plugin@' "$plugins" 2>/dev/null && has_dev=1
-  grep -q '"matrix-qa-plugin@' "$plugins" 2>/dev/null && has_mqa=1
-fi
-[ -n "$has_dev" ] && { command -v "${PG_JQ:-jq}" >/dev/null 2>&1 || no_jq=1; }
-if [ -n "$has_dev$has_mqa" ]; then
+if [ ! -f "$plugins" ] || grep -q '"ono-mobile-dev-plugin@' "$plugins" 2>/dev/null; then
+  command -v "${PG_JQ:-jq}" >/dev/null 2>&1 || no_jq=1
   node_bin="${PG_NODE:-node}"
   if ! command -v "$node_bin" >/dev/null 2>&1; then
     old_node="none"
@@ -67,9 +59,14 @@ if [ -n "$has_dev$has_mqa" ]; then
   fi
 fi
 
-node_warn=""
-[ -n "$old_node" ] && [ -n "$has_dev" ] && node_warn=1
-case "$has_mqa:$old_node" in 1:none|1:unreadable) node_warn=1 ;; esac
+# Plugins Guardian no longer installs (removed from its dependencies in 0.5.0). Removing a
+# dependency never uninstalls it, so tell the employee once how to remove them.
+removed=""
+if [ -f "$plugins" ]; then
+  for p in matrix-qa-plugin matrix-studio spec-team-toolkit; do
+    grep -q "\"$p@" "$plugins" 2>/dev/null && removed="$removed${removed:+, }$p"
+  done
+fi
 
 last="$("$scripts/session-log.sh" last "$dir" 2>/dev/null)"
 others="$("$scripts/session-log.sh" others "$dir" 2>/dev/null | paste -sd, - | sed 's/,/, /g')"
@@ -84,10 +81,12 @@ MSG
 
 # First time on this machine → offer the onboarding tour once. The marker is
 # written here, at the moment the offer is injected, so it shows exactly once.
+welcome=""
 state_dir="${PG_LOG_DIR:-$HOME/.claude/platform-guardian}/.state"
 marker="$state_dir/onboarding-offered"
 if [ "${PG_ONBOARDING:-}" != "off" ] && [ ! -e "$marker" ] &&
    mkdir -p "$state_dir" 2>/dev/null && date '+%Y-%m-%d %H:%M' >"$marker" 2>/dev/null; then
+  welcome=1
   cat <<MSG
 
 FIRST TIME WITH GUARDIAN on this computer — this notice appears once (already marked as shown in $marker).
@@ -96,7 +95,7 @@ Your reply to their first message is ONLY the welcome, so the tour offer can't g
 2. Their first message was a task or a question → one short line that you got it and will get to it right after the tour question (don't start on it).
 3. The git report needs attention (behind central, on central, central unclear) → at most one line that you'll sort it out right after — no question, no options.
 ${no_jq:+3b. The TOOLS line below (jq missing) → its one ⚠️ line here, before the tour offer.
-}${node_warn:+3c. The TOOLS line(s) below about Node.js → one ⚠️ line here, before the tour offer.
+}${old_node:+3c. The TOOLS line below (Node.js) → its one ⚠️ line here, before the tour offer.
 }4. Last, on its own line, in bold: "Want a quick 3-minute tour of how to work with me? 👉 Type **yes** for the tour, or **later** to skip it for now."
 Then STOP and wait. No git summary, no git questions, no "what are we working on", nothing after the offer — a second question gets answered instead and the tour is missed.
 If yes → run the \`platform-guardian:onboarding\` skill. If later → tell them they can type **onboarding** any time, plus the one-time setup so they always get the latest version: \`/plugin\` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — then run the normal opener (session-opener steps 1–4) and get back to their first message.
@@ -131,7 +130,7 @@ esac
 if [ -n "$no_jq" ]; then
   printf '\nTOOLS: jq is not installed on this computer, and the Ono dev plugin (0.7.6+) checks every file change with it: without jq it blocks file changes on every branch. Add one ⚠️ line (information, not a question) with the fix — see session-opener step 1.\n'
 fi
-if [ -n "$old_node" ] && [ -n "$has_dev" ]; then
+if [ -n "$old_node" ]; then
   case "$old_node" in
     none) node_found="no Node.js was found" ;;
     unreadable) node_found="\`node -v\` gave no version (broken install or NODE_OPTIONS)" ;;
@@ -139,10 +138,15 @@ if [ -n "$old_node" ] && [ -n "$has_dev" ]; then
   esac
   printf '\nTOOLS: %s, and the Ono dev plugin (0.7.7+) needs Node.js 22.18 or later on Node 22, or Node.js 24 or later: on anything else every dev-plugin command stops at its Node check, and an approved Bug Fix Cycle no longer skips the code-edit approval prompt. Add one ⚠️ line (information, not a question) with the fix — see session-opener step 1.\n' "$node_found"
 fi
-case "$has_mqa:$old_node" in 1:none|1:unreadable)
-  if [ "$old_node" = none ]; then mqa_found="no Node.js was found"; else mqa_found="\`node -v\` gave no version (Node.js crashes on start or is broken)"; fi
-  printf '\nTOOLS: %s, and the Matrix QA plugin starts node for its safety guard before almost every tool call, in every repo: every Bash / Read / Edit / Grep call will show "PreToolUse:… hook failed" (often a raw error with no plugin name, such as "dyld: Library not loaded"). Outside Matrix QA repos it is only noise; inside them the guard is off (no git-write, .env or Figma protection). Add one ⚠️ line (information, not a question) — see session-opener step 1.\n' "$mqa_found" ;;
-esac
+
+# Once per computer, and not in the same reply as the first-time welcome (it waits a session).
+removed_marker="$state_dir/removed-plugins-notice"
+verb=is; case "$removed" in *,*) verb=are ;; esac
+if [ -n "$removed" ] && [ -z "$welcome" ] && [ ! -e "$removed_marker" ] &&
+   mkdir -p "$state_dir" 2>/dev/null && date '+%Y-%m-%d %H:%M' >"$removed_marker" 2>/dev/null; then
+  printf '\nREMOVED PLUGINS (shown once on this computer): %s %s still installed, but no longer part of the Ono process — Guardian stopped installing these in 0.5.0, and dropping a plugin from Guardian does not uninstall it. Add one ℹ️ line (information, not a question) with how to remove it — see session-opener step 1.\n' \
+    "$removed" "$verb"
+fi
 
 resume="$("$scripts/resume-state.sh" "$dir" 2>/dev/null)"
 if [ -n "$resume" ]; then

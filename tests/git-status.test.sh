@@ -284,8 +284,14 @@ MQ="$(clone "$R" matrix)"
 run "$MQ"
 check '.guards.matrixQa == false'
 mkdir -p "$MQ/qa/lld"; echo '{}' >"$MQ/matrix-qa.config.json"
-run "$MQ/qa/lld"
+printf '{"plugins":{"matrix-qa-plugin@ono-plugin-marketplace":[{}]}}' >"$WORK/mqa-installed.json"
+printf '{"plugins":{"ono-plugin-qa@ono-plugin-marketplace":[{}]}}' >"$WORK/mqa-removed.json"
+PG_PLUGINS_FILE="$WORK/mqa-installed.json" run "$MQ/qa/lld"
 check ".guards.matrixQa == true and $(has_warning matrix-qa-git-blocked)"
+PG_PLUGINS_FILE="$WORK/no-such-list.json" run "$MQ/qa/lld"
+check ".guards.matrixQa == true"   # unknown plugin list → assume installed
+PG_PLUGINS_FILE="$WORK/mqa-removed.json" run "$MQ/qa/lld"
+check ".guards.matrixQa == false"  # plugin uninstalled → nothing blocks Claude's git writes
 
 case_ "ono-plugin-qa: repo folder name contains qa → commit blocked"
 run "$C"

@@ -52,9 +52,9 @@ rm "$WORK/plugins/ono-mobile-dev-plugin/commands/analyze-bug.md"
 out="$("$CHECK" "$WORK/plugins")"; expect "missing command → exit 1" "$?" "1"
 case "$out" in *"MISSING COMMAND ono-mobile-dev-plugin: analyze-bug"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL missing command not named: $out" ;; esac
 
-rm -rf "$WORK/plugins/spec-team-toolkit"
+rm -rf "$WORK/plugins/ono-plugin-qa"
 out="$("$CHECK" "$WORK/plugins")"
-case "$out" in *"MISSING PLUGIN  spec-team-toolkit"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL missing plugin not reported" ;; esac
+case "$out" in *"MISSING PLUGIN  ono-plugin-qa"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL missing plugin not reported" ;; esac
 
 "$CHECK" "$WORK/nope" >/dev/null 2>&1; expect "bad dir → usage error" "$?" "2"
 

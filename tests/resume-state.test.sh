@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Tests for scripts/resume-state.sh — fixtures in the exact formats the Ono plugins write
-# (docs/resume-state.md). Matrix fingerprints are also checked against the plugin's own
-# node helper when a checkout is available (PG_MQA=<path to mqa.mjs>).
+# (docs/resume-state.md).
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 RS="$HERE/../scripts/resume-state.sh"
@@ -326,37 +325,6 @@ expect "unparseable AUDIT.md → /inspect-status" "$I" "next: /inspect-status"
 I2="$WORK/insp2"; repo "$I2"; echo "# My own audit" >"$I2/AUDIT.md"
 expect_none "hand-written AUDIT.md (no inspector) → ignored" "$I2"
 
-# ---------- spec-team-toolkit ----------
-S="$WORK/spec"; repo "$S"
-w "$S/docs/specs/login/spac_login.md" <<'EOF'
-# SPAC: Login
-
-**Status:** 🟡 DRAFT
-**Reviewer:** TBD
-EOF
-expect "SPAC draft" "$S" "SPAC login · draft — reviewers approve, then mark it ready · next: spec-team-toolkit:lld-mobile-spec"
-sed -i.bak 's/🟡 DRAFT/✅ READY/' "$S/docs/specs/login/spac_login.md"
-expect "SPAC READY without DD starter" "$S" "SPAC login · READY, DD starter not generated"
-echo "# Frontend Technical DD: Login" >"$S/docs/specs/login/dd_login.md"
-expect_none "SPAC READY with DD → silent" "$S"
-w "$S/docs/specs/portal/hld-draft.md" <<'EOF'
-## רקע [סטטוס: הושלם]
-## מאגרי מידע [סטטוס: טיוטה חלקית]
-## אינטגרציות [סטטוס: ממתין למידע]
-## ביצועים [סטטוס: לא רלוונטי לפרויקט זה]
-EOF
-expect "HLD with open sections" "$S" "HLD portal · draft — 2 of 4 sections still open · next: spec-team-toolkit:hld-builder"
-sed -i.bak 's/טיוטה חלקית/הושלם/; s/ממתין למידע/הושלם/' "$S/docs/specs/portal/hld-draft.md"
-expect_none "HLD all done → silent" "$S"
-w "$S/docs/specs/orders/orders-api.md" <<'EOF'
-# LLD: Orders API
-
-**Status:** DRAFT
-EOF
-expect "backend LLD draft" "$S" "LLD orders-api · draft — open questions to resolve"
-sed -i.bak 's/^\*\*Status:\*\* DRAFT/**Status:** READY/' "$S/docs/specs/orders/orders-api.md"
-expect_none "backend LLD READY → silent" "$S" "LLD orders-api"
-
 # ---------- ono-plugin-qa ----------
 Q="$WORK/ws/app-qa"; repo "$Q"
 w "$Q/login/test-plan.md" <<'EOF'
@@ -402,64 +370,16 @@ sed -i.bak 's/signoff_status: valid/signoff_status: stale/' "$Q/readiness/featur
 expect "QA repo via ../.claude/qa-workspace.json" "$C" "ono-plugin-qa · feature login · readiness READY"
 expect_none "code repo without workspace file → no QA lines" "$WORK/dev" "ono-plugin-qa"
 
-# ---------- matrix-qa-plugin (fingerprints) ----------
-X="$WORK/mx"; repo "$X"
-echo '{"projectId":"p","paths":{"lldDir":"qa/lld","testCasesDir":"qa/test-cases","testDir":"tests/e2e"}}' >"$X/matrix-qa.config.json"
-w "$X/qa/lld/login.md" <<'EOF'
+# ---------- removed plugins (spec-team-toolkit, matrix-qa-plugin) are not read ----------
+X="$WORK/removed"; repo "$X"
+w "$X/docs/specs/login/spac_login.md" <<'EOF2'
+**Status:** 🟡 DRAFT
+EOF2
+echo '{"projectId":"p","paths":{"lldDir":"qa/lld","testCasesDir":"qa/test-cases"}}' >"$X/matrix-qa.config.json"
+w "$X/qa/lld/login.md" <<'EOF2'
 # LLD login
-EOF
-expect "LLD without plan → /qa-plan" "$X" "feature login · LLD ready, no test plan yet · next: /qa-plan qa/lld/login.md"
-# fingerprint of "# LLD login" (normalised) and of the plan body below, computed with the
-# plugin's algorithm (verified against mqa.mjs in development).
-fp() { printf '%s' "$1" | { shasum -a 256 2>/dev/null || sha256sum; } | cut -d' ' -f1; }
-LFP="sha256:$(fp '# LLD login')"
-CFP="sha256:$(fp '# Tests
-LOGIN-TC-001 works')"
-mxplan() { # mxplan <status> <reviewed_fp> <approved_fp>
-  w "$X/qa/test-cases/login.md" <<EOF
----
-feature: login
-feature_id: LOGIN
-lld_path: qa/lld/login.md
-lld_fingerprint: "$LFP"
-status: $1
-reviewed_fingerprint: "$2"
-approved_fingerprint: "$3"
----
-# Tests
-LOGIN-TC-001 works
-<!-- mqa:section approval -->
-approved by someone — excluded from the hash
-EOF
-}
-mxplan DRAFT "" ""
-expect "DRAFT → /qa-review" "$X" "test plan DRAFT · next: /qa-review login"
-printf '\n\n   # LLD login  \r\n\n' >"$X/qa/lld/login.md"
-expect "LLD hash ignores outer whitespace + CRLF" "$X" "test plan DRAFT · next: /qa-review login"
-printf '# LLD login\n' >"$X/qa/lld/login.md"
-mxplan REVIEWED "$CFP" ""
-expect "REVIEWED, content unchanged → /qa-approve (human)" "$X" "waiting for QA approval · next: your step — /qa-approve login"
-mxplan REVIEWED "sha256:0000" ""
-expect "REVIEWED, content changed → /qa-review" "$X" "plan changed after review · next: /qa-review login"
-mxplan APPROVED "$CFP" "$CFP"
-expect "APPROVED, no tests → /qa-automate" "$X" "test plan approved, not automated yet · next: /qa-automate login"
-w "$X/tests/e2e/login.spec.ts" <<'EOF'
-test('LOGIN-TC-001 works', async () => {});
-EOF
-expect_none "APPROVED + automated → silent" "$X"
-mxplan APPROVED "$CFP" "sha256:0000"
-expect "APPROVED, content changed → re-review" "$X" "plan changed after approval"
-mxplan APPROVED "$CFP" "$CFP"; echo "new requirement" >>"$X/qa/lld/login.md"
-expect "LLD changed → /qa-sync" "$X" "the LLD changed since the plan was written (APPROVED) · next: /qa-sync login"
-
-# Cross-check against the plugin's own node helper when available.
-if [ -n "${PG_MQA:-}" ] && [ -f "$PG_MQA" ] && command -v node >/dev/null; then
-  printf '# LLD login\n' >"$X/qa/lld/login.md"
-  echo '{"projectId":"p","paths":{"lldDir":"qa/lld","testCasesDir":"qa/test-cases","testDir":"tests/e2e"},"environments":{"l":{"baseUrl":"http://x"}},"defaultEnvironment":"l"}' >"$X/matrix-qa.config.json"
-  got="$(cd "$X" && node "$PG_MQA" plan validate login 2>/dev/null | tr -d ' \n')"
-  case "$got" in *"\"lldChanged\":false"*"\"contentFingerprint\":\"$CFP\""*|*"\"contentFingerprint\":\"$CFP\""*"\"lldChanged\":false"*) ok ;;
-    *) bad "fingerprints match mqa.mjs" "$got" ;; esac
-fi
+EOF2
+expect_none "spec drafts and Matrix QA LLDs → nothing listed" "$X"
 
 # ---------- global behaviour ----------
 M="$WORK/many"; repo "$M"

@@ -15,8 +15,8 @@ Guardian is a **coordinator, not a re-implementation.** The org plugins own thei
 | Owned by the org plugins (Guardian reads / invokes) | Owned by Guardian |
 |---|---|
 | Dev pipeline + approval gates — `ono-mobile-dev-plugin` | Session opener: git hygiene, central-branch sync warning |
-| QA ledger, readiness, sign-off — `ono-plugin-qa`, `matrix-qa-plugin` | Intent intake + routing to the right plugin command |
-| Specs (HLD / LLD / SPAC) — `spec-team-toolkit` | Resume: "you're at stage X of feature Y" across plugins |
+| QA ledger, readiness, sign-off — `ono-plugin-qa` | Intent intake + routing to the right plugin command |
+| — | Resume: "you're at stage X of feature Y" across plugins |
 | Repo knowledge, per-repo `CLAUDE.md` — `ono-project-inspector` | Session closer: commit / PR / `/clear` with handoff note |
 | Platform standards — `ono-mobile-dev-plugin/standards/` | Install surface: one plugin that brings the rest |
 
@@ -29,7 +29,7 @@ Guardian is a **coordinator, not a re-implementation.** The org plugins own thei
    - Report: repo, current branch, central branch, behind / ahead, uncommitted changes.
    - **Behind the central branch → ⚠️🚨 warning.** Make sure the employee sees and understands it, explain the options (update via merge / rebase, or continue knowingly), and **wait for their decision**. Never auto-update.
    - **On the central branch → offer to create a work branch.** When unsure which branch is central, **ask** which branch to branch from.
-   - Then: "All set. Are we working on a bug, a feature, tests, a spec? Tell me what we're doing."
+   - Then: "All set. Are we working on a bug, a feature, tests? Tell me what we're doing."
 2. **Route** — classify the intent, confirm it, start the matching org-plugin command. If work is already in progress, resume it from the plugin's own state. Human-only steps (commands with `disable-model-invocation`, e.g. `/qa-approve`) are never run by the model — Guardian tells the employee exactly what to type.
 3. **Work** — the org plugin's process runs as its owners designed it.
 4. **Close** — when the employee says goodbye, the task / stage is done, or the context is getting long:
@@ -82,7 +82,7 @@ Employees must never commit or push working files that Claude creates along the 
 | Context length | Preferred: a **mod** — `$.session.usage().context.percent`, `session.measure` after each turn. Requires Claude Code ≥ ~2.1.290 (local is 2.1.280). Fallback: UserPromptSubmit hook estimating from transcript size | [Mods reference](https://code.claude.com/docs/en/plugins/mods/reference.md) |
 | `/clear` | **User-only.** Guardian instructs; it cannot trigger it | — |
 
-**Dependency names** are marketplace names, not repo names: `ono-project-inspector`, `ono-mobile-dev-plugin`, `ono-plugin-qa`, `spec-team-toolkit`, `matrix-qa-plugin`, `matrix-studio`. Version constraints require release tags `<plugin>--v<version>` in each plugin repo — none exist today (MGA-16), so G0–G3 use unversioned dependencies.
+**Dependency names** are marketplace names, not repo names: `ono-project-inspector`, `ono-mobile-dev-plugin`, `ono-plugin-qa` (0.5.0; `spec-team-toolkit`, `matrix-qa-plugin`, `matrix-studio` were removed 2026-11-17). Version constraints require release tags `<plugin>--v<version>` in each plugin repo — none exist today (MGA-16), so G0–G3 use unversioned dependencies.
 
 ---
 
@@ -96,8 +96,8 @@ Employees must never commit or push working files that Claude creates along the 
 
 ## Open questions
 
-1. ~~**Matrix plugins**~~ — **Decided 2026-11-08:** every org plugin is part of the process; Guardian depends on all six (QA team uses both QA plugins: mobile/TV and web). The router picks the QA plugin from the task and asks only when unclear.
+1. ~~**Matrix plugins**~~ — **Reversed 2026-11-17 (Yagil, via Tom):** `matrix-qa-plugin`, `matrix-studio` and `spec-team-toolkit` are no longer part of the Ono process — removed from Guardian's dependencies and routing in 0.5.0; Guardian behaves as if they never existed, except a one-time notice with how to remove them for anyone who still has them installed. Original decision 2026-11-08: every org plugin is part of the process; Guardian depends on all six (QA team uses both QA plugins: mobile/TV and web). The router picks the QA plugin from the task and asks only when unclear.
 2. **Who is the claude.ai org Owner** who will set managed settings (G4)?
 3. ~~**Minimum Claude Code version**~~ — **Resolved 2026-11-08:** 2.1.140 (plugin dependencies + managed marketplace auto-update) — `docs/rollout.md`.
-4. ~~**Spec location**~~ — **Decided 2026-11-08:** specs written in a work repo go to `docs/specs/<feature-slug>/` and are committed (the toolkit has no repo location of its own).
+4. ~~**Spec location**~~ — **Moot since 2026-11-17** (spec-team-toolkit removed). Was decided 2026-11-08: specs written in a work repo go to `docs/specs/<feature-slug>/` and are committed (the toolkit has no repo location of its own).
 5. ~~**Repo visibility**~~ — **Decided 2026-11-08: public** (like the marketplace and the six plugins). Waiting on a repo admin (`OnOApps-Admin`) to flip it — `docs/rollout.md`.

@@ -40,7 +40,7 @@ Every Ono project goes through the **Project Inspector** once, before any work. 
 2. **Write anything** — "hi", "let's start", whatever. Guardian:
    - checks your git state — which branch you're on, whether you're behind your project's **main branch** (each project has its own — often `develop`; if Guardian isn't sure, it asks you). Something off → you'll see ⚠️🚨 and **you** decide what to do;
    - reminds you where you stopped last time;
-   - asks: **bug, feature, QA, spec…?**
+   - asks: **bug, feature, QA…?**
 3. **Say what you're doing in plain words** — "fix bug ABC-123", "new login screen", "write a QA plan". Guardian starts the right Ono plugin for you. No commands to remember.
 4. **Approvals are yours.** When a step needs a human (approving a plan, QA sign-off), Guardian stops and tells you exactly what to type.
 5. **Done** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian shows what goes into the commit (**only code** — notes and plugin documents stay out unless you ask), runs a quick **pre-PR check** (a one-page PDF of what to test; type **skip** to skip), then pushes and opens a PR — never straight to the main branch. **Every commit and push needs your OK** in a Claude Code permission prompt: approve it only if you asked for it. Then type **`/clear`** to start fresh. Nothing is lost.
@@ -58,7 +58,7 @@ The PDF is just for you: it's not saved in the project and never goes into the P
 
 ## Good to know
 
-- Want a document in the PR (e.g. a spec)? Just say so — "put docs/specs/login/hld.md in the PR". A project that always commits some paths lists them in `.platform-guardian.json`: `"commitPaths": ["docs/specs/**"]`.
+- Want a document in the PR? Just say so — "put docs/login-notes.md in the PR". A project that always commits some paths lists them in `.platform-guardian.json`: `"commitPaths": ["docs/specs/**"]`.
 - Tired of the "which branch is the main one?" question in a project? Add `.platform-guardian.json` to that project with `{"centralBranch": "<its main branch>"}` and commit it — the whole team stops getting asked.
 - 🎉 Your **first** session after installing opens with a welcome and a 3-minute tour — say yes.
 - 🎓 Type **onboarding** any time to see the tour again.

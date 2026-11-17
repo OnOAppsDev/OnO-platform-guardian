@@ -6,7 +6,7 @@ Verified against the official docs on 2026-11-08: [Manage plugins for your organ
 
 1. ✅ **PR #3 merged** into `master` (2026-11-09) — the marketplace entry tracks `master`.
 2. ✅ **G4.1 — marketplace entry** (merged 2026-11-09, marketplace 1.6.0). Ready on a local branch `add-platform-guardian` in the `ono-plugin-marketplace` clone (not pushed): manifest entry (`ref: master`), version 1.5.0 → 1.6.0, README + CHANGELOG in the marketplace's own style; `claude plugin validate .` passes. All six dependencies are already listed in that marketplace, so they resolve.
-3. **Pilot install by hand** (one team) — `/plugin install platform-guardian@ono-plugin-marketplace`, confirm the six plugins come with it.
+3. **Pilot install by hand** (one team) — `/plugin install platform-guardian@ono-plugin-marketplace`, confirm the three plugins come with it (dev, QA, inspector).
 4. **G4.2 — managed settings** (org Owner), below.
 
 ## Repo visibility — ✅ public (2026-11-09)
@@ -51,13 +51,13 @@ Who: an **Owner** of the Claude organization — **Magen and Yagil** (confirmed 
 }
 ```
 
-Enabling Guardian alone is enough — its `dependencies` install and enable the six Ono plugins (bundle pattern).
+Enabling Guardian alone is enough — its `dependencies` install and enable the three Ono plugins (bundle pattern).
 
 Notes for the Owner:
 
 - Takes effect at each member's **next session start**. Check on one machine with `/status` (`Enterprise managed settings` in *Setting sources*) and `/plugin`.
 - If server-managed settings are used, MDM / `managed-settings.json` plugin keys on the same machine are ignored (unless `managedSourcesBehavior: "merge"`).
-- Optional: if Figma ever needs one org-wide definition, add it under `managedMcpServers` (needs Claude Code 2.1.259+) — it then wins over the four plugin copies. Not needed today: the plugins' four `figma` entries share one URL, so Claude Code already connects once (MGA-83).
+- Optional: if Figma ever needs one org-wide definition, add it under `managedMcpServers` (needs Claude Code 2.1.259+) — it then wins over the two plugin copies (dev, QA). Not needed today: the plugins' four `figma` entries share one URL, so Claude Code already connects once (MGA-83).
 - Optional lockdown (later, not for the pilot): `strictKnownMarketplaces` allowing only `anthropics/claude-plugins-official` + `OnOAppsDev/*` (+ `{ "source": "skills-dir" }`), and `disableSideloadFlags: true`. Note: `MatrixStudioPlugin` lives under `OnOApps-Admin`, but the allowlist matches the **marketplace** source, not each plugin's — so `OnOAppsDev/*` is enough.
 
 ## Open
