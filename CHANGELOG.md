@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.3] — 2026-11-17
+
+- **Broken or missing Node.js + Matrix QA plugin → the opener explains the red "hook failed" lines** (bug report 2026-11-17, Android repo). The Matrix QA plugin (0.1.0) starts `node` for its guard before almost every tool call (Bash, Read, Edit, Grep …) in every repo; on a machine whose `node` crashes on start (an Intel Homebrew Node missing its ICU library) or isn't installed, every call printed "PreToolUse:… hook failed" with a raw `dyld` error and nothing said where it came from. Inside Matrix QA repos the guard is then off (a crashing hook doesn't block). Guardian now checks Node when the Matrix QA plugin is installed too, and the opener shows one ⚠️ line: where the errors come from, that work isn't blocked, and the fix (the LTS installer from nodejs.org, restart from a new Terminal window). A working old Node (e.g. 20) is fine for that plugin's guard and gets no line from it. The plugin-side fix (start `node` only in QA repos, a clear message) goes to its maintainers.
+
 ## [0.4.2] — 2026-11-17
 
 - Routes re-verified against `ono-mobile-dev-plugin` 0.7.7 (Node.js preflight in every command, complete JSON output from its scripts). No command, route or resume change (document formats changed only in version strings).
