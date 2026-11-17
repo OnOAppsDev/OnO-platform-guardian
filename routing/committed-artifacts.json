@@ -64,8 +64,9 @@
       "*.pem",
       "*.p12",
       "*.keystore",
-      "*.jks"
+      "*.jks",
+      "node_modules/"
     ],
-    "note": "Secrets are never committed regardless of plugin."
+    "note": "Never committed regardless of plugin: secrets, and node_modules/ (was only on matrix-qa-plugin's list until 0.5.0)."
   }
 }

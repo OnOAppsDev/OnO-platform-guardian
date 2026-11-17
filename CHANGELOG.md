@@ -10,6 +10,7 @@ Three plugins are no longer part of the Ono process (Yagil, via Tom): **`matrix-
 - The 0.4.3 Matrix-QA broken-Node line is gone with it; the dev-plugin Node check (0.4.2) stays.
 - **Kept on purpose (passive, never shown unless the repo has `matrix-qa.config.json`):** Guardian's write guard still leaves a Matrix QA repo's `qa/` folder alone, and the git report still notes that such a repo blocks Claude's git writes — **only while matrix-qa-plugin is installed** (unknown plugin list → assumed installed). So a team that keeps using it outside Guardian isn't broken, and after uninstalling it nobody is told their git writes are blocked.
 - Docs: plugin counts (six → three), Figma MCP copies (four → two: dev, QA).
+- **`node_modules/` stays blocked from commits in every repo** — it was on the never-commit list only through matrix-qa-plugin's entry; now it's in the list that applies everywhere (found by the commit-guard tests).
 
 ## [0.4.3] — 2026-11-17
 
