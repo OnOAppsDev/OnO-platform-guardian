@@ -126,4 +126,4 @@ Every client-side hook can be avoided: by a terminal, by `!`, by a `Bash` write,
 2. **The main-branch hook needs `jq`.** Without it `tool_name` is empty and the hook exits 0, so the protection is silently off. macOS 15+ ships `jq`, so the risk is low, but it fails open without a word.
 3. **The main-branch hook blocks by branch, not by path.** On `main` it also blocks writes outside the repo (Claude's memory, scratch files). Low.
 4. **Hook matcher:** `MultiEdit` no longer exists in Claude Code (tools reference); `NotebookEdit` isn't covered. Low.
-5. **Optional, needs agreement:** an Inspector preflight that refuses to write on `main`/`master` when it runs on its own, matching the dev plugin's standalone stance. Guardian doesn't need it, but it would close F1 for anyone running the Inspector without Guardian.
+5. **Done in Inspector 0.11.3 (2026-11-16).** ~~Optional, needs agreement:~~ an Inspector preflight that refuses to write on `main`/`master` when it runs on its own, matching the dev plugin's standalone stance. Guardian doesn't need it, but it would close F1 for anyone running the Inspector without Guardian.
