@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.1] — 2026-11-18
+
+- **A task described after the opener now goes through the router** (bug report 2026-11-18, Raz, `yestv_aos`). The opener asks "what are we working on?" and hands over to `work-router`, but the answer arrives in the next message, and nothing reminded Claude then: a bug described in free text was investigated and edited directly (two wrong fixes, one a black screen), with no bug analysis, approved plan or QA handoff. Now every typed message in a git repo gets a short `[platform-guardian] Routing:` note until the session has been routed — the `work-router` or `pre-pr` skill ran, or an Ono plugin skill or command ran (typed in full or as a short form `routes.json` knows, or started by Claude). Only the transcript's own records count, not text quoted in a tool result. The note: a task goes through `platform-guardian:work-router` before reading code, investigating or editing; greetings, answers to the opener's git question, questions with no change asked for, close-out requests and questions about Guardian are just answered; a general preference for "lean" work doesn't skip it — only the employee saying they don't want the Ono flow does (asked once). Slash commands get no note; a message that starts with a pasted path (`/Users/…`) does. Checked by an independent review agent (7 findings: path messages skipped, text in tool results counted as routing, non-repo folders reminded, unprefixed skill / `SlashCommand` runs missed — all fixed and tested; the rest are notes). It's a reminder, not a block: small work with no Ono route stays possible. Off switch: `PG_ROUTE_REMINDER=off`.
+- The opener says the same at its hand-off: run the router first thing in the reply that brings the task.
+
 ## [0.5.0] — 2026-11-17
 
 Three plugins are no longer part of the Ono process (Yagil, via Tom): **`matrix-qa-plugin`** (web QA), **`matrix-studio`** (Figma design systems) and **`spec-team-toolkit`** (HLD / LLD / SPAC).

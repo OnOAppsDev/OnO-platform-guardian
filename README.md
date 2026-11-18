@@ -3,7 +3,7 @@
   <p><strong>One plugin to install. One place to start. The right Ono process every time.</strong></p>
 
   ![Status](https://img.shields.io/badge/status-pilot%20prep-yellow?style=flat-square)
-  ![Version](https://img.shields.io/badge/version-0.5.0-blue?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.5.1-blue?style=flat-square)
   ![Org plugins](https://img.shields.io/badge/org%20plugins%20bundled-3-green?style=flat-square)
   ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-orange?style=flat-square)
 </div>
@@ -90,7 +90,7 @@ Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
 
 ```
 .claude-plugin/plugin.json      manifest + dependencies on the three org plugins
-hooks/                          SessionStart (open) · UserPromptSubmit + UserPromptExpansion (inspect gate, session length) · PreToolUse (commit guard)
+hooks/                          SessionStart (open) · UserPromptSubmit + UserPromptExpansion (inspect gate, routing reminder, session length) · PreToolUse (commit guard)
 skills/                         session-opener · work-router · session-closer · onboarding · pre-pr · report-bug
 scripts/git-status.sh           JSON git report (bash 3.2, no jq, fails open)
 scripts/session-log.sh          local session notes — ~/.claude/platform-guardian/, never in git

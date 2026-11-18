@@ -105,4 +105,4 @@ If the first message was already a task, skip this question — hand it straight
 
 If unfinished work was found, offer it first: "Continue *login* (`/implement-task login T3`), or something new?" If its next step is "your step", say what they need to do first (e.g. approve the analysis) — any command they type is given with its full name, `/‹plugin›:‹command›` — don't offer to run the following command until they've done it.
 
-Then hand over to the `platform-guardian:work-router` skill with their answer — it picks the right Ono plugin command (or resumes the work named in the last session-log entry).
+Then hand over to the `platform-guardian:work-router` skill with their answer — it picks the right Ono plugin command (or resumes the work named in the last session-log entry). Their answer usually arrives in the **next** message: run the router as the first thing in that reply, before reading code, investigating or editing — a bug described in free text goes through the router like a typed command would. Until the session has been routed, a `[platform-guardian] Routing:` note arrives with each message as a reminder.

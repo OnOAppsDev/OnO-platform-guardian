@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Tests for hooks/prompt-submit.sh (session-length signal).
+# Tests for hooks/prompt-submit.sh (routing reminder + session-length signal).
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$HERE/../hooks/prompt-submit.sh"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/pg-prompt.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
-export PG_LOG_DIR="$WORK/logs" PG_CLOSEOUT_TOKENS=100000 PG_CLOSEOUT_STEP=40000
+export PG_LOG_DIR="$WORK/logs" PG_CLOSEOUT_TOKENS=100000 PG_CLOSEOUT_STEP=40000 PG_ROUTE_REMINDER=off
 
 PASS=0 FAIL=0
 expect() { # expect <name> <should-fire:yes|no> <output>
@@ -51,6 +51,71 @@ expect "after compaction stays quiet" no "$(hook "$T" s3)"
 out="$(printf '{"session_id":"s4","transcript_path":"%s"}' "$T" | PG_CLOSEOUT_TOKENS=abc "$HOOK")"; rc=$?
 expect "bad threshold config fails open" no "$out"
 [ "$rc" -eq 0 ] && PASS=$((PASS + 1)) || { FAIL=$((FAIL + 1)); echo "FAIL exit code $rc"; }
+
+# ---- routing reminder (0.5.1) ----
+unset PG_ROUTE_REMINDER
+R="$WORK/r.jsonl"
+rhook() { # rhook <transcript> <prompt>
+  printf '{"session_id":"r1","transcript_path":"%s","hook_event_name":"UserPromptSubmit","prompt":"%s"}' "$1" "$2" | "$HOOK"
+}
+rexpect() { # rexpect <name> <yes|no> <output>
+  local fired=no; case "$3" in *"[platform-guardian] Routing:"*) fired=yes ;; esac
+  if [ "$fired" = "$2" ]; then PASS=$((PASS + 1)); else FAIL=$((FAIL + 1)); echo "FAIL routing: $1 (fired=$fired)"; fi
+}
+opener='{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"platform-guardian:session-opener"}}]}}'
+printf '%s\n' "$opener" >"$R"
+out="$(rhook "$R" "pausing a linear channel with Iris ads lands on the wrong position")"
+rexpect "task after the opener, not routed" yes "$out"
+for want in '`platform-guardian:work-router`' 'before you read code, investigate or edit anything' "doesn't skip this" "don't ask again"; do
+  case "$out" in *"$want"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL routing message missing: $want" ;; esac
+done
+rexpect "first message, transcript not written yet" yes "$(rhook "$WORK/none.jsonl" "Morning")"
+rexpect "slash command gets no note" no "$(rhook "$R" "/ono-mobile-dev-plugin:analyze-bug wrong position")"
+rexpect "built-in command gets no note" no "$(rhook "$R" "/clear")"
+rexpect "empty prompt gets no note" no "$(printf '{"session_id":"r1","transcript_path":"%s"}' "$R" | "$HOOK")"
+rexpect "user_prompt field also read" yes "$(printf '{"session_id":"r1","transcript_path":"%s","user_prompt":"fix the login crash"}' "$R" | "$HOOK")"
+rexpect "turned off" no "$(printf '{"session_id":"r1","transcript_path":"%s","prompt":"fix it"}' "$R" | PG_ROUTE_REMINDER=off "$HOOK")"
+
+routed_by() { # routed_by <name> <transcript line>
+  printf '%s\n%s\n' "$opener" "$2" >"$R"
+  rexpect "routed: $1" no "$(rhook "$R" "and now the next bug")"
+}
+routed_by "work-router skill" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:work-router"}}]}}'
+routed_by "work-router skill, short name" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"work-router"}}]}}'
+routed_by "pre-pr skill" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:pre-pr"}}]}}'
+routed_by "Ono plugin skill started by Claude" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"ono-mobile-dev-plugin:analyze-bug","args":"x"}}]}}'
+routed_by "Ono command typed (full name)" '{"type":"user","message":{"role":"user","content":"<command-message>analyze-bug</command-message>\n<command-name>/ono-mobile-dev-plugin:analyze-bug</command-name>"}}'
+routed_by "Ono command typed (short form in routes.json)" '{"type":"user","message":{"role":"user","content":"<command-name>/analyze-bug</command-name>"}}'
+
+routed_by "skill started without plugin prefix (short form)" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"analyze-bug"}}]}}'
+routed_by "SlashCommand tool" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"SlashCommand","input":{"command":"/ono-mobile-dev-plugin:analyze-bug x"}}]}}'
+routed_by "typed command, real line order (name first)" '{"type":"user","message":{"role":"user","content":"<command-name>/ono-plugin-qa:qa-plan</command-name>\n<command-message>qa-plan</command-message>"}}'
+
+not_routed_by() {
+  printf '%s\n%s\n' "$opener" "$2" >"$R"
+  rexpect "still not routed: $1" yes "$(rhook "$R" "fix the crash")"
+}
+not_routed_by "session-closer skill" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:session-closer"}}]}}'
+not_routed_by "report-bug skill" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:report-bug"}}]}}'
+not_routed_by "built-in /clear typed" '{"type":"user","message":{"role":"user","content":"<command-name>/clear</command-name>"}}'
+not_routed_by "unknown short command" '{"type":"user","message":{"role":"user","content":"<command-name>/my-own-thing</command-name>"}}'
+not_routed_by "work-router only mentioned in text" '{"type":"assistant","message":{"content":[{"type":"text","text":"I will hand over to platform-guardian:work-router"}]}}'
+
+not_routed_by "tool result quoting a typed command" '{"type":"user","message":{"role":"user","content":[{"tool_use_id":"t3","type":"tool_result","content":"x\n<command-name>/ono-mobile-dev-plugin:analyze-bug</command-name>"}]}}'
+not_routed_by "tool result quoting a skill call" '{"type":"user","message":{"role":"user","content":[{"tool_use_id":"t3","type":"tool_result","content":"\"name\":\"Skill\",\"input\":{\"skill\":\"platform-guardian:work-router\"}"}]}}'
+
+printf '%s\n' "$opener" >"$R"
+rexpect "message starting with a pasted path" yes "$(rhook "$R" "/Users/raz/app/crash.log shows a crash on launch")"
+rexpect "path-like single word" yes "$(rhook "$R" "/tmp/x.log")"
+nogit="$WORK/plain"; mkdir -p "$nogit"
+rexpect "outside a git repo" no "$(printf '{"session_id":"r1","transcript_path":"%s","cwd":"%s","prompt":"fix the crash"}' "$R" "$nogit" | GIT_CEILING_DIRECTORIES="$WORK" "$HOOK")"
+git -C "$nogit" init -q 2>/dev/null
+rexpect "inside a git repo (cwd)" yes "$(printf '{"session_id":"r1","transcript_path":"%s","cwd":"%s","prompt":"fix the crash"}' "$R" "$nogit" | "$HOOK")"
+
+# both notices in one reply: routing note first, close-out still fires
+: >"$R"; printf '{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_creation_input_tokens":0,"cache_read_input_tokens":150000}}}\n' >>"$R"
+out="$(printf '{"session_id":"r9","transcript_path":"%s","prompt":"fix the crash"}' "$R" | "$HOOK")"
+case "$out" in "[platform-guardian] Routing:"*"context is about 150k"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL both notices: $out" ;; esac
 
 echo
 echo "prompt-submit.sh: $PASS passed, $FAIL failed"
