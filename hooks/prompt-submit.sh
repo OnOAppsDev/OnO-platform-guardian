@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-# UserPromptSubmit hook: session-length signal (G3.1).
+# UserPromptSubmit hook: routing reminder + session-length signal (G3.1).
+#
+# Routing reminder (0.5.1): until this session has been routed — the work-router
+# or pre-pr skill ran, or an Ono plugin skill / command ran (Claude or the
+# employee started it) — every typed message in a git repo gets a short note: a task goes
+# through platform-guardian:work-router before any investigation or edit. The
+# opener's hand-off alone was lost when the task arrived in the next turn
+# (bug report 2026-11-18). A slash command gets no note (a pasted /path does).
 #
 # Reads the context size of the last assistant turn from the transcript's
 # `usage` block (input + cache_creation + cache_read tokens). When it crosses
@@ -8,7 +15,8 @@
 # UserPromptSubmit hook is added to Claude's context. Fails open, exit 0.
 #
 # Env: PG_CLOSEOUT_TOKENS (default 120000), PG_CLOSEOUT_STEP (default 40000),
-#      PG_LOG_DIR (state lives in $PG_LOG_DIR/.state).
+#      PG_LOG_DIR (state lives in $PG_LOG_DIR/.state),
+#      PG_ROUTE_REMINDER=off turns the routing reminder off.
 
 payload="$(cat 2>/dev/null)"
 
@@ -23,6 +31,38 @@ num() { # num NAME TEXT → integer value of "NAME":N in TEXT, or 0
 
 transcript="$(field transcript_path)"
 session="$(field session_id)"
+
+routes="$(dirname "$0")/../routing/routes.json"
+routed() { # has this session been routed into an Ono process?
+  # Only real JSON structure counts: inside a tool result the same text is a string with
+  # escaped quotes (\"skill\":…), and a typed command is the user message's own content.
+  grep -Eq '"name":"Skill","input":\{"skill":"((platform-guardian:)?(work-router|pre-pr)|ono-[a-z0-9-]+:[^"]*)"|"name":"SlashCommand","input":\{"command":"/(ono-[a-z0-9-]+:|platform-guardian:(work-router|pre-pr))|"role":"user","content":"(<command-message>[^"]*)?<command-name>/(ono-[a-z0-9-]+:|platform-guardian:(work-router|pre-pr))' "$transcript" 2>/dev/null && return 0
+  local c   # a short form (/analyze-bug, or skill "analyze-bug") that routes.json knows
+  for c in $( { grep -Eo '"role":"user","content":"(<command-message>[^"]*)?<command-name>/[a-z0-9-]+</command-name>' "$transcript" \
+                  | sed 's/.*<command-name>\/\([a-z0-9-]*\)<.*/\1/'
+                grep -Eo '"name":"Skill","input":\{"skill":"[a-z0-9-]+"' "$transcript" | sed 's/.*"skill":"//; s/"$//'
+              } 2>/dev/null | sort -u); do
+    grep -q "\"/$c[\" ]" "$routes" 2>/dev/null && return 0
+  done
+  return 1
+}
+in_repo() { # the reminder only matters where Ono work can happen: inside a git repo
+  local d; d="$(field cwd)"; [ -d "$d" ] || d="${CLAUDE_PROJECT_DIR:-$PWD}"
+  git -C "$d" rev-parse --git-dir >/dev/null 2>&1
+}
+prompt="$(field prompt)"; [ -n "$prompt" ] || prompt="$(field user_prompt)"
+case "${prompt%% *}" in
+  ''|/*/*) is_cmd= ;;                          # a pasted path (/Users/…) is not a command
+  /*) is_cmd=1 ;;
+  *) is_cmd= ;;
+esac
+# no transcript yet = not routed yet
+if [ -n "$prompt" ] && [ -z "$is_cmd" ] && [ "${PG_ROUTE_REMINDER:-on}" != off ] && in_repo && ! routed; then
+  cat <<'MSG'
+[platform-guardian] Routing: this session hasn't been routed into an Ono process yet. If this message asks for work — a bug, a feature, a fix, a task, tests, a review, "continue" — run the `platform-guardian:work-router` skill now, before you read code, investigate or edit anything (if the session opener is still due, run it first). It confirms the task with the employee and starts the right Ono plugin command (a bug → the dev plugin's bug analysis, which finds the root cause and gets a plan approved before any code changes). A general preference for lean or fast work doesn't skip this — only the employee saying they don't want the Ono plugin flow does (once they've said it in this session, don't ask again). If the message is a greeting, an answer to the opener's git question, a question or explanation with no change asked for, a close-out request or a question about Guardian, just answer it.
+MSG
+fi
+
 [ -f "$transcript" ] || exit 0
 
 threshold="${PG_CLOSEOUT_TOKENS:-120000}"
