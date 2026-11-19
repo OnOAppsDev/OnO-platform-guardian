@@ -46,4 +46,6 @@ Never invoke, auto-chain into, or "help along" anything in `humanOnly.commands` 
 
 ## Between stages
 
+**A new task mid-session goes through the router too.** When the employee brings a different bug, feature or task than the one in progress, classify and confirm it like the first one (steps 1–4) before reading code or editing. Once a stage has finished, any further code change is new work too. But when you last asked a question for the running Ono step (approve, continue, results, details), the reply answers it — even when it describes a failure or a new symptom — so continue the step. A `[platform-guardian] Routing:` note on each message is the reminder.
+
 When a plugin stage finishes, say what's next (from the plugin's own hint, its `next_command`, or the intent's `pipeline`) and ask whether to continue. If the next step is human-only, a "yes" doesn't change that — tell them what to type, with the full `/‹plugin›:‹command›` name. A finished stage is also a natural point to offer the session close-out — say how, not just when: "Want to stop here? Say **close the session** and I'll save everything; then type `/clear` to start fresh." Offer it once per session, and not if a 💡 close-out suggestion was already shown.

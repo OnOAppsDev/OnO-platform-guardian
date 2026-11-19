@@ -3,7 +3,7 @@
   <p><strong>One plugin to install. One place to start. The right Ono process every time.</strong></p>
 
   ![Status](https://img.shields.io/badge/status-pilot%20prep-yellow?style=flat-square)
-  ![Version](https://img.shields.io/badge/version-0.5.1-blue?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.5.2-blue?style=flat-square)
   ![Org plugins](https://img.shields.io/badge/org%20plugins%20bundled-3-green?style=flat-square)
   ![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-orange?style=flat-square)
 </div>

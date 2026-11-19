@@ -58,9 +58,13 @@ R="$WORK/r.jsonl"
 rhook() { # rhook <transcript> <prompt>
   printf '{"session_id":"r1","transcript_path":"%s","hook_event_name":"UserPromptSubmit","prompt":"%s"}' "$1" "$2" | "$HOOK"
 }
-rexpect() { # rexpect <name> <yes|no> <output>
-  local fired=no; case "$3" in *"[platform-guardian] Routing:"*) fired=yes ;; esac
+rexpect() { # rexpect <name> <yes|no> <output>   — the full note (session not routed yet)
+  local fired=no; case "$3" in *"[platform-guardian] Routing: this session hasn't been routed"*) fired=yes ;; esac
   if [ "$fired" = "$2" ]; then PASS=$((PASS + 1)); else FAIL=$((FAIL + 1)); echo "FAIL routing: $1 (fired=$fired)"; fi
+}
+sexpect() { # sexpect <name> <yes|no> <output>   — the short note (already routed: a NEW task is routed too)
+  local fired=no; case "$3" in *"[platform-guardian] Routing: new work — "*) fired=yes ;; esac
+  if [ "$fired" = "$2" ]; then PASS=$((PASS + 1)); else FAIL=$((FAIL + 1)); echo "FAIL short routing note: $1 (fired=$fired)"; fi
 }
 opener='{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"platform-guardian:session-opener"}}]}}'
 printf '%s\n' "$opener" >"$R"
@@ -78,7 +82,9 @@ rexpect "turned off" no "$(printf '{"session_id":"r1","transcript_path":"%s","pr
 
 routed_by() { # routed_by <name> <transcript line>
   printf '%s\n%s\n' "$opener" "$2" >"$R"
-  rexpect "routed: $1" no "$(rhook "$R" "and now the next bug")"
+  out="$(rhook "$R" "and now the next bug")"
+  rexpect "routed: $1" no "$out"
+  sexpect "routed, short note: $1" yes "$out"
 }
 routed_by "work-router skill" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:work-router"}}]}}'
 routed_by "work-router skill, short name" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"work-router"}}]}}'
@@ -93,7 +99,9 @@ routed_by "typed command, real line order (name first)" '{"type":"user","message
 
 not_routed_by() {
   printf '%s\n%s\n' "$opener" "$2" >"$R"
-  rexpect "still not routed: $1" yes "$(rhook "$R" "fix the crash")"
+  out="$(rhook "$R" "fix the crash")"
+  rexpect "still not routed: $1" yes "$out"
+  sexpect "not routed, no short note: $1" no "$out"
 }
 not_routed_by "session-closer skill" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:session-closer"}}]}}'
 not_routed_by "report-bug skill" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:report-bug"}}]}}'
@@ -111,6 +119,22 @@ nogit="$WORK/plain"; mkdir -p "$nogit"
 rexpect "outside a git repo" no "$(printf '{"session_id":"r1","transcript_path":"%s","cwd":"%s","prompt":"fix the crash"}' "$R" "$nogit" | GIT_CEILING_DIRECTORIES="$WORK" "$HOOK")"
 git -C "$nogit" init -q 2>/dev/null
 rexpect "inside a git repo (cwd)" yes "$(printf '{"session_id":"r1","transcript_path":"%s","cwd":"%s","prompt":"fix the crash"}' "$R" "$nogit" | "$HOOK")"
+
+printf '%s\n%s\n' "$opener" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:work-router"}}]}}' >"$R"
+out="$(rhook "$R" "now a second bug: the EPG freezes")"
+for want in '`platform-guardian:work-router`' 'a different bug, feature or task' 'any code change after the Ono step has finished' 'even when it describes a failure or a new symptom: continue that step' 'follows its next_command' 'for this task or the whole session'; do
+  case "$out" in *"$want"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL short note missing: $want" ;; esac
+done
+sexpect "routed: pasted path gets the short note" yes "$(rhook "$R" "/Users/raz/app/epg.log shows the freeze")"
+sexpect "routed: slash command gets no short note" no "$(rhook "$R" "/ono-mobile-dev-plugin:analyze-bug EPG")"
+sexpect "routed: turned off" no "$(printf '{"session_id":"r1","transcript_path":"%s","prompt":"fix it"}' "$R" | PG_ROUTE_REMINDER=off "$HOOK")"
+mkdir -p "$WORK/plain2"
+sexpect "routed: outside a git repo (dir exists)" no "$(printf '{"session_id":"r1","transcript_path":"%s","cwd":"%s","prompt":"fix it"}' "$R" "$WORK/plain2" | GIT_CEILING_DIRECTORIES="$WORK" "$HOOK")"
+
+# routed + long session: the short note and the close-out notice both print
+printf '%s\n%s\n' '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:work-router"}}]}}' '{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_creation_input_tokens":0,"cache_read_input_tokens":150000}}}' >"$R"
+out="$(printf '{"session_id":"r10","transcript_path":"%s","prompt":"another bug"}' "$R" | "$HOOK")"
+case "$out" in "[platform-guardian] Routing: new work"*"context is about 150k"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL short note + close-out: $out" ;; esac
 
 # both notices in one reply: routing note first, close-out still fires
 : >"$R"; printf '{"type":"assistant","message":{"usage":{"input_tokens":1,"cache_creation_input_tokens":0,"cache_read_input_tokens":150000}}}\n' >>"$R"
