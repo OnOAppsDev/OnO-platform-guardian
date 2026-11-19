@@ -35,7 +35,7 @@ The session opener offers to create this file when the central branch can't be d
 
 `hooks/prompt-submit.sh` reads the real context size from the transcript and, past the threshold, asks Claude to suggest the close-out once per band. Env: `PG_CLOSEOUT_TOKENS` (default 120000), `PG_CLOSEOUT_STEP` (default 40000).
 
-The same hook adds a **routing reminder** to every typed message inside a git repo (not slash commands; a message starting with a pasted `/path` does get it) until the session has been routed — the `work-router` or `pre-pr` skill ran, or an Ono plugin skill or command ran (full name, or a short form listed in `routes.json`): a task goes through `platform-guardian:work-router` before any investigation or edit. Env: `PG_ROUTE_REMINDER=off`.
+The same hook adds a **routing reminder** to every typed message inside a git repo (not slash commands; a message starting with a pasted `/path` does get it) until the session has been routed — the `work-router` or `pre-pr` skill ran, or an Ono plugin skill or command ran (full name, or a short form listed in `routes.json`): a task goes through `platform-guardian:work-router` before any investigation or edit. After that, a shorter note stays on each message: a **new** task mid-session (a different bug, feature or task) is routed too, while answers and follow-ups inside the running Ono step just continue it. Env: `PG_ROUTE_REMINDER=off` (turns both off).
 
 ## Inspect gate
 
