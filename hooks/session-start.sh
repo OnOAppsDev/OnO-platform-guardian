@@ -169,10 +169,11 @@ case "${inspect%%	*}" in
       # The refresh itself costs tokens, so it's only offered when it matters, once a day per repo.
       dmark="$mdir/drift-notice"
       if [ -n "$inspector_on" ] && [ "$mdir" != . ] && [ "$(cat "$dmark" 2>/dev/null)" != "$today" ]; then
-        drift="$("$scripts/inspect-status.sh" drift "$dir" 2>/dev/null)"
+        cref="$(printf '%s' "$report" | sed -n 's/.*"central":{[^}]*"ref":"\([^"]*\)".*/\1/p')"
+        drift="$("$scripts/inspect-status.sh" drift "$dir" "$cref" 2>/dev/null)"
         if [ "${drift%%	*}" = stale ] && mkdir -p "$mdir" 2>/dev/null && echo "$today" >"$dmark" 2>/dev/null; then
           bun_needed=1
-          printf '\nINSPECT DOCS: the project docs (CLAUDE.md, docs/project/*) are behind the code — %s. Not a block — follow session-opener step 0b (the docs-refresh offer). Shown once today.\n' "${drift#*	}"
+          printf '\nINSPECT DOCS: the project docs (CLAUDE.md, docs/project/*) on the central branch are behind its code — %s. Not a block — follow session-opener step 0b (the docs-refresh offer). Shown once today.\n' "${drift#*	}"
         fi
       fi ;;
     esac ;;

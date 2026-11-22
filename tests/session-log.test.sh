@@ -289,11 +289,16 @@ expect_contains "Node line names the OS" "$out" "(unsupported) (OS: windows)"
 
 # project docs behind the code → INSPECT DOCS line, once a day, only with the inspector installed
 echo '{}' >"$I/.ono/repo-knowledge.json"
+g -C "$I" switch main
 KH="$(git -C "$I" rev-parse HEAD)"
-printf '{\n  "repository": {\n    "knowledgeHead": "%s"\n  }\n}\n' "$KH" >"$I/.ono/state.json"
-echo '{"x":1}' >"$I/package.json"; g -C "$I" add -A; g -C "$I" commit -m deps
+printf '{\n  "repository": {\n    "knowledgeHead": "%s"\n  },\n  "inspection": {\n    "stage3Complete": true\n  }\n}\n' "$KH" >"$I/.ono/state.json"
+g -C "$I" add -A; g -C "$I" commit -m state
+g -C "$I" switch work; echo '{"y":1}' >"$I/package.json"; g -C "$I" add -A; g -C "$I" commit -m "own change"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog0" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "a change on the employee's own branch → no INSPECT DOCS line" "$out" "INSPECT DOCS"
+g -C "$I" switch main; echo '{"x":1}' >"$I/package.json"; g -C "$I" add -A; g -C "$I" commit -m deps; g -C "$I" switch work
 out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
-expect_contains "docs behind the code → INSPECT DOCS line" "$out" "INSPECT DOCS: the project docs (CLAUDE.md, docs/project/*) are behind the code — files=1"
+expect_contains "docs behind the code → INSPECT DOCS line" "$out" "INSPECT DOCS: the project docs (CLAUDE.md, docs/project/*) on the central branch are behind its code — files=1"
 expect_contains "…naming the signal" "$out" "package.json"
 out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
 expect_absent "INSPECT DOCS only once a day" "$out" "INSPECT DOCS"

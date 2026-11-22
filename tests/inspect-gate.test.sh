@@ -231,45 +231,69 @@ gate UserPromptSubmit "/ono-project-inspector:inspect" p8; eq "off for the user,
 rm -rf "$R/.claude"
 rm -f "$WORK/claude/settings.json"
 
-# --- drift: how far the project docs are behind the code (git only) ---
-D="$WORK/drift"; rm -rf "$D"; mkdir -p "$D"; git -C "$D" init -q
+# --- drift: how far the central branch's project docs are behind its code (git only) ---
+D="$WORK/drift"; rm -rf "$D"; mkdir -p "$D"; git -C "$D" init -q -b master
 dg() { git -C "$D" -c user.name=t -c user.email=t@t "$@" >/dev/null 2>&1; }
-mkdir -p "$D/src" "$D/docs/project" "$D/.ono"; echo a >"$D/src/a.kt"; echo '{}' >"$D/package.json"
+mkdir -p "$D/src" "$D/docs/project" "$D/.ono" "$D/My App" "$D/old"; echo a >"$D/src/a.kt"; echo '{}' >"$D/package.json"
+echo s >"$D/My App/s.swift"; echo o >"$D/old/o.kt"
 printf '# AUDIT.md\n' >"$D/AUDIT.md"; echo x >"$D/CLAUDE.md"
 for f in overview components patterns integrations capabilities; do echo x >"$D/docs/project/$f.md"; done
 dg add -A; dg commit -m base; KH="$(git -C "$D" rev-parse HEAD)"
-state() { printf '{\n  "stateSchemaVersion": 3,\n  "plugin": {\n    "name": "ono-project-inspector",\n    "version": "0.11.3"\n  },\n  "repository": {\n    "gitRemote": null,\n    "gitHead": "%s",\n    "knowledgeHead": %s\n  },\n  "stages": {\n    "s": {\n      "knowledgeHead": "ffffffffffffffffffffffffffffffffffffffff"\n    }\n  }\n}\n' "$KH" "$1" >"$D/.ono/state.json"; }
-state "\"$KH\""; dg add -A; dg commit -m state
-dstat() { "$ST" drift "$D" | cut -f1; }
+state() { # state <knowledgeHead json> [stage3Complete] [crlf]
+  printf '{\n  "stages": {\n    "s": {\n      "knowledgeHead": "ffffffffffffffffffffffffffffffffffffffff"\n    }\n  },\n  "plugin": {\n    "name": "ono-project-inspector",\n    "version": "0.11.3"\n  },\n  "repository": {\n    "gitRemote": null,\n    "gitHead": "%s",\n    "knowledgeHead": %s\n  },\n  "inspection": {\n    "started": true,\n    "stage3Complete": %s,\n    "currentStage": null\n  }\n}\n' "$KH" "$1" "${2:-true}" |
+    { [ -n "${3:-}" ] && sed 's/$/\r/' || cat; } >"$D/.ono/state.json"
+  dg add -A; dg commit -m state
+}
+state "\"$KH\""
+dstat() { "$ST" drift "$D" master | cut -f1; }
 eq "drift: nothing changed → current" "$(dstat)" current
-eq "drift: reads repository.knowledgeHead, not a stage's" "$("$ST" drift "$D" | cut -f2 | sed 's/ date=.*//')" "files=0"
-echo y >"$D/docs/project/overview.md"; echo z >"$D/CLAUDE.md"; dg commit -am "docs only"
-eq "drift: only inspector-owned files changed → current" "$(dstat)" current
+eq "drift: reads repository.knowledgeHead, not a stage's (listed first)" "$("$ST" drift "$D" master | cut -f2 | sed 's/ date=.*//')" "files=0"
+echo y >"$D/docs/project/overview.md"; echo z >"$D/CLAUDE.md"; echo h >"$D/docs/project/שלום.md"; dg add -A; dg commit -m "docs only"
+eq "drift: only inspector-owned files changed (also a Hebrew name) → current" "$(dstat)" current
 echo b >"$D/src/a.kt"; dg commit -am "one source change"
 eq "drift: a source change → behind (no line)" "$(dstat)" behind
-case "$("$ST" drift "$D")" in *"files=1 "*"inspector=0.11.3"*) ok ;; *) fail "drift detail: count + inspector version" "$("$ST" drift "$D")" ;; esac
-eq "drift: threshold lowered → stale" "$(PG_DRIFT_FILES=1 "$ST" drift "$D" | cut -f1)" stale
-eq "drift: old knowledge + a change → stale" "$(PG_NOW=$(( $(date +%s) + 40*86400 )) "$ST" drift "$D" | cut -f1)" stale
-echo '{"a":1}' >"$D/package.json"; dg commit -am deps
-eq "drift: a build manifest changed → stale" "$(dstat)" stale
-case "$("$ST" drift "$D")" in *"signals=build/dependency manifest changed: package.json"*) ok ;; *) fail "drift: names the manifest" "$("$ST" drift "$D")" ;; esac
-git -C "$D" reset -q --hard HEAD~1
-mkdir -p "$D/newmod"; echo c >"$D/newmod/c.kt"; dg add -A; dg commit -m newmod
-case "$("$ST" drift "$D")" in stale*"top-level added: newmod"*) ok ;; *) fail "drift: new top-level folder → stale" "$("$ST" drift "$D")" ;; esac
+case "$("$ST" drift "$D" master)" in *"files=1 "*"inspector=0.11.3 ref=master"*) ok ;; *) fail "drift detail: count, version, ref" "$("$ST" drift "$D" master)" ;; esac
+eq "drift: threshold lowered → stale" "$(PG_DRIFT_FILES=1 "$ST" drift "$D" master | cut -f1)" stale
+eq "drift: knowledge written 40 days ago + a change → stale" "$(PG_NOW=$(( $(date +%s) + 40*86400 )) "$ST" drift "$D" master | cut -f1)" stale
+echo s2 >"$D/My App/s.swift"; dg commit -am "space folder"
+eq "drift: a change in an existing folder with a space → still behind" "$(dstat)" behind
+# a feature branch's own changes don't count: measured on the central branch
+dg switch -c feature/x; echo '{"a":1}' >"$D/package.json"; mkdir -p "$D/newmod"; echo c >"$D/newmod/c.kt"; dg add -A; dg commit -m feat
+eq "drift: manifest + new folder on a feature branch → central still behind" "$("$ST" drift "$D" master | cut -f1)" behind
+eq "drift: …same answer when the ref comes from git-status (no 3rd arg)" "$("$ST" drift "$D" | cut -f1)" behind
+dg switch master; dg merge -q --no-edit feature/x
+case "$("$ST" drift "$D" master)" in stale*"build/dependency manifest changed: package.json"*"top-level added: newmod"*) ok ;; *) fail "drift: merged manifest + folder → stale, both named" "$("$ST" drift "$D" master)" ;; esac
+git -C "$D" rm -rq old; dg commit -m "rm old"
+case "$("$ST" drift "$D" master)" in *"top-level removed: old"*) ok ;; *) fail "drift: removed folder named" "$("$ST" drift "$D" master)" ;; esac
+mkdir -p "$D/.github/workflows" "$D/app"; echo w >"$D/.github/workflows/ci.yml"; echo g >"$D/app/build.gradle"; dg add -A; dg commit -m ci
+case "$("$ST" drift "$D" master)" in *".github/workflows/ci.yml"*"app/build.gradle"*|*"app/build.gradle"*".github/workflows/ci.yml"*) ok ;; *) fail "drift: CI + nested manifests named" "$("$ST" drift "$D" master)" ;; esac
+# a refresh: new knowledgeHead → current, dated today even though knowledgeHead's commit is older
+KH="$(git -C "$D" rev-parse HEAD)"; state "\"$KH\""
+eq "drift: after a refresh → current" "$(dstat)" current
+case "$("$ST" drift "$D" master)" in *"date=$(date +%Y-%m-%d) days=0"*) ok ;; *) fail "drift: date = when the knowledge was written" "$("$ST" drift "$D" master)" ;; esac
+state "\"$KH\"" true crlf; eq "drift: CRLF state.json still read" "$(dstat)" current
+# a refresh branch already on the remote → pending (no second offer)
+git init -q --bare "$WORK/drift-remote.git"; dg remote add origin "$WORK/drift-remote.git"; dg push -q origin master
+echo b2 >"$D/src/a.kt"; dg commit -am more; dg push -q origin master
+dg switch -c chore/refresh-project-docs-20261122; echo r >"$D/docs/project/overview.md"; dg commit -am refresh; dg push -q origin chore/refresh-project-docs-20261122; dg switch master
+case "$("$ST" drift "$D" master)" in pending*"origin/chore/refresh-project-docs-20261122"*) ok ;; *) fail "drift: open refresh branch → pending" "$("$ST" drift "$D" master)" ;; esac
+dg merge -q --no-edit chore/refresh-project-docs-20261122
+eq "drift: refresh branch merged → no longer pending" "$(dstat)" behind
+state "\"$KH\"" false; eq "drift: inspection not through stage 3 → unknown" "$(dstat)" unknown
 state null; eq "drift: knowledgeHead null → unknown" "$(dstat)" unknown
 state '"0123456789abcdef0123456789abcdef01234567"'; eq "drift: knowledgeHead not in history → unknown" "$(dstat)" unknown
-rm "$D/.ono/state.json"; eq "drift: no state.json → unknown" "$(dstat)" unknown
+git -C "$D" rm -q .ono/state.json; dg commit -m rm; eq "drift: no state.json → unknown" "$(dstat)" unknown
 # nested project: paths relative to the project folder, changes outside it don't count
-N="$WORK/nested"; rm -rf "$N"; mkdir -p "$N/App/docs/project" "$N/App/.ono" "$N/App/src" "$N/other"; git -C "$N" init -q
+N="$WORK/nested"; rm -rf "$N"; mkdir -p "$N/App/docs/project" "$N/App/.ono" "$N/App/src" "$N/other"; git -C "$N" init -q -b master
 ng() { git -C "$N" -c user.name=t -c user.email=t@t "$@" >/dev/null 2>&1; }
 printf '# AUDIT.md\n' >"$N/App/AUDIT.md"; echo x >"$N/App/CLAUDE.md"; echo a >"$N/App/src/a.kt"; echo o >"$N/other/o.txt"
 for f in overview components patterns integrations capabilities; do echo x >"$N/App/docs/project/$f.md"; done
 ng add -A; ng commit -m base; KH="$(git -C "$N" rev-parse HEAD)"
-printf '{\n  "repository": {\n    "knowledgeHead": "%s"\n  }\n}\n' "$KH" >"$N/App/.ono/state.json"; ng add -A; ng commit -m st
+printf '{\n  "repository": {\n    "knowledgeHead": "%s"\n  },\n  "inspection": {\n    "stage3Complete": true\n  }\n}\n' "$KH" >"$N/App/.ono/state.json"; ng add -A; ng commit -m st
 mkdir -p "$N/other2"; echo p >"$N/other2/p"; echo q >"$N/other/o.txt"; ng add -A; ng commit -m outside
-eq "drift nested: changes outside the project → current" "$("$ST" drift "$N/App" | cut -f1)" current
-echo b >"$N/App/src/a.kt"; ng commit -am inside
-eq "drift nested: a change inside → behind" "$("$ST" drift "$N/App" | cut -f1)" behind
+eq "drift nested: changes outside the project → current" "$("$ST" drift "$N/App" master | cut -f1)" current
+echo b >"$N/App/src/a.kt"; mkdir -p "$N/App/feat"; echo f >"$N/App/feat/f.kt"; ng add -A; ng commit -m inside
+case "$("$ST" drift "$N/App" master)" in stale*"top-level added: feat"*) ok ;; *) fail "drift nested: new folder inside the project → stale" "$("$ST" drift "$N/App" master)" ;; esac
 
 echo
 echo "inspect-status.sh + inspect-gate.sh: $PASS passed, $FAIL failed"

@@ -7,8 +7,8 @@
 #   inspect-status.sh elsewhere [dir] → "<ref>" of the most recently updated remote branch that
 #                                       holds a complete, current-model inspection (or nothing)
 #   inspect-status.sh override [dir]  → record today's manager-approved override for this repo
-#   inspect-status.sh drift [dir]     → how far the inspection's knowledge is behind the code
-#                                       (stale | behind | current | unknown — see the drift block)
+#   inspect-status.sh drift [dir] [ref] → how far the inspection's knowledge on the central branch is behind it
+#                                       (stale | behind | current | pending | unknown — see the drift block)
 #
 # Status:
 #   done        stages 1–2 complete: AUDIT.md (inspector's) + CLAUDE.md + docs/project/{overview,
@@ -78,51 +78,74 @@ if [ "$cmd" = "elsewhere" ]; then   # FYI only — merging another branch is a h
 fi
 
 if [ "$cmd" = "drift" ]; then
-  # How far the inspection's Project Knowledge is behind the code — the inspector's own freshness
-  # rule (inspection-state.ts computeKnowledgeFreshness), in git only: no Bun, no tokens.
+  # How far the inspection's Project Knowledge on the CENTRAL branch is behind the central branch's
+  # code — the inspector's own freshness rule (inspection-state.ts computeKnowledgeFreshness), in
+  # git only: no Bun, no tokens. Measured on the central branch because that's where the refresh is
+  # done (one chore PR for the team): a feature branch's own changes never trigger it, and once a
+  # refresh is merged nobody is offered it again. Ref: 3rd argument, else the central branch from
+  # git-status.sh, else HEAD.
   # Prints "<status><TAB><detail>":
   #   stale    worth a refresh: a build/dependency/CI manifest changed, a top-level entry was
   #            added or removed, ≥ PG_DRIFT_FILES (30) source files changed, or source changed and
-  #            the knowledge is ≥ PG_DRIFT_DAYS (30) days old
+  #            the knowledge was last written ≥ PG_DRIFT_DAYS (30) days ago
   #   behind   source changed, below those thresholds (no line in the opener)
   #   current  no source change since the knowledge was generated
-  #   unknown  no knowledgeHead (inspected before 0.10.0) or it isn't in this history
-  # detail: files=<n> date=<YYYY-MM-DD> days=<d> inspector=<version> signals=<a; b>
-  sf="$proj/.ono/state.json"
-  [ -f "$sf" ] || out unknown "no .ono/state.json"
-  block_val() { # block_val <block> <key>: "key": "value" inside the top-level "<block>": { … }
-    awk -v b="\"$1\"" -v k="\"$2\"" '
+  #   pending  a refresh branch (…/chore/refresh-project-docs*) is on the remote, not merged yet
+  #   unknown  no state, inspection not through stage 3, no knowledgeHead (inspected before
+  #            0.10.0), or it isn't in this history
+  # detail: files=<n> date=<YYYY-MM-DD> days=<d> inspector=<version> ref=<ref> signals=<a; b>
+  ref="${3:-}"
+  [ -n "$ref" ] || ref="$(PG_NO_FETCH=1 "$here/git-status.sh" "$top" 2>/dev/null | sed -n 's/.*"central":{[^}]*"ref":"\([^"]*\)".*/\1/p')"
+  [ -n "$ref" ] && git -C "$top" rev-parse -q --verify "$ref^{commit}" >/dev/null 2>&1 || ref=HEAD
+  g() { git -C "$proj" -c core.quotePath=false "$@" 2>/dev/null; }
+  state="$(git -C "$top" show "$ref:${pp}.ono/state.json" 2>/dev/null | tr -d '\r')"
+  [ -n "$state" ] || out unknown "no .ono/state.json on $ref"
+  block_val() { # block_val <block> <key>: the value of "key" inside the top-level "<block>": { … }
+    printf '%s\n' "$state" | awk -v b="\"$1\"" -v k="\"$2\"" '
       index($0, b) && /\{[[:space:]]*$/ { inb = 1; next }
       inb && /^[[:space:]]*\}/ { exit }
-      inb && index($0, k) { sub(/^[^:]*:[[:space:]]*"/, ""); sub(/".*$/, ""); print; exit }' "$sf"
+      inb && index($0, k) { sub(/^[^:]*:[[:space:]]*/, ""); sub(/,?[[:space:]]*$/, ""); gsub(/"/, ""); print; exit }'
   }
-  kh="$(block_val repository knowledgeHead | tr -d '\r')"
-  ver="$(block_val plugin version | tr -d '\r')"
+  ver="$(block_val plugin version)"
+  [ "$(block_val inspection stage3Complete)" = true ] || out unknown "inspection not through stage 3${ver:+ (inspector $ver)}"
+  kh="$(block_val repository knowledgeHead)"
   case "$kh" in ""|null|*[!0-9a-f]*) out unknown "no knowledgeHead recorded${ver:+ (inspector $ver)}" ;; esac
-  git -C "$proj" cat-file -e "$kh^{commit}" 2>/dev/null || out unknown "knowledgeHead ${kh%"${kh#???????}"} not in this history"
-  date="$(git -C "$proj" log -1 --format=%cs "$kh" 2>/dev/null)"
-  then_s="$(git -C "$proj" log -1 --format=%ct "$kh" 2>/dev/null)"; now_s="${PG_NOW:-$(date +%s)}"
+  git -C "$top" cat-file -e "$kh^{commit}" 2>/dev/null || out unknown "knowledgeHead ${kh%"${kh#???????}"} not in this history"
+  # a refresh already on its way → don't offer another one
+  pend="$(git -C "$top" for-each-ref --format='%(refname:short)' 'refs/remotes/*/chore/refresh-project-docs*' 2>/dev/null |
+          while IFS= read -r b; do git -C "$top" merge-base --is-ancestor "$b" "$ref" 2>/dev/null || { printf '%s\n' "$b"; break; }; done)"
+  [ -n "$pend" ] && out pending "branch=$pend"
+  # when the knowledge was last written: the commit that last changed state.json on the ref
+  # (knowledgeHead's own date can be weeks older than the refresh that recorded it)
+  when="$(git -C "$top" log -1 --format='%ct %ad' --date=short "$ref" -- "${pp}.ono/state.json" 2>/dev/null)"
+  then_s="${when%% *}"; date="${when#* }"; now_s="${PG_NOW:-$(date +%s)}"
   days=$(( (now_s - ${then_s:-$now_s}) / 86400 ))
-  changed="$(git -C "$proj" diff --relative --name-only --no-renames "$kh" HEAD 2>/dev/null |
+  changed="$(g diff --relative --name-only --no-renames "$kh" "$ref" |
     grep -Ev '^(CLAUDE\.md|AUDIT\.md|CLAUDE\.md\.bak|AUDIT\.md\.bak)$|^(\.ono|docs/project|audits)/')"
   n="$(printf '%s' "$changed" | grep -c .)"
-  detail="files=$n date=$date days=$days inspector=${ver:-?}"
+  detail="files=$n date=$date days=$days inspector=${ver:-?} ref=$ref"
   [ "$n" -eq 0 ] && out current "$detail"
-  signals=""
-  manifests="$(printf '%s\n' "$changed" | awk -F/ '{ b = $NF }
-    b ~ /^(package\.json|pnpm-workspace\.yaml|lerna\.json|nx\.json|turbo\.json|Podfile|Package\.swift|Cartfile|project\.pbxproj|build\.gradle|build\.gradle\.kts|settings\.gradle|settings\.gradle\.kts|pom\.xml|Cargo\.toml|go\.mod|pyproject\.toml|setup\.py|setup\.cfg|requirements\.txt|Pipfile|Gemfile|pubspec\.yaml|composer\.json|Makefile|Dockerfile|docker-compose\.ya?ml|\.gitlab-ci\.yml|Jenkinsfile|project\.yml|Project\.swift|Workspace\.swift|AndroidManifest\.xml|app\.json|eas\.json|config\.xml|appinfo\.json)$/ ||
-    b ~ /\.(csproj|xcscheme|xcconfig)$/ || b ~ /^(app|vite|webpack|next)\.config\.(js|cjs|mjs|ts)$/ ||
-    $0 ~ /^\.github\/workflows\// || $0 ~ /^\.circleci\// { print }' | head -3 | paste -sd, - | sed 's/,/, /g')"
-  [ -n "$manifests" ] && signals="build/dependency manifest changed: $manifests"
-  tops_then="$(git -C "$proj" ls-tree --name-only "$kh" 2>/dev/null)"; tops_now="$(git -C "$proj" ls-tree --name-only HEAD 2>/dev/null)"
-  # as the inspector: only the top folder of a changed source file counts (never .ono/ etc.)
-  added=""; removed=""
-  for t in $(printf '%s\n' "$changed" | sed 's#/.*##' | sort -u); do
-    if ! printf '%s\n' "$tops_then" | grep -qxF -- "$t"; then added="$added${added:+,}$t"
-    elif ! printf '%s\n' "$tops_now" | grep -qxF -- "$t"; then removed="$removed${removed:+,}$t"; fi
-  done
-  [ -n "$added" ] && signals="${signals:+$signals; }top-level added: $added"
-  [ -n "$removed" ] && signals="${signals:+$signals; }top-level removed: $removed"
+  # one awk pass, as the inspector: a changed file's basename is a build manifest; its top folder
+  # (split on "/" only — names may hold spaces) wasn't there before (added) or isn't now (removed)
+  signals="$( { g ls-tree --name-only "$kh" | sed 's/^/T	/'; g ls-tree --name-only "$ref" | sed 's/^/N	/'
+                printf '%s\n' "$changed" | sed 's/^/C	/'; } | awk -F'\t' '
+    $1 == "T" { before[$2] = 1; next }
+    $1 == "N" { now[$2] = 1; next }
+    $1 == "C" && $2 != "" {
+      rel = $2; n = split(rel, p, "/"); b = p[n]; top = p[1]
+      if (b ~ /^(package\.json|pnpm-workspace\.yaml|lerna\.json|nx\.json|turbo\.json|Podfile|Package\.swift|Cartfile|project\.pbxproj|build\.gradle|build\.gradle\.kts|settings\.gradle|settings\.gradle\.kts|pom\.xml|Cargo\.toml|go\.mod|pyproject\.toml|setup\.py|setup\.cfg|requirements\.txt|Pipfile|Gemfile|pubspec\.yaml|composer\.json|Makefile|Dockerfile|docker-compose\.ya?ml|\.gitlab-ci\.yml|Jenkinsfile|project\.yml|Project\.swift|Workspace\.swift|AndroidManifest\.xml|app\.json|eas\.json|config\.xml|appinfo\.json)$/ ||
+          b ~ /\.(csproj|xcscheme|xcconfig)$/ || b ~ /^(app|vite|webpack|next)\.config\.(js|cjs|mjs|ts)$/ ||
+          rel ~ /^\.github\/workflows\// || rel ~ /^\.circleci\//) { if (nm < 3 && !(rel in m)) { m[rel] = 1; ml = ml (nm++ ? ", " : "") rel } }
+      if (!(top in before)) { if (!(top in a) && na < 3) { a[top] = 1; al = al (na++ ? ", " : "") top } }
+      else if (!(top in now)) { if (!(top in r) && nr < 3) { r[top] = 1; rl = rl (nr++ ? ", " : "") top } }
+    }
+    END {
+      s = ""
+      if (ml != "") s = "build/dependency manifest changed: " ml
+      if (al != "") s = s (s != "" ? "; " : "") "top-level added: " al
+      if (rl != "") s = s (s != "" ? "; " : "") "top-level removed: " rl
+      print s
+    }')"
   detail="$detail${signals:+ signals=$signals}"
   if [ -n "$signals" ] || [ "$n" -ge "${PG_DRIFT_FILES:-30}" ] || [ "$days" -ge "${PG_DRIFT_DAYS:-30}" ]; then
     out stale "$detail"
