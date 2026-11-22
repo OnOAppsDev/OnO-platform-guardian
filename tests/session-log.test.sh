@@ -287,6 +287,19 @@ expect_absent "no manifest, inspector not installed → no manifest line" "$out"
 out="$(echo '{}' | PG_OS=windows PG_NODE="$WORK/node-v20.19.4" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
 expect_contains "Node line names the OS" "$out" "(unsupported) (OS: windows)"
 
+# project docs behind the code → INSPECT DOCS line, once a day, only with the inspector installed
+echo '{}' >"$I/.ono/repo-knowledge.json"
+KH="$(git -C "$I" rev-parse HEAD)"
+printf '{\n  "repository": {\n    "knowledgeHead": "%s"\n  }\n}\n' "$KH" >"$I/.ono/state.json"
+echo '{"x":1}' >"$I/package.json"; g -C "$I" add -A; g -C "$I" commit -m deps
+out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_contains "docs behind the code → INSPECT DOCS line" "$out" "INSPECT DOCS: the project docs (CLAUDE.md, docs/project/*) are behind the code — files=1"
+expect_contains "…naming the signal" "$out" "package.json"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "INSPECT DOCS only once a day" "$out" "INSPECT DOCS"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog2" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "inspector not installed → no INSPECT DOCS line" "$out" "INSPECT DOCS"
+
 echo
 echo "session-log.sh + session-start.sh: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

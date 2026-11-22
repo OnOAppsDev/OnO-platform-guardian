@@ -7,6 +7,8 @@
 #   inspect-status.sh elsewhere [dir] → "<ref>" of the most recently updated remote branch that
 #                                       holds a complete, current-model inspection (or nothing)
 #   inspect-status.sh override [dir]  → record today's manager-approved override for this repo
+#   inspect-status.sh drift [dir]     → how far the inspection's knowledge is behind the code
+#                                       (stale | behind | current | unknown — see the drift block)
 #
 # Status:
 #   done        stages 1–2 complete: AUDIT.md (inspector's) + CLAUDE.md + docs/project/{overview,
@@ -73,6 +75,59 @@ if [ "$cmd" = "elsewhere" ]; then   # FYI only — merging another branch is a h
       { printf '%s\n' "$r"; break; }
   done
   exit 0
+fi
+
+if [ "$cmd" = "drift" ]; then
+  # How far the inspection's Project Knowledge is behind the code — the inspector's own freshness
+  # rule (inspection-state.ts computeKnowledgeFreshness), in git only: no Bun, no tokens.
+  # Prints "<status><TAB><detail>":
+  #   stale    worth a refresh: a build/dependency/CI manifest changed, a top-level entry was
+  #            added or removed, ≥ PG_DRIFT_FILES (30) source files changed, or source changed and
+  #            the knowledge is ≥ PG_DRIFT_DAYS (30) days old
+  #   behind   source changed, below those thresholds (no line in the opener)
+  #   current  no source change since the knowledge was generated
+  #   unknown  no knowledgeHead (inspected before 0.10.0) or it isn't in this history
+  # detail: files=<n> date=<YYYY-MM-DD> days=<d> inspector=<version> signals=<a; b>
+  sf="$proj/.ono/state.json"
+  [ -f "$sf" ] || out unknown "no .ono/state.json"
+  block_val() { # block_val <block> <key>: "key": "value" inside the top-level "<block>": { … }
+    awk -v b="\"$1\"" -v k="\"$2\"" '
+      index($0, b) && /\{[[:space:]]*$/ { inb = 1; next }
+      inb && /^[[:space:]]*\}/ { exit }
+      inb && index($0, k) { sub(/^[^:]*:[[:space:]]*"/, ""); sub(/".*$/, ""); print; exit }' "$sf"
+  }
+  kh="$(block_val repository knowledgeHead | tr -d '\r')"
+  ver="$(block_val plugin version | tr -d '\r')"
+  case "$kh" in ""|null|*[!0-9a-f]*) out unknown "no knowledgeHead recorded${ver:+ (inspector $ver)}" ;; esac
+  git -C "$proj" cat-file -e "$kh^{commit}" 2>/dev/null || out unknown "knowledgeHead ${kh%"${kh#???????}"} not in this history"
+  date="$(git -C "$proj" log -1 --format=%cs "$kh" 2>/dev/null)"
+  then_s="$(git -C "$proj" log -1 --format=%ct "$kh" 2>/dev/null)"; now_s="${PG_NOW:-$(date +%s)}"
+  days=$(( (now_s - ${then_s:-$now_s}) / 86400 ))
+  changed="$(git -C "$proj" diff --relative --name-only --no-renames "$kh" HEAD 2>/dev/null |
+    grep -Ev '^(CLAUDE\.md|AUDIT\.md|CLAUDE\.md\.bak|AUDIT\.md\.bak)$|^(\.ono|docs/project|audits)/')"
+  n="$(printf '%s' "$changed" | grep -c .)"
+  detail="files=$n date=$date days=$days inspector=${ver:-?}"
+  [ "$n" -eq 0 ] && out current "$detail"
+  signals=""
+  manifests="$(printf '%s\n' "$changed" | awk -F/ '{ b = $NF }
+    b ~ /^(package\.json|pnpm-workspace\.yaml|lerna\.json|nx\.json|turbo\.json|Podfile|Package\.swift|Cartfile|project\.pbxproj|build\.gradle|build\.gradle\.kts|settings\.gradle|settings\.gradle\.kts|pom\.xml|Cargo\.toml|go\.mod|pyproject\.toml|setup\.py|setup\.cfg|requirements\.txt|Pipfile|Gemfile|pubspec\.yaml|composer\.json|Makefile|Dockerfile|docker-compose\.ya?ml|\.gitlab-ci\.yml|Jenkinsfile|project\.yml|Project\.swift|Workspace\.swift|AndroidManifest\.xml|app\.json|eas\.json|config\.xml|appinfo\.json)$/ ||
+    b ~ /\.(csproj|xcscheme|xcconfig)$/ || b ~ /^(app|vite|webpack|next)\.config\.(js|cjs|mjs|ts)$/ ||
+    $0 ~ /^\.github\/workflows\// || $0 ~ /^\.circleci\// { print }' | head -3 | paste -sd, - | sed 's/,/, /g')"
+  [ -n "$manifests" ] && signals="build/dependency manifest changed: $manifests"
+  tops_then="$(git -C "$proj" ls-tree --name-only "$kh" 2>/dev/null)"; tops_now="$(git -C "$proj" ls-tree --name-only HEAD 2>/dev/null)"
+  # as the inspector: only the top folder of a changed source file counts (never .ono/ etc.)
+  added=""; removed=""
+  for t in $(printf '%s\n' "$changed" | sed 's#/.*##' | sort -u); do
+    if ! printf '%s\n' "$tops_then" | grep -qxF -- "$t"; then added="$added${added:+,}$t"
+    elif ! printf '%s\n' "$tops_now" | grep -qxF -- "$t"; then removed="$removed${removed:+,}$t"; fi
+  done
+  [ -n "$added" ] && signals="${signals:+$signals; }top-level added: $added"
+  [ -n "$removed" ] && signals="${signals:+$signals; }top-level removed: $removed"
+  detail="$detail${signals:+ signals=$signals}"
+  if [ -n "$signals" ] || [ "$n" -ge "${PG_DRIFT_FILES:-30}" ] || [ "$days" -ge "${PG_DRIFT_DAYS:-30}" ]; then
+    out stale "$detail"
+  fi
+  out behind "$detail"
 fi
 
 if [ "$cmd" = "override" ]; then

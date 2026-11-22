@@ -68,6 +68,7 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 - **Bug reports:** something broken in the tools? "report a bug" → one organized file (exact error, steps, versions of Guardian + every Ono plugin) for the maintainer to triage — outside the repo, never committed.
 - **No forced commit or PR at close:** mid-work closes save a note (and a checkpoint commit only if the employee wants one, only when code changed); the pre-PR check, push and PR come when the bug or feature is finished.
 - **PRs waiting for your review:** at session start (with `gh` logged in) the opener lists open PRs where the employee was asked personally to review and offers them as a focus — this repo's go to `/review-code`. `PG_REVIEWS=off` turns it off.
+- **Project docs freshness:** a free git check at session start (`inspect-status.sh drift`) — when `CLAUDE.md` / `docs/project/` are meaningfully behind the code, one line a day offers the inspector's **Refresh Project Knowledge** as a separate `chore/` branch + PR. Never automatic (it costs tokens).
 - **Per-OS tool lines:** missing `jq` (dev plugin) or Bun (inspector, only when it has something to run) → one ⚠️ line with this computer's install command (Windows: `winget`).
 - **Pre-PR check before every PR:** a one-page PDF of what your change could break (`skills/pre-pr`), outside the repo, never committed. Type **skip** to skip it.
 - **QA repos:** both QA plugins block Claude's own commits there by design — Guardian hands you the commands to run instead.
