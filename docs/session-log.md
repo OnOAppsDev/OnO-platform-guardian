@@ -2,6 +2,16 @@
 
 ---
 
+## Sessions 14–16 (catch-up, written 2026-11-22) — 2026-11-17 → 11-19 — 0.4.2 → 0.5.2
+
+Not logged at the time; reconstructed from the changelog and git history.
+- 0.4.2 / 0.4.3 (11-17): routes re-verified against dev plugin 0.7.7 and inspector 0.11.3; opener warns when Node.js is too old for the dev plugin, and explains Matrix QA's "hook failed" lines on a broken Node.
+- 0.5.0 (11-17, PR #36): matrix-qa-plugin, matrix-studio and spec-team-toolkit removed from Guardian (Yagil); a one-time ℹ️ line tells employees how to uninstall them; `node_modules/` stays never-committed everywhere.
+- 0.5.1 / 0.5.2 (11-18 / 11-19, PRs #37 / #38): a task described after the opener, and every later new task, goes through `work-router` (bug report from Raz, `yestv_aos`).
+- **Process improvement:** write the session-log entry in the same PR as the release; three releases went out without one.
+
+---
+
 ## Session 13 — 2026-11-16 — Dev Plugin 0.7.6 review + Guardian 0.4.1
 
 - Yagil asked for a review of Dev Plugin 0.7.6 (dev plugin PR #62). The user approved and merged it before the review started. Post-merge check: 39 suites · 4607 checks · 0 failures on Node 24, and our findings 1–4 are fixed (`docs/branch-policy.md` status). Item 5 is still open.
