@@ -1,6 +1,6 @@
 # Platform Guardian — Backlog
 
-Last updated: 2026-11-08
+Last updated: 2026-11-22
 
 Goal and design: `docs/vision.md`. Ecosystem state the router depends on: `docs/ecosystem-status-2026-11.md`.
 The July plan (MCP server / 7-phase gate / Repo B) and its backlog are archived in `archive/2026-07-mcp-plan/`.
@@ -52,6 +52,11 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 - [x] **G4.5: Minimum Claude Code version** — Done 2026-11-08: **2.1.140** (plugin.json dependencies when the marketplace entry omits them 2.1.110; auto-update installs missing deps 2.1.116; managed marketplace auto-update persisted 2.1.140). In README + `docs/rollout.md`.
 - [ ] **G4.3: Pilot** — One team, 1–2 weeks; collect friction; fix.
 - [x] **G4.4: README rewrite** — Done 2026-11-08. — Reflect the router product (install, session flow, routing table). Current README describes the archived plan.
+
+## Waiting on plugin owners (2026-11-22)
+
+- [ ] **Pre-PR in the dev flow** — when Yagil ships `/ono-mobile-dev-plugin:pre-pr` (with the `PRE_PR` result line): route + closer to his command, `check-routes.sh` entry, Guardian's `skills/pre-pr` as fallback only, then remove. Request: `~/Downloads/2026-11-22-yagil-handoff-and-guardian-0.6.0.md` §A3.
+- [ ] **Dev plugin without jq on Windows** (§A1) and **inspector `winget` line + manifest notice** (§A2) — when they ship, re-verify routes and trim Guardian's TOOLS lines if no longer needed.
 
 ## Later
 

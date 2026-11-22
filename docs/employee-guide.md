@@ -40,14 +40,16 @@ Every Ono project goes through the **Project Inspector** once, before any work. 
 2. **Write anything** — "hi", "let's start", whatever. Guardian:
    - checks your git state — which branch you're on, whether you're behind your project's **main branch** (each project has its own — often `develop`; if Guardian isn't sure, it asks you). Something off → you'll see ⚠️🚨 and **you** decide what to do;
    - reminds you where you stopped last time;
+   - tells you about PRs teammates asked **you** to review (needs `gh` logged in) — you can pick one as today's work;
    - asks: **bug, feature, QA…?**
 3. **Say what you're doing in plain words** — "fix bug ABC-123", "new login screen", "write a QA plan". Guardian starts the right Ono plugin for you. No commands to remember.
 4. **Approvals are yours.** When a step needs a human (approving a plan, QA sign-off), Guardian stops and tells you exactly what to type.
-5. **Done** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian shows what goes into the commit (**only code** — notes and plugin documents stay out unless you ask), runs a quick **pre-PR check** (a one-page PDF of what to test; type **skip** to skip), then pushes and opens a PR — never straight to the main branch. **Every commit and push needs your OK** in a Claude Code permission prompt: approve it only if you asked for it. Then type **`/clear`** to start fresh. Nothing is lost.
+5. **Stopping for now** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian saves a note of where you stopped. Your code stays on your computer; if code changed, it asks once whether you want a checkpoint commit — no PR in the middle of the work. Only notes or logs changed? Nothing to commit, no questions.
+6. **Bug or feature finished** → say so when you close. Guardian shows what goes into the commit (**only code** — notes and plugin documents stay out unless you ask), runs a quick **pre-PR check** (a one-page PDF of what to test; type **skip** to skip), then pushes and opens a PR — never straight to the main branch. **Every commit and push needs your OK** in a Claude Code permission prompt: approve it only if you asked for it. Then type **`/clear`** to start fresh. Nothing is lost.
 
 ## Before every PR — the pre-PR check 🔍
 
-When you close a session with changes, Guardian runs a quick safety check **before** it opens the PR. It looks at the code you changed and everything that uses it, and opens a **one-page PDF** with what to test in the app:
+When your bug or feature is finished and you close the session, Guardian runs a quick safety check **before** it opens the PR. It looks at the code you changed and everything that uses it, and opens a **one-page PDF** with what to test in the app:
 
 - 🔴 **Must test** — check these before you send the PR.
 - 🟠 **Should test** — worth a quick look.

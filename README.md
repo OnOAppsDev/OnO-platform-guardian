@@ -32,7 +32,7 @@ claude ──► 1. OPEN       on your first message (any message): git report v
            3. WORK       the org plugin's own process, as its owners designed it
              │           approvals stay yours — Guardian never self-approves
              ▼
-           4. CLOSE      commit hygiene → commit → push → PR (never straight to central)
+           4. CLOSE      in progress: log + optional checkpoint commit · finished: commit → pre-PR → push → PR (never straight to central)
                          local session note · plain summary · "type /clear"
 ```
 
@@ -66,6 +66,10 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 - **Only code goes into a commit** — in every flow. Documents, data and plugin working files (`.md`, `.json`, `.yaml` …, bug plans, task state, reports) stay out — on disk, not `.gitignore`d — unless the employee asks for a file or the project lists it in `.platform-guardian.json` `"commitPaths"`. Secrets never. A guard enforces it on every `git add` / `git commit`.
 - **⛔ Inspect gate — every project is inspected first.** If the project hasn't been through the Ono Project Inspector (`AUDIT.md` + `CLAUDE.md` + `docs/project/*`), Claude is blocked in it: a red ⛔ banner on every message and Ono plugin command, until the employee runs `/ono-project-inspector:inspect` — or, only with a manager's approval, types the exact sentence `I have manager approval to work without inspect` (opens the repo for that day). The inspector's outputs are committed so the whole team shares one inspection.
 - **Bug reports:** something broken in the tools? "report a bug" → one organized file (exact error, steps, versions of Guardian + every Ono plugin) for the maintainer to triage — outside the repo, never committed.
+- **No forced commit or PR at close:** mid-work closes save a note (and a checkpoint commit only if the employee wants one, only when code changed); the pre-PR check, push and PR come when the bug or feature is finished.
+- **PRs waiting for your review:** at session start (with `gh` logged in) the opener lists open PRs where the employee was asked personally to review and offers them as a focus — this repo's go to `/review-code`. `PG_REVIEWS=off` turns it off.
+- **Project docs freshness:** a free git check at session start (`inspect-status.sh drift`) — when `CLAUDE.md` / `docs/project/` are meaningfully behind the code, one line a day offers the inspector's **Refresh Project Knowledge** as a separate `chore/` branch + PR. Never automatic (it costs tokens).
+- **Per-OS tool lines:** missing `jq` (dev plugin) or Bun (inspector, only when it has something to run) → one ⚠️ line with this computer's install command (Windows: `winget`).
 - **Pre-PR check before every PR:** a one-page PDF of what your change could break (`skills/pre-pr`), outside the repo, never committed. Type **skip** to skip it.
 - **QA repos:** both QA plugins block Claude's own commits there by design — Guardian hands you the commands to run instead.
 

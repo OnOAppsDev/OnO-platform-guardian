@@ -16,6 +16,8 @@ unset CLAUDE_PROJECT_DIR CLAUDE_PLUGIN_ROOT GIT_SSH_COMMAND PG_FETCH_TIMEOUT
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/pg-session-log.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 export PG_LOG_DIR="$WORK/logs" PG_NO_FETCH=1
+# No real GitHub call from the opener in tests (the REVIEWS tests below use a fake gh).
+export PG_REVIEWS=off
 # The machine's own node must not decide the TOOLS lines: default to a supported one.
 printf '#!/bin/sh\necho v24.0.0\n' >"$WORK/node-ok"; chmod +x "$WORK/node-ok"
 export PG_NODE="$WORK/node-ok"
@@ -216,6 +218,92 @@ expect_absent "crashing node → dyld noise not passed through" "$out" "dyld["
 
 out="$(echo '{}' | CLAUDE_PLUGIN_ROOT="$WORK/nowhere" CLAUDE_PROJECT_DIR="$R" "$HOOK" 2>&1)"; rc=$?
 expect_eq "hook with broken plugin root fails open" "$rc:$out" "0:"
+
+# --- the jq line names the OS, so the opener gives that OS's install command ---
+out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_OS=MINGW64_NT-10.0-26100 PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "Git Bash on Windows → OS: windows" "$out" "jq is not installed on this computer (OS: windows)"
+out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_OS=Darwin PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "macOS → OS: mac" "$out" "(OS: mac)"
+out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_OS=Linux PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "Linux → OS: linux" "$out" "(OS: linux)"
+
+# --- Bun missing → TOOLS line, only when the inspector has something to do here ---
+printf '{"plugins":{"ono-project-inspector@ono-plugin-marketplace":[{}]}}' >"$WORK/with-insp.json"
+out="$(echo '{}' | PG_BUN=pg-no-such-bun PG_OS=windows PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "no Bun + not inspected → Bun TOOLS line" "$out" "TOOLS: Bun is not installed on this computer (OS: windows)"
+out="$(echo '{}' | PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "no Bun, inspector not installed → no Bun line" "$out" "Bun is not installed"
+printf '#!/bin/sh\necho 1.2.0\n' >"$WORK/bun"; chmod +x "$WORK/bun"
+out="$(echo '{}' | PG_BUN="$WORK/bun" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "Bun present → no Bun line" "$out" "Bun is not installed"
+
+# an inspected repo: no manifest → one line a day; with the manifest → nothing; no Bun line unless needed
+g init "$WORK/insp"; I="$WORK/insp"
+mkdir -p "$I/docs/project" "$I/.ono"
+printf '# AUDIT.md\n' >"$I/AUDIT.md"; echo x >"$I/CLAUDE.md"
+for f in overview components patterns integrations capabilities; do echo x >"$I/docs/project/$f.md"; done
+echo '{}' >"$I/.ono/state.json"; g -C "$I" add -A; g -C "$I" commit -m inspected; g -C "$I" checkout -b work
+out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog" PG_BUN=pg-no-such-bun PG_OS=windows PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_contains "inspected, no manifest → INSPECT manifest line" "$out" ".ono/repo-knowledge.json is missing"
+expect_contains "no manifest + no Bun → Bun line too" "$out" "TOOLS: Bun is not installed"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog" PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "manifest line only once a day" "$out" "repo-knowledge.json is missing"
+expect_absent "…and then no Bun line either" "$out" "Bun is not installed"
+echo '{}' >"$I/.ono/repo-knowledge.json"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog2" PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "manifest present → no line" "$out" "repo-knowledge.json is missing"
+expect_absent "fully inspected + no Bun → no Bun line (nothing to run)" "$out" "Bun is not installed"
+
+# --- PRs waiting for review → REVIEWS block (fake gh; the real call is tested in review-requests.test.sh) ---
+g -C "$R" remote set-url origin "https://github.com/OnOAppsDev/My-App.git"
+printf '#!/bin/sh\nprintf "OnOAppsDev/My-App#12\\tdana\\tFix login crash\\thttps://github.com/OnOAppsDev/My-App/pull/12\\nOnOAppsDev/other#3\\tavi\\tNew splash\\thttps://github.com/OnOAppsDev/other/pull/3\\n"\n' >"$WORK/gh-two"; chmod +x "$WORK/gh-two"
+out="$(echo '{}' | PG_REVIEWS= PG_GH="$WORK/gh-two" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "reviews → REVIEWS header" "$out" "REVIEWS: open pull requests waiting for your review"
+expect_contains "reviews → this repo's PR marked here" "$out" "- here · OnOAppsDev/My-App#12 · by dana · Fix login crash · https://github.com/OnOAppsDev/My-App/pull/12"
+expect_contains "reviews → other repo's PR marked other" "$out" "- other · OnOAppsDev/other#3 · by avi"
+printf '#!/bin/sh\nexit 0\n' >"$WORK/gh-none"; chmod +x "$WORK/gh-none"
+out="$(echo '{}' | PG_REVIEWS= PG_GH="$WORK/gh-none" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "no PRs waiting → no REVIEWS block" "$out" "REVIEWS:"
+out="$(echo '{}' | PG_REVIEWS=off PG_GH="$WORK/gh-two" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "PG_REVIEWS=off → no REVIEWS block" "$out" "REVIEWS:"
+
+# a gh that ignores the watchdog's TERM must not hold up the opener; no temp file left behind
+printf '#!/bin/sh\ntrap "" TERM\nsleep 8\n' >"$WORK/gh-stubborn"; chmod +x "$WORK/gh-stubborn"
+mkdir -p "$WORK/tmp1"
+start=$(date +%s)
+out="$(echo '{}' | TMPDIR="$WORK/tmp1" PG_REVIEWS= PG_REVIEWS_TIMEOUT=1 PG_REVIEWS_WAIT=15 PG_GH="$WORK/gh-stubborn" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+took=$(( $(date +%s) - start ))
+[ "$took" -le 5 ] && ok || fail "stubborn gh → hook still bounded (took ${took}s)"
+expect_contains "stubborn gh → the opener is still there" "$out" "Git report"
+sleep 1
+expect_eq "no pg-reviews temp files left" "$(ls "$WORK/tmp1" | grep -c pg-reviews)" "0"
+
+# the manifest line only when the inspector is installed; Node line names the OS
+rm -rf "$WORK/mlog3"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog3" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+rm -f "$I/.ono/repo-knowledge.json"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog3" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "no manifest, inspector not installed → no manifest line" "$out" "repo-knowledge.json is missing"
+out="$(echo '{}' | PG_OS=windows PG_NODE="$WORK/node-v20.19.4" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "Node line names the OS" "$out" "(unsupported) (OS: windows)"
+
+# project docs behind the code → INSPECT DOCS line, once a day, only with the inspector installed
+echo '{}' >"$I/.ono/repo-knowledge.json"
+g -C "$I" switch main
+KH="$(git -C "$I" rev-parse HEAD)"
+printf '{\n  "repository": {\n    "knowledgeHead": "%s"\n  },\n  "inspection": {\n    "stage3Complete": true\n  }\n}\n' "$KH" >"$I/.ono/state.json"
+g -C "$I" add -A; g -C "$I" commit -m state
+g -C "$I" switch work; echo '{"y":1}' >"$I/package.json"; g -C "$I" add -A; g -C "$I" commit -m "own change"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog0" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "a change on the employee's own branch → no INSPECT DOCS line" "$out" "INSPECT DOCS"
+g -C "$I" switch main; echo '{"x":1}' >"$I/package.json"; g -C "$I" add -A; g -C "$I" commit -m deps; g -C "$I" switch work
+out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_contains "docs behind the code → INSPECT DOCS line" "$out" "INSPECT DOCS: the project docs (CLAUDE.md, docs/project/*) on the central branch are behind its code — files=1"
+expect_contains "…naming the signal" "$out" "package.json"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "INSPECT DOCS only once a day" "$out" "INSPECT DOCS"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog2" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "inspector not installed → no INSPECT DOCS line" "$out" "INSPECT DOCS"
 
 echo
 echo "session-log.sh + session-start.sh: $PASS passed, $FAIL failed"
