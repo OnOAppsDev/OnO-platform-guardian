@@ -116,11 +116,13 @@
       "label": "Review code",
       "examples": [
         "review my changes",
+        "code review <branch> into <base>",
         "security review"
       ],
       "plugin": "ono-mobile-dev-plugin",
       "start": "/review-code",
       "args": "[scope] [--bug <key>]",
+      "note": "scope = a branch, path or PR to diff against: review A into B = on A, /review-code B (origin/B if the local B is missing or behind)",
       "alternatives": [
         "/review-security [scope]",
         "/fix-review-comments <notes-file>"
