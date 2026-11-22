@@ -16,10 +16,19 @@ command -v "$gh" >/dev/null 2>&1 || exit 0
 out="$(mktemp "${TMPDIR:-/tmp}/pg-reviews.XXXXXX" 2>/dev/null)" || exit 0
 trap 'rm -f "$out"' EXIT
 
+# Titles are written by other people and land in Claude's context: only PRs by people inside the
+# org / repo (CODEOWNERS also requests reviews on outsiders' PRs), every control character
+# replaced, cut to 80 characters. Exported for the tests, which run it through jq.
+PG_REVIEWS_JQ='.[] | select(.authorAssociation == "MEMBER" or .authorAssociation == "OWNER" or .authorAssociation == "COLLABORATOR")
+  | (.title | explode | map(if . < 32 or . == 127 or . == 96 then 32 else . end) | implode
+     | if length > 80 then .[0:79] + "…" else . end) as $t
+  | "\(.repository.nameWithOwner)#\(.number)\t\(.author.login // "unknown")\t\($t)\t\(.url)"'
+[ "${PG_REVIEWS_PRINT_JQ:-}" = 1 ] && { printf '%s\n' "$PG_REVIEWS_JQ"; exit 0; }
+
 # Same watchdog pattern as git-status.sh: a hung network call must not hold up the opener.
 "$gh" search prs "user-review-requested:@me" "draft:false" --state=open --sort=updated \
-  --limit "${PG_REVIEWS_LIMIT:-10}" --json number,title,url,repository,author \
-  --jq '.[] | "\(.repository.nameWithOwner)#\(.number)\t\(.author.login)\t\(.title | gsub("[\t\r\n]"; " "))\t\(.url)"' \
+  --limit "${PG_REVIEWS_LIMIT:-10}" --json number,title,url,repository,author,authorAssociation \
+  --jq "$PG_REVIEWS_JQ" \
   </dev/null >"$out" 2>/dev/null &
 pid=$!
 ( sleep "${PG_REVIEWS_TIMEOUT:-3}"; kill -TERM "$pid" ) >/dev/null 2>&1 &

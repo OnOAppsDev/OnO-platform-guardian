@@ -43,7 +43,7 @@ If `repo` is `false`, skip to step 6. If `operation` is set (merge/rebase in pro
 
 Decide once, from this session — never from a guess:
 
-- **Finished** when the employee said so ("the bug is fixed", "done with the feature", "open a PR", "ready for review"), or the Ono flow for this branch reached its end this session — the fix was verified and reviewed, or every task is complete and reviewed, or the QA notes were created (`/create-dev-qa-notes`), or the project inspection was completed (its outputs go in a PR of their own). When the flow's end was reached but the employee didn't say it's finished, ask once: "Looks like ‹bug/feature› is finished — open the PR now? (yes / not yet)". **not yet** → in progress.
+- **Finished** when the employee said so ("the bug is fixed", "done with the feature", "open a PR", "ready for review"), or the Ono flow for this branch reached its end this session — the fix was verified and reviewed, or every task is complete and reviewed, or the QA notes were created (`/create-dev-qa-notes`), or a project inspection was completed **on a branch that holds nothing else** (e.g. `chore/project-inspection` — its outputs go in a PR of their own). An inspection finished on a feature branch doesn't make the feature finished: ask about the feature, not the inspection. When the flow's end was reached but the employee didn't say it's finished, ask once, naming exactly what finished: "Looks like ‹bug YEA-12 / feature login› is finished — open the PR now? (yes / not yet)". **not yet** → in progress.
 - **In progress** in every other case — including a close because the session got long.
 
 ### 2. Commit hygiene — only code goes in, unless the employee asks
@@ -59,9 +59,12 @@ Go through `changes.files` (and `git status --porcelain` if the list is truncate
 - **⏸️ Stays out** (default for everything else that's new): `.md`, `.json`, `.yaml`, `.txt`, `.log`, `.html` … — notes, drafts, tool output, and the documents the Ono plugins write while they work (bug work plans, task state, planning docs, reviews, inspector reports — `routing/committed-artifacts.json` lists where they land). They stay on disk for the next session.
 - **⛔ Never**: anything on a `neverCommit` list (`.env`, keys, `*.bak` …) — point it out.
 
-**Nothing under ✅** (only notes, logs, plugin documents, tool output changed) → there is nothing to commit. Say it in one line — "Nothing to commit: only ‹notes / logs› changed, and they stay on your computer." — and don't ask about a commit, a PR or a push. Go to step 5b (step 5 only if the work is finished and earlier commits aren't pushed yet).
+**Nothing under ✅** (only notes, logs, plugin documents, tool output changed — or a clean tree) → there is nothing new to commit. Say it in one line — "Nothing to commit: only ‹notes / logs› changed, and they stay on your computer." — and don't ask about a commit. Then:
+- **in progress** → no PR, no push question; go to step 5b;
+- **finished** and the branch has commits ahead of the central branch (e.g. yesterday's checkpoint commits) with no PR yet → step 4b (pre-PR check), then step 5;
+- **finished** and a PR already exists → give its link; go to step 5b.
 
-**Code under ✅, work in progress** → ask one optional question, with the reassurance first: "Your code changes stay on your computer either way. Save them as a checkpoint commit on `‹branch›`? (yes / no)". **no** → nothing is committed; go to step 5b. **yes** → show the list below and commit (step 4). Then go to step 5b — no pre-PR check, no push, no PR while the work is in progress. One FYI line is enough: "The PR comes when the bug/feature is finished — just say **open PR** then."
+**Code under ✅, work in progress** → ask one optional question, with the reassurance first: "Your code changes stay on your computer either way. Save them as a checkpoint commit on `‹branch›`? (yes / no)". **no** → nothing is committed; go to step 5b. **yes** → show the list below, then steps 3–4 (branch, commit). Then go to step 5b — no pre-PR check, no push, no PR while the work is in progress. One FYI line is enough: "The PR comes when the bug/feature is finished — just say **open PR** then."
 
 **Code under ✅, work finished** → the full path below.
 
@@ -85,7 +88,7 @@ Stage the confirmed paths and commit with a short message in the style of the re
 
 ### 4b. Pre-PR check (automatic, before the PR — finished work only)
 
-Only when the work is **finished** (step 1b). Before asking to push, run the pre-PR check on the employee's changes: if the Ono dev plugin's flow already produced its own pre-PR check for these commits in this session, show that result instead of running it again; otherwise run the **`platform-guardian:pre-pr`** skill. Many employees see it for the first time here — explain it so they know what it is, why, and what to do. In their language, roughly:
+Only when the work is **finished** (step 1b). Before asking to push, run the **`platform-guardian:pre-pr`** skill on the employee's changes (a `/review-code` result is a code review, not this check — it doesn't replace it). Many employees see it for the first time here — explain it so they know what it is, why, and what to do. In their language, roughly:
 
 **Before** (then run it):
 
@@ -102,7 +105,7 @@ Only when the work is **finished** (step 1b). Before asking to push, run the pre
 > 👉 Test the 🔴 items in the app, then type **push** — or **push now** if you've already tested them.
 
 - No PDF (no Chrome on the machine): show the same list right in the chat instead, and say so.
-- Skip the check when: the work is in progress, there are no code commits to send, it's a QA repo (`guards.matrixQa` / `guards.onoQaCommitBlocked`), or the employee types **skip**.
+- Skip the check when: the work is in progress, the branch has no commits ahead of the central branch, it's a QA repo (`guards.matrixQa` / `guards.onoQaCommitBlocked`), or the employee types **skip**.
 - Something on the list turns out broken → that's the point: fix it first (back to the plugin's flow), then close again.
 - Their answer (**push** / **push now**) is the go-ahead for step 5's push question — still name the target branch and ask for reviewers there.
 - Mention it in the session-log entry (`pre-PR: N 🔴 / M 🟠` or `skipped`).

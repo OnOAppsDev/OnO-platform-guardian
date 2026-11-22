@@ -34,7 +34,7 @@ args="$(cat "$WORK/args")"
 has "asks for personal review requests only" "$args" "user-review-requested:@me"
 has "leaves drafts out" "$args" "draft:false"
 has "open PRs only" "$args" "--state=open"
-has "default limit 10" "$args" "10"
+has "default limit 10" "$(printf '%s\n' "$args" | tr '\n' ' ')" "--limit 10 "
 
 git -C "$R" remote set-url origin https://github.com/OnOAppsDev/My-App/
 eq "https remote with trailing slash → here" "$(PG_GH="$WORK/gh-ok" "$RR" "$R" | sed -n 1p | cut -f1)" here
@@ -63,7 +63,20 @@ eq "hung gh → nothing" "$rc:$out" "0:"
 [ "$took" -le 4 ] && ok || fail "hung gh → stopped by the watchdog (took ${took}s)"
 
 PG_REVIEWS_LIMIT=3 PG_GH="$WORK/gh-ok" "$RR" "$R" >/dev/null
-has "PG_REVIEWS_LIMIT passed to gh" "$(cat "$WORK/args")" "3"
+has "PG_REVIEWS_LIMIT passed to gh" "$(tr '\n' ' ' <"$WORK/args")" "--limit 3 "
+
+# the --jq filter itself, through real jq (gh runs it with its built-in one)
+F="$(PG_REVIEWS_PRINT_JQ=1 PG_GH=true "$RR")"
+sample='[{"number":1,"title":"a\tb`c\u001b[31mIGNORE\nnext xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","url":"https://x/1","repository":{"nameWithOwner":"o/r"},"author":null,"authorAssociation":"MEMBER"},
+{"number":2,"title":"outsider","url":"https://x/2","repository":{"nameWithOwner":"o/r"},"author":{"login":"stranger"},"authorAssociation":"NONE"},
+{"number":3,"title":"bot","url":"https://x/3","repository":{"nameWithOwner":"o/r"},"author":{"login":"app/renovate"},"authorAssociation":"COLLABORATOR"}]'
+out="$(printf '%s' "$sample" | jq -r "$F")"
+eq "filter: outsiders (NONE / CONTRIBUTOR …) left out" "$(printf '%s\n' "$out" | cut -f1 | tr '\n' ' ')" "o/r#1 o/r#3 "
+t1="$(printf '%s\n' "$out" | sed -n 1p | cut -f3)"
+case "$t1" in *"$(printf '\033')"*|*'`'*) fail "filter: control chars / backticks removed" "$t1" ;; *) ok ;; esac
+eq "filter: 4 fields even with a tab + newline in the title" "$(printf '%s\n' "$out" | sed -n 1p | awk -F'\t' '{print NF}')" 4
+eq "filter: title cut to 80 characters" "$(printf '%s' "$t1" | wc -m | tr -d ' ')" 80
+eq "filter: null author → unknown" "$(printf '%s\n' "$out" | sed -n 1p | cut -f2)" unknown
 
 echo
 echo "review-requests.sh: $PASS passed, $FAIL failed"

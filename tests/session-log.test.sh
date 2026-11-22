@@ -267,6 +267,26 @@ expect_absent "no PRs waiting → no REVIEWS block" "$out" "REVIEWS:"
 out="$(echo '{}' | PG_REVIEWS=off PG_GH="$WORK/gh-two" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
 expect_absent "PG_REVIEWS=off → no REVIEWS block" "$out" "REVIEWS:"
 
+# a gh that ignores the watchdog's TERM must not hold up the opener; no temp file left behind
+printf '#!/bin/sh\ntrap "" TERM\nsleep 8\n' >"$WORK/gh-stubborn"; chmod +x "$WORK/gh-stubborn"
+mkdir -p "$WORK/tmp1"
+start=$(date +%s)
+out="$(echo '{}' | TMPDIR="$WORK/tmp1" PG_REVIEWS= PG_REVIEWS_TIMEOUT=1 PG_REVIEWS_WAIT=15 PG_GH="$WORK/gh-stubborn" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+took=$(( $(date +%s) - start ))
+[ "$took" -le 5 ] && ok || fail "stubborn gh → hook still bounded (took ${took}s)"
+expect_contains "stubborn gh → the opener is still there" "$out" "Git report"
+sleep 1
+expect_eq "no pg-reviews temp files left" "$(ls "$WORK/tmp1" | grep -c pg-reviews)" "0"
+
+# the manifest line only when the inspector is installed; Node line names the OS
+rm -rf "$WORK/mlog3"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog3" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+rm -f "$I/.ono/repo-knowledge.json"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog3" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "no manifest, inspector not installed → no manifest line" "$out" "repo-knowledge.json is missing"
+out="$(echo '{}' | PG_OS=windows PG_NODE="$WORK/node-v20.19.4" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "Node line names the OS" "$out" "(unsupported) (OS: windows)"
+
 echo
 echo "session-log.sh + session-start.sh: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]
