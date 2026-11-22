@@ -74,6 +74,22 @@ for want in '`platform-guardian:work-router`' 'before you read code, investigate
   case "$out" in *"$want"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL routing message missing: $want" ;; esac
 done
 rexpect "first message, transcript not written yet" yes "$(rhook "$WORK/none.jsonl" "Morning")"
+# 0.6.1: Ono commands come first — on both notes, on the very first message too (bug report 2026-11-22),
+# only where the dev plugin is installed (unknown plugins list → assume it is)
+printf '{"plugins":{"ono-mobile-dev-plugin@ono-plugin-marketplace":[{"version":"0.7.7"}]}}' >"$WORK/plugins-dev.json"
+printf '{"plugins":{"ono-plugin-qa@ono-plugin-marketplace":[{"version":"0.11.0"}]}}' >"$WORK/plugins-qa.json"
+printf '%s\n%s\n' "$opener" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:work-router"}}]}}' >"$WORK/p.jsonl"
+for out in "$(PG_PLUGINS_FILE="$WORK/plugins-dev.json" rhook "$WORK/none.jsonl" "code review linear_ads into linear_ads_develop")" \
+           "$(PG_PLUGINS_FILE="$WORK/plugins-dev.json" rhook "$WORK/p.jsonl" "which skill did you use for the review?")" \
+           "$(PG_PLUGINS_FILE="$WORK/nope.json" rhook "$WORK/none.jsonl" "review my changes")"; do
+  for want in 'Ono commands come first' '`/ono-mobile-dev-plugin:review-code`' 'Skills from outside the Ono plugins with the same job' '`code-review`' 'name the Ono command' 'answer honestly' "or as the running Ono step's next command" "doesn't fit this repo"; do
+    case "$out" in *"$want"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL precedence line missing: $want" ;; esac
+  done
+done
+out="$(PG_PLUGINS_FILE="$WORK/plugins-qa.json" rhook "$WORK/none.jsonl" "review my changes")"
+rexpect "QA-only machine still gets the routing note" yes "$out"
+case "$out" in *"come first"*) FAIL=$((FAIL + 1)); echo "FAIL precedence line without the dev plugin" ;; *) PASS=$((PASS + 1)) ;; esac
+case "$(printf '{"session_id":"r1","transcript_path":"%s","prompt":"fix it"}' "$R" | PG_ROUTE_REMINDER=off "$HOOK")" in *"come first"*) FAIL=$((FAIL + 1)); echo "FAIL precedence line shown with reminder off" ;; *) PASS=$((PASS + 1)) ;; esac
 rexpect "slash command gets no note" no "$(rhook "$R" "/ono-mobile-dev-plugin:analyze-bug wrong position")"
 rexpect "built-in command gets no note" no "$(rhook "$R" "/clear")"
 rexpect "empty prompt gets no note" no "$(printf '{"session_id":"r1","transcript_path":"%s"}' "$R" | "$HOOK")"

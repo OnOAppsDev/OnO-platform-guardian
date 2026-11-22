@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.6.1] — 2026-11-22
+
+Three bug reports from one session (Guy, `yestv_aos`).
+
+- **Ono commands come first** ("Generic review skills offered as equals"). Asked which skill had done a review, Claude listed `android-pr-review`, `/review-code` and the built-in `code-review` as equal choices. Both `[platform-guardian] Routing:` notes now end with one line when the dev plugin is installed (unknown plugins list → assumed installed):
+  - Where an Ono command does the job (code review → `/ono-mobile-dev-plugin:review-code`, security review → `review-security`, a bug in the app → `analyze-bug`, pre-PR → `platform-guardian:pre-pr`), it starts through the router or as the running Ono step's next command.
+  - Skills from outside the Ono plugins with the same job (`code-review`, `security-review`, `*-pr-review` …) are not offered as equal options. The dev plugin's own review skills aren't affected.
+  - Asked which tool to use, Claude names the Ono command. Asked which one ran, it answers honestly: if it wasn't the Ono command, it says so and offers it.
+  - A generic skill is fine when the employee asks for it instead of the Ono flow, or when the Ono command doesn't fit the repo.
+
+  The router says the same.
+- **"Review A into B" maps to `/review-code B`** while on A ("Code review bypassed Ono process"). If they aren't on A, they switch and back as for a PR review. Claude fetches first and uses `origin/B` when the local B is missing or behind. The other half of that report, no routing note on the first message, doesn't reproduce today. Since 0.5.1 the note comes on every typed message, the first one included (tested with no transcript yet). The report's quotes show Guy's later messages already carried 0.5.1-era notes, though, so a mid-session update or a misreport is possible. If it happens again, send the session transcript.
+- **Bug reports: draft first, write after OK** ("report-bug writes without confirmation"). On "report a bug", Claude wrote a one-bug report from its own reading of the session and opened Finder; the employee had three bugs in mind. Now, after collecting the facts and picking the suspected component, Claude shows a short draft:
+  - title, suspected component, what happened, expected
+  - the one missing-fact question, if any
+  - "one bug or several?"
+
+  Nothing is written before the employee's OK. Several bugs → one file each, linked to the others, and Finder opens their folder once. Facts still come from the session (no interview).
+- Checked by an independent review agent. Its 4 must-fix findings were all fixed: a "which one did you use" answer that could have been untrue, the line showing where the dev plugin isn't installed, wording that could catch the dev plugin's own review skills, and an over-sure changelog claim. So were the useful notes: running-step next command, "bug in the app", stale base branch, report-bug step order and several files.
+
 ## [0.6.0] — 2026-11-22
 
 - **Closing a session no longer pushes the employee into a commit and a PR** (team feedback: every close asked for commit + PR, even with only logs changed). Closing isn't finishing: the closer first decides whether the bug or feature is **finished** (the employee said so, or the Ono flow reached its end this session: fix verified + reviewed, every task done and reviewed, QA notes created, an inspection completed; when the flow ended but the employee didn't say so, it asks once) or **in progress** (everything else, including a close because the session got long).

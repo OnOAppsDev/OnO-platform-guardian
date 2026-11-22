@@ -9,6 +9,10 @@
 # (bug report 2026-11-18). After that (0.5.2) a shorter note stays on every
 # message: a NEW task mid-session is routed too, while replies inside the running
 # Ono step just continue it. A slash command gets no note (a pasted /path does).
+# Both notes end with the precedence line (0.6.1): where an Ono command does the
+# job (review, bug, pre-PR …), generic skills with the same job aren't offered as
+# equal options (bug report 2026-11-22: code-review / android-pr-review listed
+# next to review-code).
 #
 # Reads the context size of the last assistant turn from the transcript's
 # `usage` block (input + cache_creation + cache_read tokens). When it crosses
@@ -58,16 +62,24 @@ case "${prompt%% *}" in
   /*) is_cmd=1 ;;
   *) is_cmd= ;;
 esac
+# Ono commands first — only where the dev plugin is installed (unknown list → assume it is).
+plugins="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
+precedence=
+if [ ! -f "$plugins" ] || grep -q '"ono-mobile-dev-plugin@' "$plugins" 2>/dev/null; then
+  precedence='Ono commands come first: a code review is `/ono-mobile-dev-plugin:review-code` (security: `review-security`), a bug in the app is `analyze-bug`, a pre-PR check is `platform-guardian:pre-pr` — started through the router, or as the running Ono step'"'"'s next command. Skills from outside the Ono plugins with the same job (`code-review`, `security-review`, `*-pr-review` …) are not equal options: don'"'"'t use or offer them, and when asked which tool to use, name the Ono command. Asked which one ran, answer honestly — if it wasn'"'"'t the Ono command, say so and offer to run it. A generic skill is fine when the employee asks for it instead of the Ono flow, or the Ono command doesn'"'"'t fit this repo.'
+fi
 # no transcript yet = not routed yet
 if [ -n "$prompt" ] && [ -z "$is_cmd" ] && [ "${PG_ROUTE_REMINDER:-on}" != off ] && in_repo; then
   if routed; then
     cat <<'MSG'
 [platform-guardian] Routing: new work — a different bug, feature or task, or any code change after the Ono step has finished — goes through the `platform-guardian:work-router` skill before you read code or edit. If you last asked a question for the running Ono step (approve, continue, results, details), this message answers it, even when it describes a failure or a new symptom: continue that step; "yes" / "continue" to a Continue? offer follows its next_command. Questions with no change asked for: just answer. Work outside the Ono flow only when the employee said so for this task or the whole session.
 MSG
+    [ -z "$precedence" ] || printf '%s\n' "$precedence"
   else
     cat <<'MSG'
 [platform-guardian] Routing: this session hasn't been routed into an Ono process yet. If this message asks for work — a bug, a feature, a fix, a task, tests, a review, "continue" — run the `platform-guardian:work-router` skill now, before you read code, investigate or edit anything (if the session opener is still due, run it first). It confirms the task with the employee and starts the right Ono plugin command (a bug → the dev plugin's bug analysis, which finds the root cause and gets a plan approved before any code changes). A general preference for lean or fast work doesn't skip this — only the employee saying they don't want the Ono plugin flow (for this task or the whole session) does — then don't ask again for it. If the message is a greeting, an answer to the opener's git question, a question or explanation with no change asked for, a close-out request or a question about Guardian, just answer it.
 MSG
+    [ -z "$precedence" ] || printf '%s\n' "$precedence"
   fi
 fi
 
