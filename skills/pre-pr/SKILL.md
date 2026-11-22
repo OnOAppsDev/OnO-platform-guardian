@@ -1,11 +1,11 @@
 ---
 name: pre-pr
-description: Platform Guardian pre-PR regression check for the developer's OWN changes only. Run after finishing development and before opening a pull request. Use when the user says "pre-PR", "before I open a PR", "what could I have broken", "regression checklist", "ready for PR", or runs /pre-pr — and automatically from the Guardian session closer before every push + PR. Silently traces everything the developer's changes can affect, then produces a SHORT one-page PDF checklist (local temp folder, never committed) and opens it automatically.
+description: Platform Guardian pre-PR regression check for the developer's OWN changes only. Run after finishing development and before opening a pull request. Use when the user says "pre-PR", "before I open a PR", "what could I have broken", "regression checklist", "ready for PR", or runs /pre-pr — and automatically from the Guardian session closer before the push + PR of finished work. Silently traces everything the developer's changes can affect, then produces a SHORT one-page PDF checklist (local temp folder, never committed) and opens it automatically.
 ---
 
 # Pre-PR regression check — my changes only
 
-> Part of OnO Platform Guardian: the session closer runs this before every push + PR (step 4b). Chat replies in the employee's language; the PDF stays in English unless they ask otherwise. When the closer called you, hand back to it after Step 9 — the employee then decides whether to push now or after testing.
+> Part of OnO Platform Guardian: the session closer runs this before the push + PR of finished work (step 4b). Chat replies in the employee's language; the PDF stays in English unless they ask otherwise. When the closer called you, hand back to it after Step 9 — the employee then decides whether to push now or after testing.
 
 Main question, the whole time:
 **"Given only the code I changed, what existing behavior could I have accidentally broken?"**

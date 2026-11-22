@@ -50,16 +50,15 @@ Facts if they ask: the dev plugin covers mobile (iOS, Android, React Native), TV
 
 - ✋ **Approvals are yours** — approving a test plan, QA sign-off, approving a design doc. I tell you exactly what to type, but never do it for you, even if you ask 🙂
 - 🛡️ **Only code goes into your commits** — notes, drafts and the plugins' working documents stay out (still on your disk) unless you ask for one; secrets (`.env`, keys) never. 🧹
-- 🔍 **Before every PR** I open a one-page PDF: what your change might have broken somewhere else. 🔴 = test before the PR, 🟠 = worth a look. It's only for you — never in the PR. (**skip** skips it.)
+- 🔍 **Before every PR** (only when the work is finished) I open a one-page PDF: what your change might have broken somewhere else. 🔴 = test before the PR, 🟠 = worth a look. It's only for you — never in the PR. (**skip** skips it.)
 
 ### 4. 👋 Ending a session
 
 When you're done (or the session gets long — I'll tell you 💡), say **"close the session"** — in any language:
-1. I commit **only your code** on your work branch (notes and plugin documents stay out unless you ask) 💾
-2. 🔍 **Pre-PR check** — a one-page PDF opens: what your change might have broken somewhere else. 🔴 = test before the PR, 🟠 = worth a look. Just for you, never in the PR
-3. Push + PR **after you OK it**, and a note of where we stopped 📝
-4. You type **`/clear`**
-5. In the next session, your first message gets "last time you stopped at …" — zero context lost 🔁
+1. I save a note of where we stopped 📝 — in the middle of a bug or feature, that's all: your code stays on your computer, and I only ask if you'd like a checkpoint commit (only when code changed) 💾
+2. When the bug or feature is **finished**: I commit **only your code**, run the 🔍 **pre-PR check** (a one-page PDF: what your change might have broken somewhere else — 🔴 = test before the PR, 🟠 = worth a look; just for you, never in the PR), then push + PR **after you OK it** 🚀
+3. You type **`/clear`**
+4. In the next session, your first message gets "last time you stopped at …" — zero context lost 🔁
 
 ### 5. 🏁 Cheat sheet
 

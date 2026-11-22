@@ -117,6 +117,14 @@ gate UserPromptSubmit "hi";                         eq "missing: plain message b
 reason="$(printf '%s' "$OUT" | jq -r .reason)"
 case "$reason" in *"⛔"*"/ono-project-inspector:inspect"*"I have manager approval to work without inspect"*) ok ;; *) fail "banner: red, command, sentence" "$reason" ;; esac
 gate UserPromptSubmit "fix bug YEA-1";              eq "missing: task blocked" "$DEC" block
+# Bun missing → the banner says to install it first, with this OS's command
+printf '#!/bin/sh\necho 1.2.0\n' >"$WORK/bun"; chmod +x "$WORK/bun"
+PG_BUN=pg-no-such-bun PG_OS=MINGW64_NT-10.0 gate UserPromptSubmit "hi"
+case "$(printf '%s' "$OUT" | jq -r .reason)" in *"First install Bun"*"winget install Oven-sh.Bun"*"/ono-project-inspector:inspect"*) ok ;; *) fail "no Bun on Windows → winget line before inspect" "$OUT" ;; esac
+PG_BUN=pg-no-such-bun PG_OS=Darwin gate UserPromptSubmit "hi"
+case "$(printf '%s' "$OUT" | jq -r .reason)" in *"brew install oven-sh/bun/bun"*) ok ;; *) fail "no Bun on macOS → brew line" "$OUT" ;; esac
+PG_BUN="$WORK/bun" gate UserPromptSubmit "hi"
+case "$(printf '%s' "$OUT" | jq -r .reason)" in *"Bun"*) fail "Bun present → no Bun line" "$OUT" ;; *) ok ;; esac
 gate UserPromptExpansion "/ono-mobile-dev-plugin:analyze-bug YEA-1"; eq "Ono plugin command blocked" "$DEC" block
 gate UserPromptExpansion "/analyze-bug YEA-1";      eq "short Ono command blocked" "$DEC" block
 gate UserPromptExpansion "/clear";                  eq "built-in /clear allowed" "$DEC" none

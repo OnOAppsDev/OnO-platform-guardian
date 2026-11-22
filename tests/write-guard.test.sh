@@ -15,7 +15,7 @@ unset CLAUDE_PLUGIN_ROOT CLAUDE_PROJECT_DIR PG_WRITE_GUARD
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/pg-write.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
-export PG_LOG_DIR="$WORK/state"
+export PG_LOG_DIR="$WORK/state" PG_REVIEWS=off
 
 PASS=0 FAIL=0
 ok()   { PASS=$((PASS + 1)); }

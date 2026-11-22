@@ -99,7 +99,7 @@ Answer the user's message first. **Timing:** if an Ono plugin step is in the mid
 
 ---
 💡 This session is getting long. Good moment to save and start fresh:
-1. Say **"close the session"** — I'll save everything: commit, PR, and a note of where we stopped.
+1. Say **"close the session"** — I'll save a note of where we stopped (and a commit only if you want one — the PR waits until the work is finished).
 2. When I say it's saved, type **\`/clear\`** and press Enter.
 3. In the fresh session, write your next message — anything, e.g. "continue" — and I'll open with where we stopped.
 ---

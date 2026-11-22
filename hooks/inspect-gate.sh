@@ -16,7 +16,7 @@
 # Fails open: anything unexpected → exit 0 with no output. Never writes stderr.
 #
 # Env: PG_INSPECT_GATE=off disables it; PG_LOG_DIR (state dir); PG_PLUGINS_FILE / PG_CLAUDE_DIR
-# (installed-plugins list / user settings — tests).
+# (installed-plugins list / user settings — tests); PG_BUN / PG_OS (Bun binary, OS — tests).
 
 [ "${PG_INSPECT_GATE:-}" = "off" ] && exit 0
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -172,6 +172,19 @@ $fix" ;;
   disabled) fix="👉 First turn the inspector on:  /plugin → Installed → ono-project-inspector → Enable  → then /reload-plugins
 $fix" ;;
 esac
+# the inspector runs on Bun and stops without it (its check-bun.sh) — say so before they try
+if [ "$status" != on-central ] && ! command -v "${PG_BUN:-bun}" >/dev/null 2>&1; then
+  case "${PG_OS:-$(uname -s 2>/dev/null)}" in
+    windows|MINGW*|MSYS*|CYGWIN*|Windows_NT)
+      bun="in PowerShell (not here):  winget install Oven-sh.Bun" ;;
+    mac|Darwin)
+      bun="in the Terminal app (not here):  brew install oven-sh/bun/bun   (no Homebrew: curl -fsSL https://bun.sh/install | bash)" ;;
+    *) bun="in a terminal (not here):  curl -fsSL https://bun.sh/install | bash" ;;
+  esac
+  fix="👉 First install Bun (the inspector runs on it) — $bun
+   then quit Claude Code and open it again from a new window.
+$fix"
+fi
 # the inspector writes files → a work branch first (it's blocked on a protected branch)
 if [ -n "$on_protected" ] && [ "$status" != on-central ]; then
   fix="You're on \`$branch\`, a protected branch — the inspection is done on a work branch and reaches the team through a PR.
