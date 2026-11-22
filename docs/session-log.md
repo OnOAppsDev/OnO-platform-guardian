@@ -2,6 +2,18 @@
 
 ---
 
+## Session 17 — 2026-11-22 — Windows bugs, close without forced PR, PR reviews, docs freshness (0.6.0)
+
+- Two Windows bug reports (ekaterina.s, `YesPlusSmartTV`): the dev plugin blocks every write without `jq` (Yagil); the inspector needs Bun, and the repo has no `.ono/repo-knowledge.json` (one `/inspect-sync` by anyone with Bun fixes it for the team). Guardian: OS-aware jq / Bun / Node lines (`winget`), Bun first in the gate banner, a once-a-day manifest line.
+- Team feedback: the closer no longer forces commit + PR — nothing to commit when only notes / logs changed, an optional checkpoint commit mid-work, pre-PR + push + PR only for finished work.
+- New: PRs waiting for the employee's review at session start (`scripts/review-requests.sh`, `gh`, org members only, sanitized titles, bounded); docs freshness (`inspect-status.sh drift`, git only, measured on the central branch, refresh offered once as its own chore PR — the refresh costs tokens, the check doesn't).
+- Two independent review agents: 7 + 5 must-fix findings, all fixed; 702 checks green. Handoff for Yagil (jq on Windows, Bun `winget` line, pre-PR in the dev flow, doc version / date headers, audit re-check, `/review-code --pr`): `~/Downloads/2026-11-22-yagil-handoff-and-guardian-0.6.0.md`.
+- Open: Yagil's side (backlog "Waiting on plugin owners"); the team actions in the handoff Part C.
+- **Process improvement:** for any check that leads to a team-wide action (a refresh, a PR), decide first *which branch it's measured on*; the reviewer caught that drift on the employee's own branch would have offered refreshes to everyone.
+- **Next session:** Yagil's answers → route Guardian to his `/pre-pr`, trim the TOOLS lines his fixes make unnecessary; live test of 0.6.0 on a Windows machine.
+
+---
+
 ## Sessions 14–16 (catch-up, written 2026-11-22) — 2026-11-17 → 11-19 — 0.4.2 → 0.5.2
 
 Not logged at the time; reconstructed from the changelog and git history.
