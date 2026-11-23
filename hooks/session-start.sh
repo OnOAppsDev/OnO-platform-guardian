@@ -39,8 +39,9 @@ case "$report" in
   *) "$scripts/protected-branch.sh" forget "$dir" ;;
 esac
 
-# Guardian needs neither jq nor Node, but the Ono dev plugin does. Its hooks (0.7.6+) read every
-# file change with jq and, without it, block every write; its scripts (0.7.7+) need Node 22.18+ on
+# Guardian needs neither jq nor Node, but the Ono dev plugin does. Its hooks (0.7.6–0.7.7) read every
+# file change with jq and, without it, block every write — from 0.8.0 they fall back to Node, so jq
+# is checked only for an older (or unknown) version; its scripts (0.7.7+) need Node 22.18+ on
 # the 22 line or Node 24+, and every command stops on anything older. Checked only when that
 # plugin is installed (unknown list → assume it is). This sees the node on Claude Code's own PATH;
 # the plugin's commands run node through the Bash tool, which can load a different one (nvm set up
@@ -49,7 +50,10 @@ no_jq=""
 old_node=""
 plugins="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
 if [ ! -f "$plugins" ] || grep -q '"ono-mobile-dev-plugin@' "$plugins" 2>/dev/null; then
-  command -v "${PG_JQ:-jq}" >/dev/null 2>&1 || no_jq=1
+  case "$(PG_PLUGINS_FILE="$plugins" "$scripts/dev-plugin.sh" version 2>/dev/null)" in
+    [1-9]*|0.[8-9].*|0.[1-9][0-9]*) ;;                       # 0.8.0+: Node fallback, jq optional
+    *) command -v "${PG_JQ:-jq}" >/dev/null 2>&1 || no_jq=1 ;;
+  esac
   node_bin="${PG_NODE:-node}"
   if ! command -v "$node_bin" >/dev/null 2>&1; then
     old_node="none"
@@ -182,7 +186,7 @@ case "${inspect%%	*}" in
 esac
 
 if [ -n "$no_jq" ]; then
-  printf '\nTOOLS: jq is not installed on this computer (OS: %s), and the Ono dev plugin (0.7.6+) checks every file change with it: without jq it blocks file changes on every branch. Add one ⚠️ line (information, not a question) with the fix for this OS — see session-opener step 1.\n' "$os"
+  printf '\nTOOLS: jq is not installed on this computer (OS: %s), and the installed Ono dev plugin (0.7.6–0.7.7) checks every file change with it: without jq it blocks file changes on every branch — updating the dev plugin to 0.8.0+ also fixes it. Add one ⚠️ line (information, not a question) with the fix for this OS — see session-opener step 1.\n' "$os"
 fi
 if [ -n "$no_bun" ] && [ -n "$bun_needed" ]; then
   printf '\nTOOLS: Bun is not installed on this computer (OS: %s), and the Ono Project Inspector runs on Bun: without it every inspector command stops before doing anything. Add one ⚠️ line (information, not a question) with the fix for this OS — see session-opener step 1.\n' "$os"

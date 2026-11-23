@@ -55,8 +55,15 @@ Each item is scoped to one session (~2–3 hours) unless noted. Estimate for G0�
 
 ## Waiting on plugin owners (2026-11-22)
 
-- [ ] **Pre-PR in the dev flow** — when Yagil ships `/ono-mobile-dev-plugin:pre-pr` (with the `PRE_PR` result line): route + closer to his command, `check-routes.sh` entry, Guardian's `skills/pre-pr` as fallback only, then remove. Request: `~/Downloads/2026-11-22-yagil-handoff-and-guardian-0.6.0.md` §A3.
-- [ ] **Dev plugin without jq on Windows** (§A1) and **inspector `winget` line + manifest notice** (§A2) — when they ship, re-verify routes and trim Guardian's TOOLS lines if no longer needed.
+Sent to Yagil 2026-11-22: handoff + addendum (A1–A5). Check his repos with `git log --all --since=…` in `~/Projects/OnO Marketplace/`; each item ships as its own Guardian release.
+
+- [x] **A3 — Pre-PR in the dev flow** — dev plugin 0.8.0 `/pre-pr` + readiness contract; Guardian 0.7.0 routes to it, the closer queries `ono-pr-readiness` v1, own `skills/pre-pr` removed (no fallback, per `docs/guardian-integration.md`).
+- [x] **A1 — Dev plugin without jq on Windows** — 0.8.0 falls back to Node; Guardian 0.7.0 shows the jq line only for 0.7.6–0.7.7.
+- [ ] **A2 — Bun on Windows.** Dev-plugin half done in 0.8.0 (`inspectionWithoutManifest` → one line recommending `/inspect-sync`). Inspector half (its own `winget` install line) still open — inspector unchanged at 0.11.3. When it ships: re-check Guardian's Bun TOOLS line and the gate banner's "First install Bun"; consider dropping Guardian's once-a-day manifest line.
+- [ ] **A4 — Inspector document freshness.** Version + date line on every inspector doc; audit re-check (`audit.verifiedHead` per topic); freshness fields in `state.json` (`knowledge.status`, `changedSourceCount`, `checkedAt`); `core.quotePath=false` fix. Inspector unchanged at 0.11.3. When it ships: `inspect-status.sh drift` reads the `state.json` fields instead of mirroring `isInspectorOwned` / `ANALYSIS_MANIFEST_BASENAMES`; add audit staleness to the once-a-day line; put his refresh cost (tokens / minutes) in the refresh offer.
+- [x] **A5 — teammate PR review** — not `--pr`: 0.8.0 ships `/review-pr <URL>` (read-only, no checkout); Guardian 0.7.0 routes the opener's 🔎 PRs there.
+- [ ] **Live-verify 0.8.0's open gates** (Yagil's "Known limitations"): `/review-pr`'s forked read-only agent + guard hook, real `gh` / Bitbucket reads, `${CLAUDE_PLUGIN_DATA}` = the data dir `pr-readiness.ts` finds. First real PR through the new closer path on a team machine.
+- [ ] **Optional, org Owners (Magen, Yagil):** `anthropic-skills:android-pr-review`'s description claims every code review in an Android repo, competing with `/review-code`. Narrow it or turn it off org-wide. Guardian 0.6.1 already handles it with the precedence line.
 
 ## Later
 

@@ -138,6 +138,15 @@ out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_PLUGINS_FILE="$WORK/no-dev.json" PG_ON
 expect_absent "no jq, dev plugin not installed → no TOOLS line" "$out" "TOOLS:"
 out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_PLUGINS_FILE="$WORK/nowhere.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
 expect_contains "no jq, unknown plugin list → TOOLS line" "$out" "TOOLS: jq is not installed"
+# 0.7.0: dev plugin 0.8.0+ reads hook input with Node when jq is missing → no jq line
+for v in 0.8.0 0.9.1 0.10.0 1.0.0; do
+  printf '{"plugins":{"ono-mobile-dev-plugin@ono-plugin-marketplace":[{"scope":"user","installPath":"/x","version":"%s"}]}}' "$v" >"$WORK/dev-new.json"
+  out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_PLUGINS_FILE="$WORK/dev-new.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+  expect_absent "no jq, dev plugin $v → no jq line" "$out" "TOOLS: jq is not installed"
+done
+printf '{"plugins":{"ono-mobile-dev-plugin@ono-plugin-marketplace":[{"scope":"user","installPath":"/x","version":"0.7.7"}]}}' >"$WORK/dev-old.json"
+out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_PLUGINS_FILE="$WORK/dev-old.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "no jq, dev plugin 0.7.7 → jq line" "$out" "TOOLS: jq is not installed"
 out="$(echo '{}' | PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
 expect_absent "jq present → no TOOLS line" "$out" "TOOLS:"
 # first time on the machine: the jq line is part of the welcome (item 3b), not a second opener line

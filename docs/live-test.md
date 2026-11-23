@@ -120,8 +120,8 @@ Clean up: `git reset -q && rm -rf notes.md .env.test src/Foo.kt docs/bugs/T-1`.
 | # | Step | Expected | Result |
 |---|---|---|---|
 | 5.1 | On `pg/clean` with one small code change **plus** a new `notes.md`, say "close the session" | Lists ✅ will commit (the code) / ⏸️ stays out (`notes.md`) · waits for OK · commits only the code on the work branch · `notes.md` still on disk, not in `.gitignore` | |
-| 5.1b | (continues) | Before asking to push: one line about the pre-PR check, then a **one-page PDF checklist opens** · `git status` shows no `regression-checklist` file in the repo · then asks before push / PR (say **no push** for the test) | |
-| 5.1c | Same again, but type **skip** when the pre-PR line appears | Skips the check, goes straight to the push / PR question | |
+| 5.1b | (continues; say the work is finished) | Runs `scripts/dev-plugin.sh readiness` · on a branch with no Ono work: one line "no Ono bug or feature behind this branch" (not blocked), then asks before push / PR (say **no push** for the test) | |
+| 5.1c | On a branch with a reviewed Ono bug, no pre-PR yet | **No push / PR offered** · explains the pre-PR check · offers `/ono-mobile-dev-plugin:pre-pr bug:<key>` · after it, the readiness check runs again and the PR body is the plugin's description (`### Ono references (v1)`) | |
 | 5.2 | — | Ends with "✅ Everything is saved" + the 3 numbered `/clear` steps | |
 | 5.3 | `cat ~/.claude/platform-guardian/*/pg_clean.md` | Entry with what we did / where we stopped / next step | |
 | 5.4 | `/clear`, then `let's start` | Opener starts with "Last time you stopped at …" | |

@@ -21,6 +21,10 @@ MAX_DOCS=400   # planning docs scanned per repo — bounds hook latency in huge 
 
 start="${1:-${CLAUDE_PROJECT_DIR:-$PWD}}"
 HERE_RS="$(cd "$(dirname "$0")" && pwd)"   # before any cd: $0 may be relative
+# dev plugin 0.8.0+ (or unknown list): a feature review record + the plugin's own /pre-pr
+case "$("$HERE_RS/dev-plugin.sh" version 2>/dev/null || echo new)" in
+  0.[0-7].*) dev08= ;; *) dev08=1 ;;
+esac
 start="$(cd "$start" 2>/dev/null && pwd)" || exit 0   # absolute — the upward walks rely on it
 root="$(git -C "$start" rev-parse --show-toplevel 2>/dev/null)" || root=""
 [ -n "$root" ] || root="$(cd "$start" && pwd)"
@@ -166,8 +170,16 @@ dev_features() {
         emit ono-mobile-dev-plugin "feature $feat" "implementing ($done/$total tasks complete)" \
           "/implement-task $feat $first" "${tb#*	}"
       else
-        emit ono-mobile-dev-plugin "feature $feat" "all $total tasks complete, not handed to QA yet" \
-          "/review-code (if not done yet), then /create-dev-qa-notes $feat" "${tb#*	}"
+        if [ -z "$dev08" ]; then
+          emit ono-mobile-dev-plugin "feature $feat" "all $total tasks complete, not handed to QA yet" \
+            "/review-code (if not done yet), then /create-dev-qa-notes $feat" "${tb#*	}"
+        elif [ ! -f "docs/reviews/$feat/review.md" ]; then
+          emit ono-mobile-dev-plugin "feature $feat" "all $total tasks complete, not reviewed yet" \
+            "/review-code --feature $feat" "${tb#*	}"
+        else
+          emit ono-mobile-dev-plugin "feature $feat" "reviewed, not handed to QA yet" \
+            "/pre-pr feature:$feat (skips itself if already done), then /create-dev-qa-notes $feat" "docs/reviews/$feat/review.md"
+        fi
       fi
     elif [ -n "$dd" ]; then
       if [ "${dd%%	*}" != "approved" ]; then
@@ -239,7 +251,7 @@ dev_bugs() {
         "/create-dev-qa-notes bug:$key — it resumes at the approval, which is yours" "$h"
     else
       emit ono-mobile-dev-plugin "bug $key" "fix reviewed (cycle $cyc), not handed to QA" \
-        "/create-dev-qa-notes bug:$key" "$plan"
+        "${dev08:+/pre-pr bug:$key (skips itself if already done), then }/create-dev-qa-notes bug:$key" "$plan"
     fi
   done
 }

@@ -1,6 +1,6 @@
 ---
 name: session-closer
-description: Platform Guardian session closer. Run when the employee wants to stop or wrap up ("I'm done", "that's it for today", "close the session", "bye", "thanks, that's all" — in any language), when they accept a close-out suggestion from the "[platform-guardian]" session-length signal, or after a plugin stage completes and they agree to stop. Saves the work safely without forcing git steps — a commit only when code changed (optional while the work is in progress), and the pre-PR check, push and PR only when the bug or feature is finished (never a direct push to the central branch) — writes the local session-log entry, gives a plain-language summary and tells them to /clear.
+description: Platform Guardian session closer. Run when the employee wants to stop or wrap up ("I'm done", "that's it for today", "close the session", "bye", "thanks, that's all" — in any language), when they accept a close-out suggestion from the "[platform-guardian]" session-length signal, or after a plugin stage completes and they agree to stop. Saves the work safely without forcing git steps — a commit only when code changed (optional while the work is in progress), and the PR-readiness check (the dev plugin's review + pre-PR), push and PR only when the bug or feature is finished (never a direct push to the central branch) — writes the local session-log entry, gives a plain-language summary and tells them to /clear.
 ---
 
 # Session closer
@@ -9,8 +9,8 @@ You close the session so nothing is lost and the next session can pick up exactl
 
 **Closing a session is not finishing the work.** Most closes happen in the middle of a bug or feature: uncommitted code is safe on the employee's computer, and the next session picks it up. So the closer never pushes the employee through commit → PR:
 - **No code changed** (only notes, logs, plugin documents) → no commit, no question.
-- **Code changed, work still in progress** → one optional question: a checkpoint commit. No push, no pre-PR check, no PR.
-- **The bug or feature is finished** → the full path: commit, pre-PR check, push, PR.
+- **Code changed, work still in progress** → one optional question: a checkpoint commit. No push, no readiness check, no PR.
+- **The bug or feature is finished** → the full path: commit, PR-readiness check, push, PR.
 
 ## Hard rules
 
@@ -43,28 +43,29 @@ If `repo` is `false`, skip to step 6. If `operation` is set (merge/rebase in pro
 
 Decide once, from this session — never from a guess:
 
-- **Finished** when the employee said so ("the bug is fixed", "done with the feature", "open a PR", "ready for review"), or the Ono flow for this branch reached its end this session — the fix was verified and reviewed, or every task is complete and reviewed, or the QA notes were created (`/create-dev-qa-notes`), or a project inspection was completed **on a branch that holds nothing else** (e.g. `chore/project-inspection`, `chore/refresh-project-docs` — its outputs go in a PR of their own). An inspection finished on a feature branch doesn't make the feature finished: ask about the feature, not the inspection. When the flow's end was reached but the employee didn't say it's finished, ask once, naming exactly what finished: "Looks like ‹bug YEA-12 / feature login› is finished — open the PR now? (yes / not yet)". **not yet** → in progress.
+- **Finished** when the employee said so ("the bug is fixed", "done with the feature", "open a PR", "ready for review"), or the Ono flow for this branch reached its end this session — the internal review (`/review-code --bug` / `--feature`) and the pre-PR (`/ono-mobile-dev-plugin:pre-pr`) were done, or the QA notes were created (`/create-dev-qa-notes`), or a project inspection was completed **on a branch that holds nothing else** (e.g. `chore/project-inspection`, `chore/refresh-project-docs` — its outputs go in a PR of their own). An inspection finished on a feature branch doesn't make the feature finished: ask about the feature, not the inspection. When the flow's end was reached but the employee didn't say it's finished, ask once, naming exactly what finished: "Looks like ‹bug YEA-12 / feature login› is finished — open the PR now? (yes / not yet)". **not yet** → in progress.
 - **In progress** in every other case — including a close because the session got long.
 
-### 2. Commit hygiene — only code goes in, unless the employee asks
+### 2. Commit hygiene — code, plus the documents the PR needs
 
-**Ono rule, every flow (bugs, features, reviews, QA, inspections):** a commit holds the code change. Documents, data and working files stay **out** — not deleted, not `.gitignore`d, just not committed — unless the employee explicitly asks for a file or the project lists it in `.platform-guardian.json` `"commitPaths"`.
+**Ono rule, every flow (bugs, features, reviews, QA, inspections):** a commit holds the code change. Documents, data and working files stay **out** — not deleted, not `.gitignore`d, just not committed — unless the employee explicitly asks for a file or the project lists it in `.platform-guardian.json` `"commitPaths"`. Two kinds of documents go **in** with the code: the inspector's outputs, and (dev plugin 0.8.0+) the planning and review documents its PR-readiness check requires.
 
 Go through `changes.files` (and `git status --porcelain` if the list is truncated) and sort every path:
 
 - **✅ Will commit**
   - modified tracked files — mention anything that looks accidental (debug code, local config);
   - new **source code** and the config files that come with it (`package.json`, `Contents.json`, CI workflows …);
-  - new files on the project's `"commitPaths"` list.
-- **⏸️ Stays out** (default for everything else that's new): `.md`, `.json`, `.yaml`, `.txt`, `.log`, `.html` … — notes, drafts, tool output, and the documents the Ono plugins write while they work (bug work plans, task state, planning docs, reviews, inspector reports — `routing/committed-artifacts.json` lists where they land). They stay on disk for the next session.
+  - new files on the project's `"commitPaths"` list;
+  - the dev plugin's **planning and review documents** for this work — the PR must carry them (its readiness check blocks without them): Feature Analysis, Detailed Design, Task Breakdown, Dev Plan (any `.md` with `doc_schema_version` + `feature:` at the top, `*-DD.md`) and `docs/reviews/‹feature›/review.md`; for a bug `docs/bugs/‹key›/bug-report.json`, `bug-work-plan.md`, `review-c‹n›.md`; the QA handoff (`docs/qa/*-qa-handoff.md`) when there is one (`requiredInPr` in `routing/committed-artifacts.json`).
+- **⏸️ Stays out** (default for everything else that's new): `.md`, `.json`, `.yaml`, `.txt`, `.log`, `.html` … — notes, drafts, tool output, and the plugins' working files (task state `docs/tasks/**`, other files under `docs/bugs/`, atomic-write `*.tmp` — `routing/committed-artifacts.json` lists where they land). They stay on disk for the next session.
 - **⛔ Never**: anything on a `neverCommit` list (`.env`, keys, `*.bak` …) — point it out.
 
 **Nothing under ✅** (only notes, logs, plugin documents, tool output changed — or a clean tree) → there is nothing new to commit. Say it in one line — "Nothing to commit: only ‹notes / logs› changed, and they stay on your computer." — and don't ask about a commit. Then:
 - **in progress** → no PR, no push question; go to step 5b;
-- **finished** and the branch has commits ahead of the central branch (e.g. yesterday's checkpoint commits) with no PR yet → step 4b (pre-PR check), then step 5;
+- **finished** and the branch has commits ahead of the central branch (e.g. yesterday's checkpoint commits) with no PR yet → step 4b (readiness check), then step 5;
 - **finished** and a PR already exists → give its link; go to step 5b.
 
-**Code under ✅, work in progress** → ask one optional question, with the reassurance first: "Your code changes stay on your computer either way. Save them as a checkpoint commit on `‹branch›`? (yes / no)". **no** → nothing is committed; go to step 5b. **yes** → show the list below, then steps 3–4 (branch, commit). Then go to step 5b — no pre-PR check, no push, no PR while the work is in progress. One FYI line is enough: "The PR comes when the bug/feature is finished — just say **open PR** then."
+**Code under ✅, work in progress** → ask one optional question, with the reassurance first: "Your code changes stay on your computer either way. Save them as a checkpoint commit on `‹branch›`? (yes / no)". **no** → nothing is committed; go to step 5b. **yes** → show the list below, then steps 3–4 (branch, commit). Then go to step 5b — no readiness check, no push, no PR while the work is in progress. One FYI line is enough: "The PR comes when the bug/feature is finished — just say **open PR** then."
 
 **Code under ✅, work finished** → the full path below.
 
@@ -86,29 +87,29 @@ The guard asks the employee to confirm every `git commit` and `git push` in a pe
 
 Stage the confirmed paths and commit with a short message in the style of the repo's recent history (`git log --oneline -10`). Nothing to commit → say so and continue.
 
-### 4b. Pre-PR check (automatic, before the PR — finished work only)
+### 4b. PR-readiness check (before the push — finished work only)
 
-Only when the work is **finished** (step 1b). Before asking to push, run the **`platform-guardian:pre-pr`** skill on the employee's changes (a `/review-code` result is a code review, not this check — it doesn't replace it). Many employees see it for the first time here — explain it so they know what it is, why, and what to do. In their language, roughly:
+The dev plugin owns the internal review and the pre-PR check (`/ono-mobile-dev-plugin:review-code`, `/ono-mobile-dev-plugin:pre-pr`, 0.8.0+). Guardian runs neither itself — it asks the plugin whether the branch is ready, and acts on the answer. Skip this step when the work is in progress, the branch has no commits ahead of the central branch, or it's a QA repo (`guards.matrixQa` / `guards.onoQaCommitBlocked`).
 
-**Before** (then run it):
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/dev-plugin.sh" readiness --base "‹central branch›"
+```
 
-> 🔍 **Before the PR — a quick safety check.** I'm looking at the code you changed and everything that uses it, to find what it might have broken somewhere else. In a moment a one-page PDF opens with a short list of what to test in the app:
-> - 🔴 **Must test** — check these before you send the PR.
-> - 🟠 **Should test** — worth a quick look.
-> - ⚠️ **Watch out** — spots in the code that look risky.
->
-> The PDF is just for you — not saved in the project, not part of the PR. (Type **skip** to skip it.)
+Read-only; one JSON object (the plugin's `ono-pr-readiness` contract v1, or Guardian's own `{"guardian": …}`). Act on it:
 
-**After** the PDF opened — one short message, then wait:
+| Result | Do |
+|---|---|
+| `"guardian":"dev-plugin-not-installed"` | Not an Ono-managed repo: no pre-PR is required and none is run. Step 5. |
+| `"guardian":"dev-plugin-too-old"` | "Your dev plugin is older than 0.8.0 — update it: `/plugin` → **Installed** → `ono-mobile-dev-plugin` → update, then `/reload-plugins`." Don't call the branch ready and don't run a pre-PR of your own; push + PR only if the employee says to go ahead without the check. |
+| `"guardian":"node-missing"` / `"error"`, `status: error`, or `compatible: false` | Say plainly what's wrong (Node.js 22.18+ needed — the TOOLS line has the install command; `blockers[0].message`; or which plugin is out of date from `supported_versions`). Same as above: not "ready"; push + PR only on the employee's explicit go-ahead. |
+| `AMBIGUOUS_WORK` in `blockers` | Ask which work this PR is for (from the message / `candidates`), then run again with `--work ‹bug:KEY / feature:name›`. |
+| `managed: false` (`NO_ONO_WORK`) | Not blocked. One line: "This branch has no Ono bug or feature behind it — next time, start new work through the Ono flow." Step 5. |
+| `managed: true`, `ready_for_pr: false` | **No push, no PR yet.** Show each `blockers[].message` in plain words. `REQUIRED_DOCS_NOT_COMMITTED` / `REQUIRED_DOCS_MISSING` with paths you have → stage exactly those paths and commit them (step 4; if the guard holds one back, `PG_INCLUDE_FILES=1 git add ‹path›` — tell the employee the PR check requires it), then run the check again. Other blockers → offer `next_command.display` ("Next: `/ono-mobile-dev-plugin:pre-pr bug:YEA-12` — run it? (yes / not now)"); on **yes** start it through the Skill tool (never a human-only step — then give the command to type), and run the check again when it finishes. **not now** → in progress; step 5b. |
+| `managed: true`, `ready_for_pr: true` | Step 5, with `pr_metadata`. Show the `warnings` in one or two lines (Major findings, UI not verified, reviewed code left uncommitted). |
 
-> ✅ **Your checklist is open:** ‹N› 🔴 must test · ‹M› 🟠 should test. Most important: ‹the single biggest risk, plain words›.
-> 👉 Test the 🔴 items in the app, then type **push** — or **push now** if you've already tested them.
+**Explaining the pre-PR.** Many employees meet it for the first time when it blocks here. Before you offer `/pre-pr`, say in their language: "🔍 **Before the PR — a quick safety check.** The dev plugin looks at the code you changed and what uses it, and opens a one-page PDF of what to test in the app: 🔴 must test · 🟠 should test · ⚠️ watch out. The PDF is only for you — not in the project or the PR." When it's done, or the check reports `pre_pr.status: fresh`: "✅ Checklist: ‹must› 🔴 · ‹should› 🟠 (`pre_pr.pdf_path`). Test the 🔴 items, then type **push** — or **push now** if you already did." Their answer is the go-ahead for step 5's question.
 
-- No PDF (no Chrome on the machine): show the same list right in the chat instead, and say so.
-- Skip the check when: the work is in progress, the branch has no commits ahead of the central branch, it's a QA repo (`guards.matrixQa` / `guards.onoQaCommitBlocked`), or the employee types **skip**.
-- Something on the list turns out broken → that's the point: fix it first (back to the plugin's flow), then close again.
-- Their answer (**push** / **push now**) is the go-ahead for step 5's push question — still name the target branch and ask for reviewers there.
-- Mention it in the session-log entry (`pre-PR: N 🔴 / M 🟠` or `skipped`).
+Record it for the session log: `pre-PR: ‹must› 🔴 / ‹should› 🟠` from `pre_pr.counts`, or `not run` / `not required (no dev plugin)`.
 
 ### 5. Push + PR (finished work only)
 
@@ -116,7 +117,10 @@ Work in progress → skip this step entirely. Their commits stay on this compute
 
 - **Ask first, in one question** — the OK in step 2 covered the commit, not sharing it: "Push `‹branch›` and open a PR to `‹central›`? Reviewers? (or stop here — it's committed locally)". Wait for the answer.
 - Push the work branch: `git push -u origin ‹branch›`. Rejected because the remote moved → explain, offer `git pull --no-rebase` (merge) and retry; never force.
-- PR: check for an existing one first (`gh pr view --json url,state 2>/dev/null`). If none, use the target branch and reviewers from that answer (target default: the central branch from the report), then `gh pr create --base ‹target› --fill` (add `--reviewer` if given). If `gh` isn't installed or authenticated, give the compare link from the push output and tell them to open the PR there.
+- PR: check for an existing one first (`gh pr view --json url,state 2>/dev/null`). If none, use the target branch and reviewers from that answer (target default: the central branch from the report).
+  - **Ready Ono work** (`pr_metadata` from step 4b): write `pr_metadata.description_markdown` to a temp file **outside the repo** (`mktemp`), then `gh pr create --base ‹target› --title "‹pr_metadata.title_suggestion›" --body-file ‹that file›` (add `--reviewer` if given). Don't rewrite the description — its `### Ono references (v1)` section is read back by `/review-pr`.
+  - Otherwise: `gh pr create --base ‹target› --fill` (add `--reviewer` if given).
+  - Bitbucket, or `gh` not installed / not logged in: give the compare link from the push output, and when there's a `description_markdown`, show it in a fenced block for them to paste as the PR description.
 - The employee may choose to stop before pushing (e.g. work not ready to share) — fine; record it in the log.
 
 ### 5b. Tool bug during the session?
@@ -130,7 +134,7 @@ If something in Guardian, an Ono plugin or Claude Code misbehaved this session a
 - **What we did:** ‹1–2 short sentences›
 - **Where we stopped:** ‹the exact point, e.g. "validation done, API call not started"›
 - **Next step:** ‹the first thing to do next session›
-- **Git:** ‹branch› · ‹in progress: "not committed" / "checkpoint commit" — or finished: pushed + PR link› · pre-PR: ‹N 🔴 / M 🟠, skipped, or "not yet — work in progress"›
+- **Git:** ‹branch› · ‹in progress: "not committed" / "checkpoint commit" — or finished: pushed + PR link› · pre-PR: ‹N 🔴 / M 🟠 (from the readiness check), "not required", or "not yet — work in progress"›
 EOF
 ```
 

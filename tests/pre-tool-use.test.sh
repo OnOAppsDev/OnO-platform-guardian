@@ -58,7 +58,7 @@ expect() {
 }
 
 # --- allowlist parser agrees with jq ------------------------------------------------
-want="$(jq -r '[.plugins[] | (.commit // [])[], (.neverCommit // [])[]] + .always.neverCommit | length' "$ALLOW")"
+want="$(jq -r '[.plugins[] | (.commit // [])[], (.requiredInPr // [])[], (.neverCommit // [])[]] + .always.neverCommit | length' "$ALLOW")"
 got="$(printf '{"tool_input":{"command":"git status"}}' | PG_GUARD_DUMP_RULES=1 "$HOOK" | grep -c .)"
 [ "$want" = "$got" ] && ok || { OUT=""; bad "allowlist parse" "rules $got, jq says $want"; }
 dump="$(printf '{"tool_input":{"command":"git status"}}' | PG_GUARD_DUMP_RULES=1 "$HOOK")"
@@ -87,13 +87,28 @@ mk AUDIT.md;               run "git add AUDIT.md";          expect "inspector AU
 mk CLAUDE.md.bak;          run "git add CLAUDE.md.bak";     expect "inspector .bak → deny" deny
 mk README.md;              run "git add README.md";         expect "README → none" none
 mk docs/login-plan.md "$(printf -- '---\ndoc_schema_version: 1\nfeature: login\n---\n# Plan')"
-run "git add docs/login-plan.md";                           expect "frontmatter planning doc → stays out" deny
+run "git add docs/login-plan.md";                           expect "frontmatter planning doc → committed (0.8.0 readiness requires it)" none
+mk docs/feature/login-DD.md "$(printf -- '# Detailed Design\n\n```yaml\ndoc_schema_version: 2\nfeature: login\n```')"
+run "git add docs/feature/login-DD.md";                     expect "planning doc with a yaml fence → committed" none
+mk docs/feature/fa.md "$(printf -- '```yaml\ndoc_schema_version: 3\nfeature: login\n```')"
+run "git add docs/feature/fa.md";                           expect "yaml-fence FA, no fixed name → committed" none
 mk docs/random.md "$(printf -- '---\nfeature: login\n---\n')"
 run "git add docs/random.md";                               expect "frontmatter without schema → deny" deny "docs/random.md"
 mk debug.log;              run "git add debug.log";         expect ".log → deny" deny
 
 # --- 0.2.6: only code by default (any flow, not just bugs) ---
 mk docs/bugs/ABC-1/plan.md; run "git add docs/bugs/ABC-1/plan.md"; expect "bug work plan → stays out" deny "docs/bugs/ABC-1/plan.md"
+# --- 0.7.0: dev plugin 0.8.0 requires its planning + review documents in the PR ---
+for f in docs/bugs/ABC-1/bug-work-plan.md docs/bugs/ABC-1/bug-report.json docs/bugs/ABC-1/review-c1.md \
+         docs/reviews/login/review.md docs/qa/login-qa-handoff.md docs/qa/bug-ABC-1-qa-handoff.md \
+         yestvos/YesTVOS/docs/bugs/ABC-1/bug-work-plan.md yestvos/YesTVOS/docs/reviews/login/review.md; do
+  fresh; mk "$f"; run "git add $f"; expect "required in the PR: $f" none
+done
+fresh
+mk docs/bugs/ABC-1/.ABC-1.task-state.tmp; run "git add docs/bugs/ABC-1/.ABC-1.task-state.tmp"; expect "atomic-write .tmp → stays out" deny
+mk docs/reviews/login/x.feature-review.tmp; run "git add docs/reviews/login/x.feature-review.tmp"; expect "review .tmp → stays out" deny
+mk docs/tasks/login-task-state.json; run "git add docs/tasks/login-task-state.json"; expect "task state → still out (not required)" deny
+mk docs/bugs/ABC-1/notes.md; run "git add docs/bugs/ABC-1/notes.md"; expect "other bug file → still out" deny
 mk docs/bugs/ABC-1/state.json; run "git add docs/bugs/ABC-1/state.json"; expect "plugin .json → stays out" deny "state.json"
 mk tool-output.json;       run "git add tool-output.json";   expect "stray .json → deny" deny "tool-output.json"
 mk notes.yaml;             run "git add notes.yaml";         expect "stray .yaml → deny" deny

@@ -33,7 +33,8 @@ Several files of one kind for a feature (`-v1` copies): the shortest path wins. 
 | handoff `draft` | your step — set `ready-for-qa` |
 | TB or Dev Plan not `approved` | your step — approve both, then `/implement-task <f> T1` |
 | TB approved, a task not `complete` in `docs/tasks/<f>-task-state.json` | `/implement-task <f> <first not complete>` |
-| all tasks complete | `/review-code` (if not done — no file records it), then `/create-dev-qa-notes <f>` |
+| all tasks complete, no `docs/reviews/<f>/review.md` | `/review-code --feature <f>` (dev plugin 0.8.0+; older: `/review-code` if not done, then `/create-dev-qa-notes <f>`) |
+| review record exists | `/pre-pr feature:<f>` (skips itself if already done), then `/create-dev-qa-notes <f>` |
 | DD `draft` / `approved` | your step — approve / `/dev-feature-start <f>` |
 | FA `proposed` / `approved` | your step — approve / `/dev-design-start <f>` |
 
@@ -49,7 +50,7 @@ Task ids: first column of TB tables matching `^([A-Za-z]+[0-9]+|C[1-9][0-9]*-T[1
 | `verification-c<n>.md` missing or not `passed` | your step — `/verify-fix-cycle bug:<key>` |
 | no `review-c<n>.md` | `/review-code --bug <key>` |
 | `docs/qa/bug-<key>-qa-handoff.md` `ready-for-qa` for cycle n | — waiting for QA |
-| otherwise | `/create-dev-qa-notes bug:<key>` |
+| otherwise | `/pre-pr bug:<key>` (0.8.0+, skips itself if already done), then `/create-dev-qa-notes bug:<key>` |
 
 ## ono-project-inspector
 
