@@ -5,11 +5,12 @@
 **Works with ono-mobile-dev-plugin 0.8.0** (Yagil's answer to the 2026-11-22 handoff, A1 / A3 / A5 and the dev-plugin half of A2), following its `docs/guardian-integration.md`.
 
 - **Pre-PR belongs to the dev plugin now.** Guardian's own `pre-pr` skill is removed, with no fallback. "Ready for PR", "what could I have broken" and similar requests go to `/ono-mobile-dev-plugin:pre-pr bug:‹key› | feature:‹name› --base ‹central›`. It refuses until the internal review is done and says what comes first. In a repo without the dev plugin, no pre-PR is required and none is run.
-- **The closer asks the dev plugin whether the PR is ready.** New `scripts/dev-plugin.sh readiness` runs the plugin's read-only `ono-pr-readiness` contract v1 (`pr-readiness.ts check --contract 1 --base ‹central›`), found through `installed_plugins.json`. Before pushing finished work:
+- **The closer asks the dev plugin whether the PR is ready.** New `scripts/dev-plugin.sh readiness` runs the plugin's read-only `ono-pr-readiness` contract v1 (`pr-readiness.ts check --contract 1 --base ‹central›`). It finds the plugin through `installed_plugins.json`: this project's entry first, then the user-wide one, from any marketplace key, with Windows paths unescaped. The plugin's own Node.js check runs first, and its message is passed on word for word. Before pushing finished work:
   - **Not ready:** no push and no PR. The closer shows each blocker in plain words and offers the plugin's `next_command` (e.g. the pre-PR), then runs the check again.
-  - **Ready:** the PR is opened with the plugin's generated title and description (`--body-file`, outside the repo). On Bitbucket, or without `gh`, the description is shown for pasting.
+  - **Ready:** the PR is opened with the plugin's generated title and description. `dev-plugin.sh pr-body ‹dir›` writes them exactly (outside the repo, so nothing is hand-copied out of JSON), then `gh pr create --title "$(cat …)" --body-file …`. On Bitbucket, or without `gh`, the description is shown for pasting.
   - **No Ono work on the branch:** not blocked; one line suggests starting new work through the Ono flow.
-  - **Plugin older than 0.8.0, Node.js missing or too old, or a contract mismatch:** never reported as "ready", and never replaced by a pre-PR of Guardian's own.
+  - **Plugin older than 0.8.0, Node.js missing or unsupported, or a contract mismatch:** never reported as "ready", and never replaced by a pre-PR of Guardian's own. The PR waits; only on the employee's explicit go-ahead is it opened with `--fill`, logged as `readiness: not checked`.
+  - **A required document that's git-ignored:** never force-added. The employee decides about the ignore rule.
 
   The session log's pre-PR line comes from the check's counts.
 - **The planning and review documents go into the PR** (agreed in the integration: the readiness check blocks a PR without them). New `requiredInPr` in `routing/committed-artifacts.json`:
@@ -26,6 +27,7 @@
   - new `review-pr` and `pre-pr` intents
   - feature commands' Continue offers are followed like the bug flow's
   - "where was I" shows "reviewed → `/pre-pr` then QA notes" and "all tasks done → `/review-code --feature`"; older dev plugins keep the old lines
+  - for a feature the employee picks, the router asks the plugin's `feature-flow.ts status`, which also sees a stale review. The fast session-start lines (no Node) stay a hint.
 - **No jq warning with dev plugin 0.8.0+.** Its hooks now fall back to Node.js, which has its own TOOLS line. The jq line stays for 0.7.6–0.7.7 (and unknown versions).
 - The routing notes' "Ono commands come first" line names `/review-pr` for a teammate's PR and `/ono-mobile-dev-plugin:pre-pr`. Guardian's removed pre-PR skill no longer counts as "routed".
 - Still waiting on the inspector (unchanged at 0.11.3): version / date lines on its documents, audit re-check and freshness fields (A4), and the Windows `winget` line for Bun (A2). Guardian's Bun line and once-a-day manifest line stay.

@@ -50,7 +50,7 @@ no_jq=""
 old_node=""
 plugins="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
 if [ ! -f "$plugins" ] || grep -q '"ono-mobile-dev-plugin@' "$plugins" 2>/dev/null; then
-  case "$(PG_PLUGINS_FILE="$plugins" "$scripts/dev-plugin.sh" version 2>/dev/null)" in
+  case "$("$scripts/dev-plugin.sh" version 2>/dev/null)" in
     [1-9]*|0.[8-9].*|0.[1-9][0-9]*) ;;                       # 0.8.0+: Node fallback, jq optional
     *) command -v "${PG_JQ:-jq}" >/dev/null 2>&1 || no_jq=1 ;;
   esac
