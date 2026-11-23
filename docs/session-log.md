@@ -2,6 +2,18 @@
 
 ---
 
+## Session 18 — 2026-11-22 → 11-23 — Guy's 3 reports (0.6.1), dev plugin 0.8.0 integration (0.7.0)
+
+- 0.6.1 (PR #40): Ono commands come before generic review skills (only where the dev plugin is installed, honest "what ran"), "review A into B" → `/review-code B`, and report-bug shows a draft before writing. Guy's "first message not routed" doesn't reproduce since 0.5.1, but that isn't fully proven.
+- 0.7.0 (PR #41) implements Yagil's `docs/guardian-integration.md` §1–§10 for dev plugin 0.8.0. Guardian's pre-PR is removed; the closer queries `ono-pr-readiness` v1 via the new `scripts/dev-plugin.sh` (`readiness` / `pr-body`); teammate PRs go to `/review-pr ‹URL›`; routes and resume lines are updated.
+- Policy (approved with Yagil's PR): the dev plugin's planning and review documents are committed with the code (`requiredInPr`), the second exception after inspector outputs.
+- Independent reviews: 0.6.1 had 4 must-fix findings and 0.7.0 had 2 (wrong installed entry with several installs; hand-copied PR body), all fixed. 791 checks are green and routes are verified against 0.8.0.
+- Open: inspector still 0.11.3 (A4, A2 `winget`); Yagil's live-unverified gates (`/review-pr` fork + guard, real gh / Bitbucket reads); the `next_command` question. Message: `~/Downloads/2026-11-23-yagil-after-dev-plugin-0.8.0.md`.
+- **Process improvement:** a value another plugin hands over to be used verbatim (PR body, title, paths) goes through a Guardian script, never copied by the model (memory `verbatim-handoffs-via-script`).
+- **Next session:** first real PR through the 0.7.0 closer on a team machine (live gates), then the inspector release (A4 / A2) when Yagil ships it.
+
+---
+
 ## Session 17 — 2026-11-22 — Windows bugs, close without forced PR, PR reviews, docs freshness (0.6.0)
 
 - Two Windows bug reports (ekaterina.s, `YesPlusSmartTV`): the dev plugin blocks every write without `jq` (Yagil); the inspector needs Bun, and the repo has no `.ono/repo-knowledge.json` (one `/inspect-sync` by anyone with Bun fixes it for the team). Guardian: OS-aware jq / Bun / Node lines (`winget`), Bun first in the gate banner, a once-a-day manifest line.
