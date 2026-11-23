@@ -2,7 +2,7 @@
 # UserPromptSubmit hook: routing reminder + session-length signal (G3.1).
 #
 # Routing reminder (0.5.1): until this session has been routed — the work-router
-# or pre-pr skill ran, or an Ono plugin skill / command ran (Claude or the
+# skill ran, or an Ono plugin skill / command ran (Claude or the
 # employee started it) — every typed message in a git repo gets a note: a task goes
 # through platform-guardian:work-router before any investigation or edit. The
 # opener's hand-off alone was lost when the task arrived in the next turn
@@ -42,7 +42,7 @@ routes="$(dirname "$0")/../routing/routes.json"
 routed() { # has this session been routed into an Ono process?
   # Only real JSON structure counts: inside a tool result the same text is a string with
   # escaped quotes (\"skill\":…), and a typed command is the user message's own content.
-  grep -Eq '"name":"Skill","input":\{"skill":"((platform-guardian:)?(work-router|pre-pr)|ono-[a-z0-9-]+:[^"]*)"|"name":"SlashCommand","input":\{"command":"/(ono-[a-z0-9-]+:|platform-guardian:(work-router|pre-pr))|"role":"user","content":"(<command-message>[^"]*)?<command-name>/(ono-[a-z0-9-]+:|platform-guardian:(work-router|pre-pr))' "$transcript" 2>/dev/null && return 0
+  grep -Eq '"name":"Skill","input":\{"skill":"((platform-guardian:)?work-router|ono-[a-z0-9-]+:[^"]*)"|"name":"SlashCommand","input":\{"command":"/(ono-[a-z0-9-]+:|platform-guardian:work-router)|"role":"user","content":"(<command-message>[^"]*)?<command-name>/(ono-[a-z0-9-]+:|platform-guardian:work-router)' "$transcript" 2>/dev/null && return 0
   local c   # a short form (/analyze-bug, or skill "analyze-bug") that routes.json knows
   for c in $( { grep -Eo '"role":"user","content":"(<command-message>[^"]*)?<command-name>/[a-z0-9-]+</command-name>' "$transcript" \
                   | sed 's/.*<command-name>\/\([a-z0-9-]*\)<.*/\1/'
@@ -66,7 +66,7 @@ esac
 plugins="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
 precedence=
 if [ ! -f "$plugins" ] || grep -q '"ono-mobile-dev-plugin@' "$plugins" 2>/dev/null; then
-  precedence='Ono commands come first: a code review is `/ono-mobile-dev-plugin:review-code` (security: `review-security`), a bug in the app is `analyze-bug`, a pre-PR check is `platform-guardian:pre-pr` — started through the router, or as the running Ono step'"'"'s next command. Skills from outside the Ono plugins with the same job (`code-review`, `security-review`, `*-pr-review` …) are not equal options: don'"'"'t use or offer them, and when asked which tool to use, name the Ono command. Asked which one ran, answer honestly — if it wasn'"'"'t the Ono command, say so and offer to run it. A generic skill is fine when the employee asks for it instead of the Ono flow, or the Ono command doesn'"'"'t fit this repo.'
+  precedence='Ono commands come first: a review of your own changes is `/ono-mobile-dev-plugin:review-code` (security: `review-security`), a teammate'"'"'s PR is `/ono-mobile-dev-plugin:review-pr ‹PR URL›`, a bug in the app is `analyze-bug`, a pre-PR check is `/ono-mobile-dev-plugin:pre-pr` — started through the router, or as the running Ono step'"'"'s next command. Skills from outside the Ono plugins with the same job (`code-review`, `security-review`, `*-pr-review` …) are not equal options: don'"'"'t use or offer them, and when asked which tool to use, name the Ono command. Asked which one ran, answer honestly — if it wasn'"'"'t the Ono command, say so and offer to run it. A generic skill is fine when the employee asks for it instead of the Ono flow, or the Ono command doesn'"'"'t fit this repo.'
 fi
 # no transcript yet = not routed yet
 if [ -n "$prompt" ] && [ -z "$is_cmd" ] && [ "${PG_ROUTE_REMINDER:-on}" != off ] && in_repo; then

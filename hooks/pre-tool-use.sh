@@ -8,10 +8,11 @@
 # .platform-guardian.json "commitPaths":
 #   - on a `neverCommit` list (secrets, plugin scratch)        → deny, always
 #   - a document / data / working file (.md .json .yaml .txt .log .html …),
-#     or a file an Ono plugin writes (plugin `commit` lists, frontmatter
-#     planning docs)                                            → deny: it stays OUT of
+#     or a file an Ono plugin writes (plugin `commit` lists)  → deny: it stays OUT of
 #     the commit unless the employee asked for it in chat (the command then
 #     carries PG_INCLUDE_FILES=1) or the project lists it in "commitPaths"
+#   - the inspector's outputs, and the dev plugin's planning / review documents its PR-readiness
+#     check requires (`requiredInPr`, frontmatter planning docs — 0.8.0)  → no output (committed)
 #   - anything else (new source code, README / CHANGELOG, known config files) → no output
 # On top of that, the EMPLOYEE confirms in a permission prompt ("ask"), never Claude alone:
 #   - every `git commit` and `git push` — no commit or push without the employee's explicit OK;
@@ -66,13 +67,13 @@ dir="$(json_str cwd)"
 
 # --- allowlist → lines "commit<TAB>glob" / "never<TAB>glob" / "except<TAB>glob" --------
 rules="$(awk '
-  /"(commit|neverCommit|doNotTouch)"[ \t]*:[ \t]*\[/ {
-    mode = ($0 ~ /"commit"/) ? "commit" : (($0 ~ /"neverCommit"/) ? "never" : "skip")
+  /"(commit|requiredInPr|neverCommit|doNotTouch)"[ \t]*:[ \t]*\[/ {
+    mode = ($0 ~ /"commit"/) ? "commit" : (($0 ~ /"requiredInPr"/) ? "required" : (($0 ~ /"neverCommit"/) ? "never" : "skip"))
     if ($0 ~ /\]/) mode = ""
     next
   }
   mode != "" && /\]/ { mode = ""; next }
-  mode == "commit" || mode == "never" {
+  mode == "commit" || mode == "required" || mode == "never" {
     if (match($0, /"[^"]*"/)) {
       p = substr($0, RSTART + 1, RLENGTH - 2)
       if (mode == "never" && substr(p, 1, 1) == "!") print "except\t" substr(p, 2)
@@ -147,6 +148,11 @@ PATHS
        { [ -f "$3/$sub/AUDIT.md" ] && head -5 "$3/$sub/AUDIT.md" | grep -q '^# AUDIT\.md'; }; }; then
     echo ok; return
   fi
+  # the dev plugin's planning and review documents (0.8.0): its PR-readiness check blocks a PR
+  # without them, so they go in with the code (its *.tmp atomic-write files match no rule here)
+  rule_match required "$path" && { echo ok; return; }
+  case "$base" in *.md) [ -f "$file" ] && head -n 25 "$file" | grep -q '^doc_schema_version:' &&
+    head -n 25 "$file" | grep -q '^feature:' && { echo ok; return; } ;; esac
   rule_match commit "$path" && { echo stray; return; }
   case "$base" in
     *.md|*.markdown|*.txt|*.log|*.html|*.htm|*.csv|*.tsv|*.tmp|*.out|*.orig|*.rej|*.patch|*.diff|*.swp|\

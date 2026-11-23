@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "verifiedAt": "2026-11-08",
-  "note": "Where the Ono plugins write files into a work repo. Ono rule (2026-11-10): only code goes into a commit by default — the files on the 'commit' lists below stay OUT unless the employee asks for one or the project lists it in .platform-guardian.json commitPaths. The session closer never .gitignores these. Patterns are git-style globs relative to the repo root. 'neverCommit' lists plugin scratch files that land in the repo but must not be committed. Generated ledger/readiness files must never be edited, formatted or line-ending-normalized.",
+  "verifiedAt": "2026-11-23",
+  "note": "Where the Ono plugins write files into a work repo. Ono rule (2026-11-10): only code goes into a commit by default — the files on the 'commit' lists below stay OUT unless the employee asks for one or the project lists it in .platform-guardian.json commitPaths. Exceptions, committed with the code: the inspector's outputs, and (dev plugin 0.8.0, 2026-11-23) the planning and review documents on 'requiredInPr' — the dev plugin's PR-readiness check blocks a PR without them. The session closer never .gitignores these. Patterns are git-style globs relative to the repo root. 'neverCommit' lists plugin scratch files that land in the repo but must not be committed. Generated ledger/readiness files must never be edited, formatted or line-ending-normalized.",
   "plugins": {
     "ono-mobile-dev-plugin": {
       "commit": [
@@ -12,9 +12,22 @@
         "*-DD.md",
         "docs/reviews/**"
       ],
-      "frontmatterDocs": "Feature Analysis, Dev Plan and Task Breakdown have no fixed filename: any new .md whose YAML frontmatter has doc_schema_version + feature: is a planning doc → commit.",
+      "requiredInPr": [
+        "docs/bugs/*/bug-report.json",
+        "docs/bugs/*/bug-work-plan.md",
+        "docs/bugs/*/review-c*.md",
+        "docs/reviews/*/review.md",
+        "docs/qa/*-qa-handoff.md",
+        "*/docs/bugs/*/bug-report.json",
+        "*/docs/bugs/*/bug-work-plan.md",
+        "*/docs/bugs/*/review-c*.md",
+        "*/docs/reviews/*/review.md",
+        "*/docs/qa/*-qa-handoff.md",
+        "*-DD.md"
+      ],
+      "frontmatterDocs": "Feature Analysis, Detailed Design, Task Breakdown and Dev Plan have no fixed filename: a new .md whose frontmatter (--- block or ```yaml fence near the top) has doc_schema_version + feature: is a planning doc → requiredInPr. Unstamped legacy docs aren't recognised: the closer stages the paths the readiness check lists (documents.required) and the employee confirms any the guard still holds back.",
       "neverCommit": [],
-      "evidence": "docs/task-state-contract.md:20, docs/bug-work-plan-contract.md:412, scripts/reference-integrity.ts:331; scratch is written outside the repo."
+      "evidence": "docs/task-state-contract.md:20, docs/bug-work-plan-contract.md:412, scripts/reference-integrity.ts:331; scratch is written outside the repo. 0.8.0: docs/pr-readiness-contract.md § Required documents, docs/guardian-integration.md § 4 (*.tmp atomic-write files stay out)."
     },
     "ono-project-inspector": {
       "commit": [

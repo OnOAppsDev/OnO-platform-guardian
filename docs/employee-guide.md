@@ -45,18 +45,22 @@ Every Ono project goes through the **Project Inspector** once, before any work. 
 3. **Say what you're doing in plain words** — "fix bug ABC-123", "new login screen", "write a QA plan". Guardian starts the right Ono plugin for you. No commands to remember.
 4. **Approvals are yours.** When a step needs a human (approving a plan, QA sign-off), Guardian stops and tells you exactly what to type.
 5. **Stopping for now** (or Guardian shows 💡 because the session got long) → say **"close the session"**. Guardian saves a note of where you stopped. Your code stays on your computer; if code changed, it asks once whether you want a checkpoint commit — no PR in the middle of the work. Only notes or logs changed? Nothing to commit, no questions.
-6. **Bug or feature finished** → say so when you close. Guardian shows what goes into the commit (**only code** — notes and plugin documents stay out unless you ask), runs a quick **pre-PR check** (a one-page PDF of what to test; type **skip** to skip), then pushes and opens a PR — never straight to the main branch. **Every commit and push needs your OK** in a Claude Code permission prompt: approve it only if you asked for it. Then type **`/clear`** to start fresh. Nothing is lost.
+6. **Bug or feature finished** → say so when you close. Guardian shows what goes into the commit (**your code, plus the plan and review documents the PR needs** — notes and working files stay out unless you ask), asks the dev plugin whether the work is **ready for a PR** (review done, pre-PR check done), then pushes and opens the PR with a ready-made description — never straight to the main branch. **Every commit and push needs your OK** in a Claude Code permission prompt: approve it only if you asked for it. Then type **`/clear`** to start fresh. Nothing is lost.
 
 ## Before every PR — the pre-PR check 🔍
 
-When your bug or feature is finished and you close the session, Guardian runs a quick safety check **before** it opens the PR. It looks at the code you changed and everything that uses it, and opens a **one-page PDF** with what to test in the app:
+When your bug or feature has passed its internal review, the dev plugin runs a quick safety check (`/ono-mobile-dev-plugin:pre-pr`) **before** the PR — usually offered as the next step right after the review, or by Guardian when you close. It looks at the code you changed and everything that uses it, and opens a **one-page PDF** with what to test in the app:
 
 - 🔴 **Must test** — check these before you send the PR.
 - 🟠 **Should test** — worth a quick look.
 - ⚠️ **Watch out** — spots in the code that look risky.
 
 Test the 🔴 items, then type **push**. Found something broken? Great catch — fix it first, then close again.
-The PDF is just for you: it's not saved in the project and never goes into the PR. In a hurry? Type **skip**. You can also ask for it any time: "what could I have broken?"
+The PDF is just for you: it's not saved in the project and never goes into the PR. For Ono work it's required — the PR waits until it's done. You can also ask for it any time: "what could I have broken?"
+
+## Reviewing a teammate's PR 🔎
+
+When someone asks you to review their PR, Guardian shows it when you start a session. Pick it, and the dev plugin reviews it straight from GitHub (or Bitbucket) — **no switching branches**, even with your own changes open. You get only real findings; approving or commenting on the PR stays your call.
 
 ## Good to know
 

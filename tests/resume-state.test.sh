@@ -6,6 +6,10 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 RS="$HERE/../scripts/resume-state.sh"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/pg-resume.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
+# the installed dev plugin's version picks the next steps (0.8.0+: feature review record, /pre-pr)
+printf '{"plugins":{"ono-mobile-dev-plugin@ono-plugin-marketplace":[{"installPath":"/x","version":"0.8.0"}]}}' >"$WORK/dev08.json"
+printf '{"plugins":{"ono-mobile-dev-plugin@ono-plugin-marketplace":[{"installPath":"/x","version":"0.7.7"}]}}' >"$WORK/dev07.json"
+export PG_PLUGINS_FILE="$WORK/dev08.json"
 PASS=0 FAIL=0
 ok() { PASS=$((PASS + 1)); }
 bad() { FAIL=$((FAIL + 1)); echo "FAIL $1"; [ -n "${2:-}" ] && printf '     got: %s\n' "$2"; }
@@ -141,7 +145,13 @@ expect "partial state → first non-complete" "$R" "implementing (1/3 tasks comp
 state "$R" login complete complete failed
 expect "failed task → re-run it" "$R" "implementing (2/3 tasks complete) · next: /implement-task login T3"
 state "$R" login complete complete complete
-expect "all complete → review + QA notes" "$R" "all 3 tasks complete, not handed to QA yet · next: /review-code (if not done yet), then /create-dev-qa-notes login"
+expect "all complete, no review record → /review-code --feature" "$R" "all 3 tasks complete, not reviewed yet · next: /review-code --feature login"
+PG_PLUGINS_FILE="$WORK/dev07.json" expect "all complete, dev plugin 0.7.7 → review + QA notes" "$R" "all 3 tasks complete, not handed to QA yet · next: /review-code (if not done yet), then /create-dev-qa-notes login"
+w "$R/docs/reviews/login/review.md" <<'EOF'
+# Internal review — login
+EOF
+expect "reviewed → /pre-pr, then QA notes" "$R" "reviewed, not handed to QA yet · next: /pre-pr feature:login (skips itself if already done), then /create-dev-qa-notes login"
+rm -rf "$R/docs/reviews"
 w "$R/docs/qa/login-qa-handoff.md" <<'EOF'
 ---
 feature: login
@@ -274,7 +284,8 @@ w "$B/docs/bugs/BUG-7/review-c1.md" <<'EOF'
 review_schema: 1
 ---
 EOF
-expect "reviewed → /create-dev-qa-notes" "$B" "fix reviewed (cycle 1), not handed to QA · next: /create-dev-qa-notes bug:BUG-7"
+expect "reviewed → /pre-pr, then /create-dev-qa-notes" "$B" "fix reviewed (cycle 1), not handed to QA · next: /pre-pr bug:BUG-7 (skips itself if already done), then /create-dev-qa-notes bug:BUG-7"
+PG_PLUGINS_FILE="$WORK/dev07.json" expect "reviewed, dev plugin 0.7.7 → /create-dev-qa-notes" "$B" "fix reviewed (cycle 1), not handed to QA · next: /create-dev-qa-notes bug:BUG-7"
 w "$B/docs/qa/bug-BUG-7-qa-handoff.md" <<'EOF'
 ---
 work_type: bug
@@ -291,7 +302,7 @@ expect "cycle 2 tasks come from ### Cycle 2" "$B" "fixing, cycle 2 (0/1 tasks co
 printf '{\n  "tasks": {\n    "C2-T1": {\n      "state": "complete"\n    }\n  }\n}\n' >"$B/docs/tasks/bugs/BUG-7.task-state.json"
 printf -- '---\nstatus: passed\n---\n' >"$B/docs/bugs/BUG-7/verification-c2.md"
 printf -- '---\nreview_schema: 1\n---\n' >"$B/docs/bugs/BUG-7/review-c2.md"
-expect "cycle-1 handoff does not cover cycle 2" "$B" "fix reviewed (cycle 2), not handed to QA · next: /create-dev-qa-notes bug:BUG-7"
+expect "cycle-1 handoff does not cover cycle 2" "$B" "fix reviewed (cycle 2), not handed to QA · next: /pre-pr bug:BUG-7 (skips itself if already done), then /create-dev-qa-notes bug:BUG-7"
 
 # ---------- inspector ----------
 I="$WORK/insp"; repo "$I"

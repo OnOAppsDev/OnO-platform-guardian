@@ -56,7 +56,7 @@ Facts if they ask: the dev plugin covers mobile (iOS, Android, React Native), TV
 
 When you're done (or the session gets long — I'll tell you 💡), say **"close the session"** — in any language:
 1. I save a note of where we stopped 📝 — in the middle of a bug or feature, that's all: your code stays on your computer, and I only ask if you'd like a checkpoint commit (only when code changed) 💾
-2. When the bug or feature is **finished**: I commit **only your code**, run the 🔍 **pre-PR check** (a one-page PDF: what your change might have broken somewhere else — 🔴 = test before the PR, 🟠 = worth a look; just for you, never in the PR), then push + PR **after you OK it** 🚀
+2. When the bug or feature is **finished**: I commit **your code** (plus the plan and review documents the PR needs), check with the dev plugin that it's **ready for a PR** — its review and 🔍 **pre-PR check** (a one-page PDF: what your change might have broken somewhere else — 🔴 = test before the PR, 🟠 = worth a look; just for you, never in the PR) — then push + PR **after you OK it** 🚀
 3. You type **`/clear`**
 4. In the next session, your first message gets "last time you stopped at …" — zero context lost 🔁
 

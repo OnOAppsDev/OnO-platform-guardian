@@ -82,7 +82,7 @@ printf '%s\n%s\n' "$opener" '{"type":"assistant","message":{"content":[{"type":"
 for out in "$(PG_PLUGINS_FILE="$WORK/plugins-dev.json" rhook "$WORK/none.jsonl" "code review linear_ads into linear_ads_develop")" \
            "$(PG_PLUGINS_FILE="$WORK/plugins-dev.json" rhook "$WORK/p.jsonl" "which skill did you use for the review?")" \
            "$(PG_PLUGINS_FILE="$WORK/nope.json" rhook "$WORK/none.jsonl" "review my changes")"; do
-  for want in 'Ono commands come first' '`/ono-mobile-dev-plugin:review-code`' 'Skills from outside the Ono plugins with the same job' '`code-review`' 'name the Ono command' 'answer honestly' "or as the running Ono step's next command" "doesn't fit this repo"; do
+  for want in 'Ono commands come first' '`/ono-mobile-dev-plugin:review-code`' "a teammate's PR is \`/ono-mobile-dev-plugin:review-pr" '`/ono-mobile-dev-plugin:pre-pr`' 'Skills from outside the Ono plugins with the same job' '`code-review`' 'name the Ono command' 'answer honestly' "or as the running Ono step's next command" "doesn't fit this repo"; do
     case "$out" in *"$want"*) PASS=$((PASS + 1)) ;; *) FAIL=$((FAIL + 1)); echo "FAIL precedence line missing: $want" ;; esac
   done
 done
@@ -104,7 +104,11 @@ routed_by() { # routed_by <name> <transcript line>
 }
 routed_by "work-router skill" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:work-router"}}]}}'
 routed_by "work-router skill, short name" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"work-router"}}]}}'
-routed_by "pre-pr skill" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:pre-pr"}}]}}'
+routed_by "dev plugin pre-pr (0.8.0)" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"ono-mobile-dev-plugin:pre-pr","args":"bug:X-1"}}]}}'
+routed_by "dev plugin review-pr typed" '{"type":"user","message":{"role":"user","content":"<command-name>/ono-mobile-dev-plugin:review-pr</command-name>"}}'
+# Guardian's own pre-PR skill is gone (0.7.0): a stale name doesn't count as routed
+printf '%s\n%s\n' "$opener" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"platform-guardian:pre-pr"}}]}}' >"$R"
+rexpect "old platform-guardian:pre-pr no longer routes" yes "$(rhook "$R" "and now the next bug")"
 routed_by "Ono plugin skill started by Claude" '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"ono-mobile-dev-plugin:analyze-bug","args":"x"}}]}}'
 routed_by "Ono command typed (full name)" '{"type":"user","message":{"role":"user","content":"<command-message>analyze-bug</command-message>\n<command-name>/ono-mobile-dev-plugin:analyze-bug</command-name>"}}'
 routed_by "Ono command typed (short form in routes.json)" '{"type":"user","message":{"role":"user","content":"<command-name>/analyze-bug</command-name>"}}'

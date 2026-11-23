@@ -32,7 +32,7 @@ claude ──► 1. OPEN       on your first message (any message): git report v
            3. WORK       the org plugin's own process, as its owners designed it
              │           approvals stay yours — Guardian never self-approves
              ▼
-           4. CLOSE      in progress: log + optional checkpoint commit · finished: commit → pre-PR → push → PR (never straight to central)
+           4. CLOSE      in progress: log + optional checkpoint commit · finished: commit → readiness check (dev plugin's review + pre-PR) → push → PR (never straight to central)
                          local session note · plain summary · "type /clear"
 ```
 
@@ -63,14 +63,14 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 - **Never pushes to the central branch.** Everything goes back through a PR; it asks before every push or PR, and you pick the target and reviewers.
 - **Never updates your branch silently** and never uses force operations.
 - **Offline?** The server check gives up after 5 seconds, and Guardian tells you the numbers may be out of date instead of calling you "up to date".
-- **Only code goes into a commit** — in every flow. Documents, data and plugin working files (`.md`, `.json`, `.yaml` …, bug plans, task state, reports) stay out — on disk, not `.gitignore`d — unless the employee asks for a file or the project lists it in `.platform-guardian.json` `"commitPaths"`. Secrets never. A guard enforces it on every `git add` / `git commit`.
+- **Code goes into a commit, plus the documents the PR needs** — in every flow. Documents, data and plugin working files (`.md`, `.json`, `.yaml` …, task state, reports) stay out — on disk, not `.gitignore`d — unless the employee asks for a file or the project lists it in `.platform-guardian.json` `"commitPaths"`. Two exceptions go in with the code: the inspector's outputs, and the dev plugin's planning and review documents (Feature Analysis, DD, Task Breakdown, Dev Plan, bug report + plan, review records), which its PR-readiness check requires (dev plugin 0.8.0+). Secrets never. A guard enforces it on every `git add` / `git commit`.
 - **⛔ Inspect gate — every project is inspected first.** If the project hasn't been through the Ono Project Inspector (`AUDIT.md` + `CLAUDE.md` + `docs/project/*`), Claude is blocked in it: a red ⛔ banner on every message and Ono plugin command, until the employee runs `/ono-project-inspector:inspect` — or, only with a manager's approval, types the exact sentence `I have manager approval to work without inspect` (opens the repo for that day). The inspector's outputs are committed so the whole team shares one inspection.
 - **Bug reports:** something broken in the tools? "report a bug" → one organized file (exact error, steps, versions of Guardian + every Ono plugin) for the maintainer to triage — outside the repo, never committed.
-- **No forced commit or PR at close:** mid-work closes save a note (and a checkpoint commit only if the employee wants one, only when code changed); the pre-PR check, push and PR come when the bug or feature is finished.
-- **PRs waiting for your review:** at session start (with `gh` logged in) the opener lists open PRs where the employee was asked personally to review and offers them as a focus — this repo's go to `/review-code`. `PG_REVIEWS=off` turns it off.
+- **No forced commit or PR at close:** mid-work closes save a note (and a checkpoint commit only if the employee wants one, only when code changed); the readiness check, push and PR come when the bug or feature is finished.
+- **PRs waiting for your review:** at session start (with `gh` logged in) the opener lists open PRs where the employee was asked personally to review and offers them as a focus — the dev plugin's `/review-pr ‹URL›` reviews any of them straight from GitHub, with no checkout. `PG_REVIEWS=off` turns it off.
 - **Project docs freshness:** a free git check at session start (`inspect-status.sh drift`) — when `CLAUDE.md` / `docs/project/` are meaningfully behind the code, one line a day offers the inspector's **Refresh Project Knowledge** as a separate `chore/` branch + PR. Never automatic (it costs tokens).
-- **Per-OS tool lines:** missing `jq` (dev plugin) or Bun (inspector, only when it has something to run) → one ⚠️ line with this computer's install command (Windows: `winget`).
-- **Pre-PR check before every PR:** a one-page PDF of what your change could break (`skills/pre-pr`), outside the repo, never committed. Type **skip** to skip it.
+- **Per-OS tool lines:** missing Bun (inspector, only when it has something to run), Node.js, or `jq` (only for a dev plugin older than 0.8.0) → one ⚠️ line with this computer's install command (Windows: `winget`).
+- **PR-readiness before every PR:** before pushing finished Ono work, the closer asks the dev plugin (`scripts/dev-plugin.sh readiness` → its `ono-pr-readiness` contract v1) whether the internal review and the pre-PR check (`/ono-mobile-dev-plugin:pre-pr`, a one-page PDF of what to test) are done and the required documents committed. Not ready → it shows why and offers the next command; ready → the PR gets the plugin's generated description. Guardian runs no pre-PR of its own. Repos without the dev plugin aren't blocked.
 - **QA repos:** both QA plugins block Claude's own commits there by design — Guardian hands you the commands to run instead.
 
 ## 🚀 Install
@@ -95,7 +95,7 @@ Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
 ```
 .claude-plugin/plugin.json      manifest + dependencies on the three org plugins
 hooks/                          SessionStart (open) · UserPromptSubmit + UserPromptExpansion (inspect gate, routing reminder, session length) · PreToolUse (commit guard)
-skills/                         session-opener · work-router · session-closer · onboarding · pre-pr · report-bug
+skills/                         session-opener · work-router · session-closer · onboarding · report-bug
 scripts/git-status.sh           JSON git report (bash 3.2, no jq, fails open)
 scripts/session-log.sh          local session notes — ~/.claude/platform-guardian/, never in git
 scripts/inspect-status.sh       inspect gate: done / partial / missing / on-central / override (manager-approved, per day)
