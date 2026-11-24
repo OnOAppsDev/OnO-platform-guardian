@@ -2,6 +2,18 @@
 
 ---
 
+## Session 19c — 2026-11-24 — Inspector 0.12.0 on Node.js: Guardian follows (0.7.3, released)
+
+- Yagil shipped Inspector 0.12.0 (Bun removed, Node.js only, `scripts/node-preflight.mjs`) and gave five rules. Verified against its source, then 0.7.3: no Bun lines for 0.12.0+; an older inspector without Bun gets "update the inspector" (never "install Bun"); the inspector's preflight decides Node; one shared Node line for the inspector and the dev plugin; nothing when the inspector isn't installed here.
+- New `scripts/ono-plugin.sh` (shared plugin lookup; `inspector-runtime` skips turned-off and other-project installs) and `scripts/node-check.sh` (one node process under a watchdog). The gate banner and the opener's TOOLS wording were updated; `routes.json` was re-verified against 0.12.0.
+- Review: 0 must-fix, 6 should-fix + 8 nits fixed (opener trigger collision, refresh offer hidden by a dev-only Node line, turned-off / other-project installs). 870 checks green, 6 mutations caught; macOS startup 0.97 → 1.00 s.
+- PR #45 merged. First official GitHub release + tag: `v0.7.3`. Message sent to Ekaterina: update the marketplace, restart, retry Refresh Project Knowledge.
+- Open: Ekaterina's confirmation (then tell Yagil); 0.7.3 not yet run on Windows.
+- **Process improvement:** when a hook gets a new context line, grep the opener skill's triggers for it, so no two triggers match one line. The reviewer caught "Node.js" matching both the update line and the Node trigger.
+- **Next session:** Ekaterina's result on 0.12.0 + 0.7.3 → report to Yagil; any feedback on 0.7.2 / 0.7.3.
+
+---
+
 ## Session 19b — 2026-11-24 — Central branch asked every session (0.7.2) + two reports triaged
 
 - Guy, `yes_plus_mobile_android`: "develop or master?" every session, even before a read-only PR review (origin/HEAD = master, develop 41 ahead). Guardian's bug. 0.7.2: master with no commits of its own except merges → `develop` (`gitflow`, high); otherwise still asks. The answer is remembered per repo on the employee's computer (`protected-branch.sh answer`, protects at once). A read-only first task gets no git questions; the router settles them before a write intent.
