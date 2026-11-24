@@ -2,6 +2,18 @@
 
 ---
 
+## Session 19b — 2026-11-24 — Central branch asked every session (0.7.2) + two reports triaged
+
+- Guy, `yes_plus_mobile_android`: "develop or master?" every session, even before a read-only PR review (origin/HEAD = master, develop 41 ahead). Guardian's bug. 0.7.2: master with no commits of its own except merges → `develop` (`gitflow`, high); otherwise still asks. The answer is remembered per repo on the employee's computer (`protected-branch.sh answer`, protects at once). A read-only first task gets no git questions; the router settles them before a write intent.
+- Side effect, on purpose: in these repos `develop` is now protected (it was a plain work branch under the `master` guess). Called out in the CHANGELOG.
+- Guy's second report (`/analyze-bug` asks the platform on every bug, yestv_aos) is the dev plugin's design (`commands/analyze-bug.md` step 5, test 17). Message for Yagil given; only that one is his.
+- Review: 2 must-fix (a release merge flipped the verdict to master-high; `origin/develop` overwrote a good answer and was then ignored) + 6 should-fix, all fixed. 822 checks green, 4 mutations caught.
+- Open: Yagil on Bun (0.7.1 ticket) and on analyze-bug routing; 0.7.1 / 0.7.2 live on team machines.
+- **Process improvement:** a history-based guess needs the release step in its test set. The first rule worked until the team's first release; the reviewer found it, my tests didn't.
+- **Next session:** Yagil's answers; feedback from Guy / Ekaterina on 0.7.2.
+
+---
+
 ## Session 19 — 2026-11-24 — Windows: Bun warning lost with the whole opener (0.7.1)
 
 - Ticket (Ekaterina, `YesPlusSmartTV`, Windows 11): the inspector stopped with `BUN NOT FOUND`, and Guardian had shown no warning, with no SessionStart report at all. Split: Bun-only is the inspector's design (Yagil, A2); the missing warning is Guardian's.

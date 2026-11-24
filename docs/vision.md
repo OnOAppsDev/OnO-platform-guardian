@@ -64,7 +64,7 @@ Employees must never commit or push working files that Claude creates along the 
 
 ## Git policy
 
-- **Central branch is per project** (usually `develop`). Detection order: project override (`.platform-guardian.json`) → `origin/HEAD` → `develop` → `main` → `master`. Low confidence → ask.
+- **Central branch is per project** (usually `develop`). Detection order: project override (`.platform-guardian.json`) → the employee's remembered answer → `origin/HEAD` (main/master beside develop, master with only release merges of its own → develop) → `develop` → `main` → `master`. Low confidence → ask once, then remember.
 - **No direct push to the central branch.** All changes return through a PR; the employee chooses target branch and reviewers.
 - **No silent updates.** Being behind is surfaced loudly and decided by the employee.
 - **No force operations**, ever, from Guardian.
