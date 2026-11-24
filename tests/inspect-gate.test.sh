@@ -88,6 +88,16 @@ git -C "$R" switch -q develop
 eq "older-model inspection elsewhere doesn't count" "$("$ST" elsewhere "$R")" ""
 eq "no remote → nothing" "$(cd "$WORK" && mkdir -p lone && git -c init.defaultBranch=main init -q lone && "$ST" elsewhere "$WORK/lone")" ""
 rm -rf "$WORK/origin2.git" "$WORK/lone"
+# one cat-file call for all branches: the right branch among several, and a nested project folder
+fresh; mkdir -p "$R/App"; printf '# AUDIT.md\n' >"$R/App/AUDIT.md"; git -C "$R" add -A; git -C "$R" commit -qm app
+for b in a-old b-partial c-full d-newest-partial; do git -C "$R" switch -q -c "feature/$b" develop; done
+git -C "$R" switch -q feature/c-full; mkdir -p "$R/App/docs/project"
+for p in overview capabilities; do echo d >"$R/App/docs/project/$p.md"; done; git -C "$R" add -A; git -C "$R" commit -qm full
+git -C "$R" switch -q feature/d-newest-partial; mkdir -p "$R/App/docs/project"; echo d >"$R/App/docs/project/overview.md"
+git -C "$R" add -A; git -C "$R" commit -qm partial; git -C "$R" switch -q develop
+git clone -q --bare "$R" "$WORK/origin3.git"; git -C "$R" remote add origin "$WORK/origin3.git"; git -C "$R" fetch -q origin
+eq "elsewhere: nested folder, newest complete branch among several" "$("$ST" elsewhere "$R/App")" "origin/feature/c-full"
+rm -rf "$WORK/origin3.git"
 
 # override: today only
 fresh
@@ -120,7 +130,7 @@ gate UserPromptSubmit "fix bug YEA-1";              eq "missing: task blocked" "
 # Bun missing → the banner says to install it first, with this OS's command
 printf '#!/bin/sh\necho 1.2.0\n' >"$WORK/bun"; chmod +x "$WORK/bun"
 PG_BUN=pg-no-such-bun PG_OS=MINGW64_NT-10.0 gate UserPromptSubmit "hi"
-case "$(printf '%s' "$OUT" | jq -r .reason)" in *"First install Bun"*"winget install Oven-sh.Bun"*"/ono-project-inspector:inspect"*) ok ;; *) fail "no Bun on Windows → winget line before inspect" "$OUT" ;; esac
+case "$(printf '%s' "$OUT" | jq -r .reason)" in *"First install Bun"*'powershell -c "irm bun.sh/install.ps1 | iex"'*"Ask IT"*"/ono-project-inspector:inspect"*) ok ;; *) fail "no Bun on Windows → the inspector PowerShell line + no-admin hint before inspect" "$OUT" ;; esac
 PG_BUN=pg-no-such-bun PG_OS=Darwin gate UserPromptSubmit "hi"
 case "$(printf '%s' "$OUT" | jq -r .reason)" in *"brew install oven-sh/bun/bun"*) ok ;; *) fail "no Bun on macOS → brew line" "$OUT" ;; esac
 PG_BUN="$WORK/bun" gate UserPromptSubmit "hi"

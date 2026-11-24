@@ -10,6 +10,16 @@ here="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 scripts="${CLAUDE_PLUGIN_ROOT:-$here/..}/scripts"
 dir="${CLAUDE_PROJECT_DIR:-$PWD}"
 
+# Time budget: Claude Code drops ALL of a hook's output when it runs past its timeout (20 s), and
+# on a slow computer (Git Bash on Windows starts processes slowly) that silently lost the git
+# report and the TOOLS lines. Past the budget the optional checks are skipped and named; the
+# core (git report, inspect status, TOOLS) is not budgeted — it's kept to as few processes as it can.
+SECONDS=0   # an exported SECONDS would otherwise carry over
+budget="${PG_HOOK_BUDGET:-12}"
+case "$budget" in ''|*[!0-9]*) budget=12 ;; esac
+skipped=""
+in_budget() { [ "$SECONDS" -lt "$budget" ] && return 0; skipped="$skipped${skipped:+, }$1"; return 1; }
+
 # PRs waiting for the employee's review: a network call, so it starts now and runs alongside the
 # git fetch; collected at the end (its own 3 s watchdog).
 # Its own folder, removed as a whole: a force-killed lookup can't clean up its temp file itself.
@@ -140,12 +150,13 @@ else
 fi
 [ -n "$others" ] && printf 'Other branches of this repo with session logs (newest first): %s\n' "$others"
 
-inspect="$("$scripts/inspect-status.sh" check "$dir" 2>/dev/null)"
+cref="$(printf '%s' "$report" | sed -n 's/.*"central":{[^}]*"ref":"\([^"]*\)".*/\1/p')"
+inspect="$("$scripts/inspect-status.sh" check "$dir" "$cref" 2>/dev/null)"
 bun_needed=""
 case "${inspect%%	*}" in
   missing|partial|on-central)
     [ "${inspect%%	*}" = on-central ] || bun_needed=1
-    newer="$("$scripts/inspect-status.sh" elsewhere "$dir" 2>/dev/null)"
+    newer=""; in_budget "inspection on other branches" && newer="$("$scripts/inspect-status.sh" elsewhere "$dir" 2>/dev/null)"
     [ -n "$newer" ] && printf '\nINSPECT: FYI — a complete inspection exists on %s (never merged into this branch).\n' "$newer"
     d="${inspect#*	}"
     printf '\nINSPECT GATE: %s%s — this project has NOT been through the Ono Project Inspector. The inspect-gate hook blocks the employee'"'"'s messages and Ono plugin commands with a red ⛔ banner until they run /ono-project-inspector:inspect or type the manager-approval sentence. If a message reaches you anyway (they started the inspector, or typed the sentence), follow session-opener step 0b.\n' \
@@ -153,7 +164,7 @@ case "${inspect%%	*}" in
   done)
     case "${inspect#*	}" in refresh-recommended:*)
       bun_needed=1
-      newer="$("$scripts/inspect-status.sh" elsewhere "$dir" 2>/dev/null)"
+      newer=""; in_budget "inspection on other branches" && newer="$("$scripts/inspect-status.sh" elsewhere "$dir" 2>/dev/null)"
       printf '\nINSPECT: complete, but made with an older inspector knowledge model (missing:%s)%s. Not a block — follow session-opener step 0b (offer the refresh).\n' \
         "${inspect#*refresh-recommended:}" "${newer:+; a current-model inspection exists on $newer (never merged into this branch)}" ;;
     *)
@@ -172,8 +183,7 @@ case "${inspect%%	*}" in
       # The project docs (CLAUDE.md, docs/project/*) behind the code: a git-only check, no tokens.
       # The refresh itself costs tokens, so it's only offered when it matters, once a day per repo.
       dmark="$mdir/drift-notice"
-      if [ -n "$inspector_on" ] && [ "$mdir" != . ] && [ "$(cat "$dmark" 2>/dev/null)" != "$today" ]; then
-        cref="$(printf '%s' "$report" | sed -n 's/.*"central":{[^}]*"ref":"\([^"]*\)".*/\1/p')"
+      if [ -n "$inspector_on" ] && [ "$mdir" != . ] && [ "$(cat "$dmark" 2>/dev/null)" != "$today" ] && in_budget "project-docs freshness"; then
         drift="$("$scripts/inspect-status.sh" drift "$dir" "$cref" 2>/dev/null)"
         if [ "${drift%%	*}" = stale ] && mkdir -p "$mdir" 2>/dev/null && echo "$today" >"$dmark" 2>/dev/null; then
           bun_needed=1
@@ -213,8 +223,9 @@ if [ -n "${reviews_pid:-}" ]; then
   # Its own watchdog should end it within 3 s; this bound holds even if gh ignores the signal
   # (a native gh.exe under Git Bash) — the opener must never be lost to the hook's 20 s timeout.
   n=0
-  while kill -0 "$reviews_pid" 2>/dev/null && [ "$n" -lt "${PG_REVIEWS_WAIT:-40}" ]; do sleep 0.1; n=$((n + 1)); done
+  while kill -0 "$reviews_pid" 2>/dev/null && [ "$n" -lt "${PG_REVIEWS_WAIT:-40}" ] && [ "$SECONDS" -lt "$budget" ]; do sleep 0.1; n=$((n + 1)); done
   if kill -0 "$reviews_pid" 2>/dev/null; then
+    [ "$SECONDS" -lt "$budget" ] || skipped="$skipped${skipped:+, }PRs waiting for your review"
     kill -KILL "$reviews_pid" 2>/dev/null; : >"$reviews_out"
   fi
   wait "$reviews_pid" 2>/dev/null
@@ -226,8 +237,11 @@ if [ -n "${reviews_pid:-}" ]; then
   fi
 fi
 
-resume="$("$scripts/resume-state.sh" "$dir" 2>/dev/null)"
+resume=""; in_budget "unfinished work in the Ono plugins' documents" && resume="$("$scripts/resume-state.sh" "$dir" 2>/dev/null)"
 if [ -n "$resume" ]; then
   printf '\nUnfinished work found in the Ono plugins'"'"' documents (scripts/resume-state.sh — apparent stage; the plugin confirms when it runs):\n%s\n' "$resume"
+fi
+if [ -n "$skipped" ]; then
+  printf '\nSKIPPED (this computer is slow, the start-up check stopped at its time limit): %s. Never say there are none. Do not run them now; only when the employee asks ("where am I") does the session-opener full check get them.\n' "$skipped"
 fi
 exit 0

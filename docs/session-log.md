@@ -2,6 +2,18 @@
 
 ---
 
+## Session 19 — 2026-11-24 — Windows: Bun warning lost with the whole opener (0.7.1)
+
+- Ticket (Ekaterina, `YesPlusSmartTV`, Windows 11): the inspector stopped with `BUN NOT FOUND`, and Guardian had shown no warning, with no SessionStart report at all. Split: Bun-only is the inspector's design (Yagil, A2); the missing warning is Guardian's.
+- Likely cause (not proven on her machine): the start-up hook passed its 20 s timeout, so Claude Code dropped all output. `inspect-status.sh elsewhere` ran up to 3 `git` per remote branch (≤ 200), which is slow in Git Bash. Now one `cat-file --batch-check`: 4.4 s → 0.4 s; hook 7.1 s → 2.2 s on macOS. Alternative cause to ask about: a resumed session (the hook matches only startup|clear).
+- 0.7.1: time budget in the hook (`PG_HOOK_BUDGET` 12 s, optional checks skipped and named in `SKIPPED`); opener fallback runs the full hook; the inspector's own Windows Bun command (verified per-user, no admin); no-permission line; no "run it now" refresh offer without Bun. Declined: an extra Bun banner in the gate for `refresh-recommended`.
+- 805 checks green, mutation-checked (branch search, budget). Independent review: no must-fix; 5 should-fix/nits fixed (the core before the budget runs git-status once, not twice; one SKIPPED rule; a test that passed without the feature; inherited `SECONDS`; backlog wording). Not fixed (older): once-a-day markers are written even when a timed-out hook loses its output.
+- Open: Yagil's side (Bun → Node, or one agreed install command; A2 / A4); confirm on a Windows machine that the opener now arrives.
+- **Process improvement:** every script the SessionStart hook calls is now judged by process count, not macOS seconds. Windows Git Bash multiplies each process start, and a timed-out hook loses everything silently.
+- **Next session:** Yagil's answer on Bun → adjust the TOOLS line; live check of 0.7.1 on Ekaterina's machine.
+
+---
+
 ## Session 18 — 2026-11-22 → 11-23 — Guy's 3 reports (0.6.1), dev plugin 0.8.0 integration (0.7.0)
 
 - 0.6.1 (PR #40): Ono commands come before generic review skills (only where the dev plugin is installed, honest "what ran"), "review A into B" → `/review-code B`, and report-bug shows a draft before writing. Guy's "first message not routed" doesn't reproduce since 0.5.1, but that isn't fully proven.

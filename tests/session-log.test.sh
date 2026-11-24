@@ -314,6 +314,32 @@ expect_absent "INSPECT DOCS only once a day" "$out" "INSPECT DOCS"
 out="$(echo '{}' | PG_LOG_DIR="$WORK/dlog2" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
 expect_absent "inspector not installed → no INSPECT DOCS line" "$out" "INSPECT DOCS"
 
+# the Windows ticket (2026-11-23): inspection made with an older model + no Bun → refresh line AND Bun line
+g -C "$I" switch work; rm -f "$I/docs/project/capabilities.md"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/rlog" PG_BUN=pg-no-such-bun PG_OS=MINGW64_NT-10.0-26100 PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_contains "older model → refresh line" "$out" "INSPECT: complete, but made with an older inspector knowledge model"
+expect_contains "older model + no Bun → Bun TOOLS line (OS: windows)" "$out" "TOOLS: Bun is not installed on this computer (OS: windows)"
+
+# time budget: past it, the optional checks are skipped and named; the git report and TOOLS lines stay
+out="$(echo '{}' | PG_HOOK_BUDGET=0 PG_LOG_DIR="$WORK/blog" PG_BUN=pg-no-such-bun PG_OS=windows PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_contains "budget spent → git report still there" "$out" "Git report"
+expect_contains "budget spent → Bun TOOLS line still there" "$out" "TOOLS: Bun is not installed"
+expect_contains "budget spent → SKIPPED line" "$out" "SKIPPED (this computer is slow"
+expect_contains "…naming the branch search" "$out" "inspection on other branches"
+expect_contains "…and the resume list" "$out" "unfinished work in the Ono plugins' documents"
+g -C "$I" checkout -q -- docs/project/capabilities.md
+out="$(echo '{}' | PG_HOOK_BUDGET=0 PG_LOG_DIR="$WORK/blog2" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_contains "budget spent → docs freshness skipped" "$out" "project-docs freshness"
+expect_absent "…and no INSPECT DOCS line" "$out" "INSPECT DOCS"
+out="$(echo '{}' | PG_HOOK_BUDGET=0 PG_REVIEWS= PG_REVIEWS_TIMEOUT=5 PG_GH="$WORK/gh-stubborn" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "budget spent → a slow review lookup is dropped and named" "$out" "PRs waiting for your review"
+out="$(echo '{}' | SECONDS=50 PG_LOG_DIR="$WORK/blog5" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "an inherited SECONDS doesn't spend the budget" "$out" "SKIPPED"
+out="$(echo '{}' | PG_HOOK_BUDGET=abc PG_LOG_DIR="$WORK/blog3" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "bad budget value → default, nothing skipped" "$out" "SKIPPED"
+out="$(echo '{}' | PG_LOG_DIR="$WORK/blog4" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
+expect_absent "normal run → no SKIPPED line" "$out" "SKIPPED"
+
 echo
 echo "session-log.sh + session-start.sh: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

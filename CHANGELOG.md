@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.1] — 2026-11-24
+
+**Windows: the Bun warning was lost along with the whole opener** (ticket from Ekaterina, `YesPlusSmartTV`, Windows 11. The inspector stopped with `BUN NOT FOUND`, and Guardian had said nothing at session start).
+
+- **Most likely cause: the start-up check ran past its 20 s limit**, and Claude Code then drops all of its output (git report, TOOLS lines, INSPECT lines). On a repo with an older-model inspection, Guardian looks for a newer inspection on the other branches, and that took up to 3 `git` calls per remote branch (≤ 200). Process starts are slow in Git Bash, so that alone could take tens of seconds. Now it's **one** `git cat-file --batch-check` call: 4.4 s → 0.4 s on a 132-branch repo (whole hook 7.1 s → 2.2 s on macOS). Same result.
+- **Time budget inside the start-up check** (`PG_HOOK_BUDGET`, default 12 s). Past it, the optional checks are skipped: the branch search, project-docs freshness, PRs waiting for review, and unfinished-work list. A `SKIPPED (…)` line names them, so the opener never claims there are none (and doesn't re-run them unless the employee asks). The core is not budgeted (git report, inspect status, TOOLS lines), but it got lighter: `inspect-status.sh check` takes the central ref from the git report instead of running `git-status.sh` a second time.
+- **The opener's fallback runs the full start-up check**, not only `git-status.sh`, when the report is missing. The Bun / Node.js / jq and INSPECT lines now come with it.
+- **One Windows Bun command, the inspector's own:** `powershell -c "irm bun.sh/install.ps1 | iex"`, which installs in the user's folder with no admin (was `winget install Oven-sh.Bun`). Used in the opener and the inspect-gate banner.
+- **No permission to install software:** the Bun line adds "ask IT, or a teammate who has Bun can run the inspector command". With Bun missing, the older-model refresh is no longer offered as "run it now" (it would stop at once). It's one ℹ️ line pointing to Bun or a teammate.
+- Not changed (by choice): no extra Bun banner in the inspect gate for `refresh-recommended`. That repo isn't blocked, the start-up line covers it, and the inspector's own check stops cleanly before writing anything. Running the inspector on Node.js instead of Bun is the inspector's decision (backlog A2).
+
 ## [0.7.0] — 2026-11-23
 
 **Works with ono-mobile-dev-plugin 0.8.0** (Yagil's answer to the 2026-11-22 handoff, A1 / A3 / A5 and the dev-plugin half of A2), following its `docs/guardian-integration.md`.

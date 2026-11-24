@@ -176,13 +176,14 @@ esac
 if [ "$status" != on-central ] && ! command -v "${PG_BUN:-bun}" >/dev/null 2>&1; then
   case "${PG_OS:-$(uname -s 2>/dev/null)}" in
     windows|MINGW*|MSYS*|CYGWIN*|Windows_NT)
-      bun="in PowerShell (not here):  winget install Oven-sh.Bun" ;;
+      bun='in PowerShell (not here):  powershell -c "irm bun.sh/install.ps1 | iex"' ;;
     mac|Darwin)
       bun="in the Terminal app (not here):  brew install oven-sh/bun/bun   (no Homebrew: curl -fsSL https://bun.sh/install | bash)" ;;
     *) bun="in a terminal (not here):  curl -fsSL https://bun.sh/install | bash" ;;
   esac
   fix="👉 First install Bun (the inspector runs on it) — $bun
    then quit Claude Code and open it again from a new window.
+   (Not allowed to install software? Ask IT — or a teammate who has Bun can run the inspection.)
 $fix"
 fi
 # the inspector writes files → a work branch first (it's blocked on a protected branch)
