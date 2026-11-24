@@ -49,56 +49,44 @@ case "$report" in
   *) "$scripts/protected-branch.sh" forget "$dir" ;;
 esac
 
-# Guardian needs neither jq nor Node, but the Ono dev plugin does. Its hooks (0.7.6–0.7.7) read every
-# file change with jq and, without it, block every write — from 0.8.0 they fall back to Node, so jq
-# is checked only for an older (or unknown) version; its scripts (0.7.7+) need Node 22.18+ on
-# the 22 line or Node 24+, and every command stops on anything older. Checked only when that
-# plugin is installed (unknown list → assume it is). This sees the node on Claude Code's own PATH;
-# the plugin's commands run node through the Bash tool, which can load a different one (nvm set up
-# only in the shell), so the opener line also says how to check inside Claude Code.
+# Guardian needs neither jq nor Node, but the Ono plugins do.
+# - The dev plugin's hooks (0.7.6–0.7.7) read every file change with jq and, without it, block every
+#   write — from 0.8.0 they fall back to Node, so jq is checked only for an older (or unknown) version.
+# - Node.js: the dev plugin (0.7.7+) and the inspector (0.12.0+, which replaced Bun) both need
+#   Node 22.18+ on the 22 line or Node 24+, and stop on anything older. One check, one TOOLS line naming
+#   whichever of them is installed (unknown list → assume the dev plugin). With the inspector's own
+#   preflight (scripts/node-preflight.mjs) when it has one, else `node -v` — scripts/node-check.sh.
+# - An inspector older than 0.12.0 still runs on Bun. Without Bun the fix is updating the inspector,
+#   not installing Bun — said only when the inspector has something to do here (the INSPECT lines below).
+# - Inspector not installed → no inspector runtime line at all.
 no_jq=""
-old_node=""
-plugins="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
+node_for=""
+plugins="${PG_PLUGINS_FILE:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/installed_plugins.json}"
 if [ ! -f "$plugins" ] || grep -q '"ono-mobile-dev-plugin@' "$plugins" 2>/dev/null; then
-  case "$("$scripts/dev-plugin.sh" version 2>/dev/null)" in
+  case "$("$scripts/ono-plugin.sh" version ono-mobile-dev-plugin 2>/dev/null)" in
     [1-9]*|0.[8-9].*|0.[1-9][0-9]*) ;;                       # 0.8.0+: Node fallback, jq optional
     *) command -v "${PG_JQ:-jq}" >/dev/null 2>&1 || no_jq=1 ;;
   esac
-  node_bin="${PG_NODE:-node}"
-  if ! command -v "$node_bin" >/dev/null 2>&1; then
-    old_node="none"
-  else
-    # A broken shim must not eat the whole opener (the hook has 20 s): one watchdog, as in git-status.sh.
-    node_out="$(mktemp "${TMPDIR:-/tmp}/pg-node.XXXXXX" 2>/dev/null)"
-    if [ -n "$node_out" ]; then
-      "$node_bin" -v </dev/null >"$node_out" 2>/dev/null &
-      pid=$!
-      ( sleep "${PG_NODE_TIMEOUT:-2}"; kill -TERM "$pid" ) >/dev/null 2>&1 &
-      dog=$!
-      wait "$pid" 2>/dev/null
-      if kill -0 "$dog" 2>/dev/null; then pkill -TERM -P "$dog" 2>/dev/null; kill -TERM "$dog" 2>/dev/null; fi
-      wait "$dog" 2>/dev/null
-      node_v="$(head -1 "$node_out" | tr -d '\r')"
-      rm -f "$node_out"
-      node_major="${node_v#v}"; node_major="${node_major%%.*}"
-      node_minor="${node_v#v*.}"; node_minor="${node_minor%%.*}"
-      case "$node_v:$node_major:$node_minor" in
-        v*:*[!0-9:]*|v*::*|v*:*:|[!v]*|"":*) old_node="unreadable" ;;
-        *) if [ "${#node_major}" -le 4 ] && { [ "$node_major" -ge 24 ] || { [ "$node_major" -eq 22 ] && [ "$node_minor" -ge 18 ]; }; }; then :
-           else old_node="$node_v"; fi ;;
-      esac
-    fi
-  fi
+  node_for="The Ono dev plugin (0.7.7+)"
 fi
-
-# The Ono Project Inspector runs every helper on Bun and stops without it (its own check-bun.sh).
-# Only worth a line when the inspector has something to do here (see the INSPECT lines below).
-no_bun=""
 inspector_on=""
-if [ ! -f "$plugins" ] || grep -q '"ono-project-inspector@' "$plugins" 2>/dev/null; then
+old_inspector=""   # its version, when it still runs on Bun and Bun is missing
+preflight=""
+if insp_rt="$("$scripts/ono-plugin.sh" inspector-runtime 2>/dev/null)"; then
   inspector_on=1
-  command -v "${PG_BUN:-bun}" >/dev/null 2>&1 || no_bun=1
+  case "$insp_rt" in
+    node\ *) preflight="${insp_rt#node }"
+            if [ -n "$node_for" ]; then node_for="$node_for and the Ono Project Inspector (0.12.0+)"
+            else node_for="The Ono Project Inspector (0.12.0+)"; fi ;;
+    bun\ *) command -v "${PG_BUN:-bun}" >/dev/null 2>&1 || old_inspector="${insp_rt#bun }" ;;
+  esac
 fi
+node_state=""
+if [ -n "$node_for" ]; then
+  if [ -n "$preflight" ]; then node_state="$("$scripts/node-check.sh" "$preflight" 2>/dev/null)"
+  else node_state="$("$scripts/node-check.sh" 2>/dev/null)"; fi
+fi
+case "$node_state" in ok*) node_state="" ;; esac
 
 # Plugins Guardian no longer installs (removed from its dependencies in 0.5.0). Removing a
 # dependency never uninstalls it, so tell the employee once how to remove them.
@@ -136,7 +124,8 @@ Your reply to their first message is ONLY the welcome, so the tour offer can't g
 2. Their first message was a task or a question → one short line that you got it and will get to it right after the tour question (don't start on it).
 3. The git report needs attention (behind central, on central, central unclear) → at most one line that you'll sort it out right after — no question, no options.
 ${no_jq:+3b. The TOOLS line below (jq missing) → its one ⚠️ line here, before the tour offer.
-}${old_node:+3c. The TOOLS line below (Node.js) → its one ⚠️ line here, before the tour offer.
+}${node_state:+3c. The TOOLS line below (Node.js) → its one ⚠️ line here, before the tour offer.
+}${old_inspector:+3d. If a TOOLS line below is about updating the Ono Project Inspector → its one ⚠️ line here, before the tour offer.
 }4. Last, on its own line, in bold: "Want a quick 3-minute tour of how to work with me? 👉 Type **yes** for the tour, or **later** to skip it for now."
 Then STOP and wait. No git summary, no git questions, no "what are we working on", nothing after the offer — a second question gets answered instead and the tour is missed.
 If yes → run the \`platform-guardian:onboarding\` skill. If later → tell them they can type **onboarding** any time, plus the one-time setup so they always get the latest version: \`/plugin\` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — then run the normal opener (session-opener steps 1–4) and get back to their first message.
@@ -152,10 +141,10 @@ fi
 
 cref="$(printf '%s' "$report" | sed -n 's/.*"central":{[^}]*"ref":"\([^"]*\)".*/\1/p')"
 inspect="$("$scripts/inspect-status.sh" check "$dir" "$cref" 2>/dev/null)"
-bun_needed=""
+insp_needed=""
 case "${inspect%%	*}" in
   missing|partial|on-central)
-    [ "${inspect%%	*}" = on-central ] || bun_needed=1
+    [ "${inspect%%	*}" = on-central ] || insp_needed=1
     newer=""; in_budget "inspection on other branches" && newer="$("$scripts/inspect-status.sh" elsewhere "$dir" 2>/dev/null)"
     [ -n "$newer" ] && printf '\nINSPECT: FYI — a complete inspection exists on %s (never merged into this branch).\n' "$newer"
     d="${inspect#*	}"
@@ -163,7 +152,7 @@ case "${inspect%%	*}" in
       "${inspect%%	*}" "${d:+ ($d)}" ;;
   done)
     case "${inspect#*	}" in refresh-recommended:*)
-      bun_needed=1
+      insp_needed=1
       newer=""; in_budget "inspection on other branches" && newer="$("$scripts/inspect-status.sh" elsewhere "$dir" 2>/dev/null)"
       printf '\nINSPECT: complete, but made with an older inspector knowledge model (missing:%s)%s. Not a block — follow session-opener step 0b (offer the refresh).\n' \
         "${inspect#*refresh-recommended:}" "${newer:+; a current-model inspection exists on $newer (never merged into this branch)}" ;;
@@ -177,7 +166,7 @@ case "${inspect%%	*}" in
       today="$(date '+%Y-%m-%d')"
       if [ -n "$proj" ] && [ ! -f "$proj/.ono/repo-knowledge.json" ] && [ "$mdir" != . ] && [ -n "$inspector_on" ] &&
          [ "$(cat "$mark" 2>/dev/null)" != "$today" ] && mkdir -p "$mdir" 2>/dev/null && echo "$today" >"$mark" 2>/dev/null; then
-        bun_needed=1
+        insp_needed=1
         printf '\nINSPECT: complete, but .ono/repo-knowledge.json is missing (inspected before the inspector wrote that file), so the Ono dev plugin re-reads the code on every analysis — slower, more tokens. Not a block — follow session-opener step 0b (the manifest line). Shown once today.\n'
       fi
       # The project docs (CLAUDE.md, docs/project/*) behind the code: a git-only check, no tokens.
@@ -186,7 +175,7 @@ case "${inspect%%	*}" in
       if [ -n "$inspector_on" ] && [ "$mdir" != . ] && [ "$(cat "$dmark" 2>/dev/null)" != "$today" ] && in_budget "project-docs freshness"; then
         drift="$("$scripts/inspect-status.sh" drift "$dir" "$cref" 2>/dev/null)"
         if [ "${drift%%	*}" = stale ] && mkdir -p "$mdir" 2>/dev/null && echo "$today" >"$dmark" 2>/dev/null; then
-          bun_needed=1
+          insp_needed=1
           printf '\nINSPECT DOCS: the project docs (CLAUDE.md, docs/project/*) on the central branch are behind its code — %s. Not a block — follow session-opener step 0b (the docs-refresh offer). Shown once today.\n' "${drift#*	}"
         fi
       fi ;;
@@ -198,16 +187,19 @@ esac
 if [ -n "$no_jq" ]; then
   printf '\nTOOLS: jq is not installed on this computer (OS: %s), and the installed Ono dev plugin (0.7.6–0.7.7) checks every file change with it: without jq it blocks file changes on every branch — updating the dev plugin to 0.8.0+ also fixes it. Add one ⚠️ line (information, not a question) with the fix for this OS — see session-opener step 1.\n' "$os"
 fi
-if [ -n "$no_bun" ] && [ -n "$bun_needed" ]; then
-  printf '\nTOOLS: Bun is not installed on this computer (OS: %s), and the Ono Project Inspector runs on Bun: without it every inspector command stops before doing anything. Add one ⚠️ line (information, not a question) with the fix for this OS — see session-opener step 1.\n' "$os"
+if [ -n "$old_inspector" ] && [ -n "$insp_needed" ]; then
+  printf '\nTOOLS: the installed Ono Project Inspector is %s, which still runs on Bun, and Bun is not installed on this computer (OS: %s): every inspector command stops before doing anything. The fix is updating the inspector — 0.12.0+ needs no Bun (it needs Node.js 22.18+ or 24+, like the dev plugin); never suggest installing Bun. Add one ⚠️ line (information, not a question) — see session-opener step 1.\n' "$old_inspector" "$os"
 fi
-if [ -n "$old_node" ]; then
-  case "$old_node" in
-    none) node_found="no Node.js was found" ;;
-    unreadable) node_found="\`node -v\` gave no version (broken install or NODE_OPTIONS)" ;;
-    *) node_found="this computer's Node.js is $old_node (unsupported)" ;;
+if [ -n "$node_state" ]; then
+  case "$node_state" in
+    none*) node_found="no Node.js was found" ;;
+    unreadable*) node_found="Node.js gave no version (broken install, NODE_OPTIONS, a very slow start, or its check failed)" ;;
+    *) node_v="${node_state#*	}"; node_found="this computer's Node.js ${node_v%%	*} is unsupported" ;;
   esac
-  printf '\nTOOLS: %s (OS: %s), and the Ono dev plugin (0.7.7+) needs Node.js 22.18 or later on Node 22, or Node.js 24 or later: on anything else every dev-plugin command stops at its Node check, and an approved Bug Fix Cycle no longer skips the code-edit approval prompt. Add one ⚠️ line (information, not a question) with the fix for this OS — see session-opener step 1.\n' "$node_found" "$os"
+  case "$node_for" in *" and "*) need=need; their=their ;; *) need=needs; their=its ;; esac
+  case "$node_for" in *"dev plugin"*) extra=", and an approved Bug Fix Cycle no longer skips the code-edit approval prompt" ;; *) extra="" ;; esac
+  printf '\nTOOLS: %s (OS: %s). %s %s Node.js 22.18 or later on Node 22, or Node.js 24 or later: on anything else %s commands stop at the Node check%s. Add one ⚠️ line (information, not a question) with the fix for this OS — see session-opener step 1.\n' \
+    "$node_found" "$os" "$node_for" "$need" "$their" "$extra"
 fi
 
 # Once per computer, and not in the same reply as the first-time welcome (it waits a session).

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # PreToolUse hook (Write | Edit | NotebookEdit | Skill | SlashCommand | Agent | Task): no file
 # writes on a protected branch, and Claude never starts the Ono Project Inspector there (it writes
-# files, partly through bun scripts no write hook sees — the inspect gate stops the employee's
+# files, partly through helper scripts no write hook sees — the inspect gate stops the employee's
 # typed command; this stops Claude starting it through a tool). Read-only inspect-status is fine.
 # Protected = main, master, and the project's central branch when it's certain
 # (scripts/protected-branch.sh). Guardian's own rule — it doesn't rely on any Ono plugin's hook

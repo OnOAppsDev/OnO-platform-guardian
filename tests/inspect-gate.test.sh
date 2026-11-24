@@ -127,14 +127,41 @@ gate UserPromptSubmit "hi";                         eq "missing: plain message b
 reason="$(printf '%s' "$OUT" | jq -r .reason)"
 case "$reason" in *"⛔"*"/ono-project-inspector:inspect"*"I have manager approval to work without inspect"*) ok ;; *) fail "banner: red, command, sentence" "$reason" ;; esac
 gate UserPromptSubmit "fix bug YEA-1";              eq "missing: task blocked" "$DEC" block
-# Bun missing → the banner says to install it first, with this OS's command
+# the inspector's runtime: an old one without Bun → "update the inspector" (never "install Bun");
+# 0.12.0+ → its Node.js preflight decides; not installed / version unknown → no runtime line
+reason_of() { printf '%s' "$OUT" | jq -r .reason; }
 printf '#!/bin/sh\necho 1.2.0\n' >"$WORK/bun"; chmod +x "$WORK/bun"
-PG_BUN=pg-no-such-bun PG_OS=MINGW64_NT-10.0 gate UserPromptSubmit "hi"
-case "$(printf '%s' "$OUT" | jq -r .reason)" in *"First install Bun"*'powershell -c "irm bun.sh/install.ps1 | iex"'*"Ask IT"*"/ono-project-inspector:inspect"*) ok ;; *) fail "no Bun on Windows → the inspector PowerShell line + no-admin hint before inspect" "$OUT" ;; esac
-PG_BUN=pg-no-such-bun PG_OS=Darwin gate UserPromptSubmit "hi"
-case "$(printf '%s' "$OUT" | jq -r .reason)" in *"brew install oven-sh/bun/bun"*) ok ;; *) fail "no Bun on macOS → brew line" "$OUT" ;; esac
-PG_BUN="$WORK/bun" gate UserPromptSubmit "hi"
-case "$(printf '%s' "$OUT" | jq -r .reason)" in *"Bun"*) fail "Bun present → no Bun line" "$OUT" ;; *) ok ;; esac
+mkdir -p "$WORK/insp-old" "$WORK/insp-new/scripts"; : >"$WORK/insp-new/scripts/node-preflight.mjs"
+printf '{"version":2,"plugins":{"ono-project-inspector@ono-plugin-marketplace":[{"scope":"user","installPath":"%s","version":"0.11.3"}]}}\n' "$WORK/insp-old" >"$WORK/claude/old.json"
+printf '{"version":2,"plugins":{"ono-project-inspector@ono-plugin-marketplace":[{"scope":"user","installPath":"%s","version":"0.12.0"}]}}\n' "$WORK/insp-new" >"$WORK/claude/new.json"
+mk_pf() { printf '#!/bin/sh\nprintf '"'"'%%s\\n'"'"' '"'"'%s'"'"'\nexit %s\n' "$2" "$3" >"$WORK/$1"; chmod +x "$WORK/$1"; }
+mk_pf pf-ok '{"supported":true,"version":"24.1.0","execPath":"/n","required":"r","message":"ok"}' 0
+mk_pf pf-bad '{"supported":false,"version":"20.19.4","execPath":"/n","required":"r","message":"Unsupported Node.js v20.19.4 (/n). Check it inside Claude Code with `! node -v`."}' 1
+mk_pf pf-crash '' 3
+PG_PLUGINS_FILE="$WORK/claude/old.json" PG_BUN=pg-no-such-bun gate UserPromptSubmit "hi"
+case "$(reason_of)" in *"First update the inspector"*"(0.11.3) still needs Bun"*"Update marketplace"*"/ono-project-inspector:inspect"*) ok ;; *) fail "old inspector, no Bun → update line before inspect" "$OUT" ;; esac
+case "$(reason_of)" in *"bun.sh"*|*"install Bun"*|*"Install Bun"*) fail "old inspector → never 'install Bun'" "$OUT" ;; *) ok ;; esac
+PG_PLUGINS_FILE="$WORK/claude/old.json" PG_BUN="$WORK/bun" gate UserPromptSubmit "hi"
+case "$(reason_of)" in *"Bun"*) fail "old inspector + Bun present → no runtime line" "$OUT" ;; *) ok ;; esac
+PG_PLUGINS_FILE="$WORK/claude/new.json" PG_BUN=pg-no-such-bun PG_NODE="$WORK/pf-ok" gate UserPromptSubmit "hi"
+case "$(reason_of)" in *"Bun"*|*"Node.js"*) fail "0.12.0 + preflight ok, no Bun → no runtime line" "$OUT" ;; *) ok ;; esac
+PG_PLUGINS_FILE="$WORK/claude/new.json" PG_NODE="$WORK/pf-bad" PG_OS=MINGW64_NT-10.0 gate UserPromptSubmit "hi"
+case "$(reason_of)" in *"First fix Node.js"*'Unsupported Node.js v20.19.4 (/n). Check it inside Claude Code with `! node -v`.'*"winget install OpenJS.NodeJS.LTS"*"/ono-project-inspector:inspect"*) ok ;; *) fail "0.12.0 + unsupported → preflight message verbatim + Windows fix before inspect" "$OUT" ;; esac
+PG_PLUGINS_FILE="$WORK/claude/new.json" PG_NODE="$WORK/pf-crash" PG_OS=Darwin gate UserPromptSubmit "hi"
+case "$(reason_of)" in *"First fix Node.js"*"nvm install 24"*) ok ;; *) fail "0.12.0 + preflight crash → not supported, macOS fix" "$OUT" ;; esac
+PG_PLUGINS_FILE="$WORK/claude/new.json" PG_NODE=pg-no-such-node gate UserPromptSubmit "hi"
+case "$(reason_of)" in *"First install Node.js 24"*) ok ;; *) fail "0.12.0 + no node → install Node.js" "$OUT" ;; esac
+PG_BUN=pg-no-such-bun PG_NODE=pg-no-such-node gate UserPromptSubmit "hi"
+case "$(reason_of)" in *"Bun"*|*"Node.js"*) fail "version unknown (no installPath) → no runtime line" "$OUT" ;; *) ok ;; esac
+PG_PLUGINS_FILE="$WORK/claude/no-such-list.json" PG_BUN=pg-no-such-bun PG_NODE=pg-no-such-node gate UserPromptSubmit "hi"
+case "$(reason_of)" in *"Bun"*|*"Node.js"*) fail "no plugins list (version unknown) → no runtime line" "$OUT" ;; *) ok ;; esac
+printf '{"enabledPlugins":{"ono-project-inspector@ono-plugin-marketplace":false}}\n' >"$WORK/claude/settings.json"
+PG_PLUGINS_FILE="$WORK/claude/new.json" PG_NODE="$WORK/pf-bad" gate UserPromptSubmit "hi"
+case "$(reason_of)" in *"First turn the inspector on"*) case "$(reason_of)" in *"Node.js"*) fail "inspector turned off → no runtime line" "$OUT" ;; *) ok ;; esac ;; *) fail "inspector turned off → enable line" "$OUT" ;; esac
+rm -f "$WORK/claude/settings.json"
+printf '{"version":2,"plugins":{}}\n' >"$WORK/claude/none.json"
+PG_PLUGINS_FILE="$WORK/claude/none.json" PG_BUN=pg-no-such-bun PG_NODE=pg-no-such-node gate UserPromptSubmit "hi"
+case "$(reason_of)" in *"First install the inspector"*) case "$(reason_of)" in *"Bun"*|*"Node.js"*) fail "inspector not installed → no runtime line" "$OUT" ;; *) ok ;; esac ;; *) fail "inspector not installed → install line" "$OUT" ;; esac
 gate UserPromptExpansion "/ono-mobile-dev-plugin:analyze-bug YEA-1"; eq "Ono plugin command blocked" "$DEC" block
 gate UserPromptExpansion "/analyze-bug YEA-1";      eq "short Ono command blocked" "$DEC" block
 gate UserPromptExpansion "/clear";                  eq "built-in /clear allowed" "$DEC" none
