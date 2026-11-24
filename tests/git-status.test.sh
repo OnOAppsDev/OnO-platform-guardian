@@ -16,6 +16,9 @@ unset CLAUDE_PROJECT_DIR GIT_SSH_COMMAND PG_NO_FETCH PG_FETCH_TIMEOUT
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/pg-git-status.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
+# the employee's remembered answer lives here (protected-branch.sh answer) — never the real ~/.claude
+export PG_LOG_DIR="$WORK/state"
+PB="$HERE/../scripts/protected-branch.sh"
 
 PASS=0 FAIL=0 CASE=""
 OUT=""
@@ -330,6 +333,83 @@ case_ "many files → truncated list, exact counts"
 for i in $(seq 1 25); do touch "$W/n$i.txt"; done
 run "$W"
 check '.changes.total == 29 and (.changes.files | length) == 20 and .changes.truncated == true'
+
+# --- main/master + develop: the history decides (Guy's report, 2026-11-24) ---
+case_ "git-flow: develop has work master lacks, master nothing develop lacks → develop, high"
+RG="$(new_remote gflow develop)"; CG="$(clone "$RG" gflow)"
+g -C "$CG" checkout develop; commit "$CG" f.txt; commit "$CG" f.txt; g -C "$CG" push origin develop
+run "$CG"
+check '.central.branch == "develop" and .central.ref == "origin/develop" and .central.source == "gitflow" and .central.confidence == "high"'
+check ".onCentral == true and $(no_warning central-ambiguous)" "on develop → on central, no question"
+g -C "$CG" checkout -b feature/x; commit "$CG" x.txt
+run "$CG"
+check '.central.branch == "develop" and .ahead == 1 and .behind == 0 and .onCentral == false'
+
+case_ "release: develop merged into master with a merge commit → develop stays central"
+g -C "$CG" checkout main; g -C "$CG" merge --no-ff -m "release 1.0" develop; g -C "$CG" push origin main
+g -C "$CG" checkout feature/x
+run "$CG"
+check '.central.branch == "develop" and .central.source == "gitflow" and .behind == 0' "a release merge on master isn't master's own work"
+g -C "$CG" checkout develop; commit "$CG" f2.txt; g -C "$CG" push origin develop
+run "$CG"
+check '.central.branch == "develop" and .central.confidence == "high"' "…and after develop moves on"
+
+case_ "git-flow with dev instead of develop"
+RD="$(new_remote gdev dev)"; CD="$(clone "$RD" gdev)"
+g -C "$CD" checkout dev; commit "$CD" f.txt; g -C "$CD" push origin dev
+run "$CD"
+check '.central.branch == "dev" and .central.source == "gitflow"'
+
+case_ "master has commits of its own (stale develop, or a hotfix) → ambiguous, never master-high"
+RS="$(new_remote stale develop)"; CS="$(clone "$RS" stale)"
+commit "$CS" m.txt; g -C "$CS" push origin main
+run "$CS"
+check ".central.branch == \"main\" and .central.confidence == \"medium\" and $(has_warning central-ambiguous)"
+
+case_ "both have their own commits → still ambiguous (the opener asks)"
+g -C "$CS" checkout develop; commit "$CS" d.txt; g -C "$CS" push origin develop
+run "$CS"
+check ".central.branch == \"main\" and .central.confidence == \"medium\" and $(has_warning central-ambiguous)"
+
+# --- the employee's answer, remembered on this computer ---
+case_ "answered → that branch, high, no question"
+eq_out="$("$PB" answer "$CS" origin/develop)"; RC=$?
+OUT="{\"stored\":\"$eq_out\",\"rc\":$RC}"; RC=0
+check '.stored == "develop" and .rc == 0' "origin/develop is stored as develop, and printed"
+run "$CS"
+check ".central.branch == \"develop\" and .central.source == \"answered\" and .central.confidence == \"high\" and $(no_warning central-ambiguous)"
+OUT="{\"check\":\"$("$PB" check "$CS" | cut -f1)\"}"; RC=0
+check '.check == "protected"' "protected right away, in the same session (on develop)"
+"$PB" forget "$CS"
+run "$CS"
+check '.central.source == "answered"' "the answer survives forget (only the guess cache is dropped)"
+OUT="$(PG_NO_FETCH=1 PG_SUSPECT_AHEAD=0 "$SCRIPT" "$CS")"; RC=$?
+check '.central.source == "answered" and .central.confidence == "high"' "an answer is never second-guessed as suspect"
+
+case_ "a name that isn't a branch here is refused, the earlier answer kept"
+"$PB" answer "$CS" release/nope >/dev/null; r1=$?
+"$PB" answer "$CS" "bad..name" >/dev/null; r2=$?
+OUT="{\"r1\":$r1,\"r2\":$r2,\"kept\":\"$("$PB" answered "$CS")\"}"; RC=0
+check '.r1 == 1 and .r2 == 1 and .kept == "develop"'
+
+case_ "the team's .platform-guardian.json wins over the local answer"
+printf '{"centralBranch": "main"}\n' >"$CS/.platform-guardian.json"
+run "$CS"
+check '.central.branch == "main" and .central.source == "override"'
+rm -f "$CS/.platform-guardian.json"
+
+case_ "answers are per repo"
+RP="$(new_remote other2 develop)"; CP="$(clone "$RP" other2)"
+commit "$CP" m.txt; g -C "$CP" push origin main    # ambiguous on its own
+run "$CP"
+check ".central.source != \"answered\" and $(has_warning central-ambiguous)" "another repo doesn't get CS's answer"
+
+case_ "an answered branch that was deleted since → ignored, normal detection"
+g -C "$CS" checkout -b team/main2; g -C "$CS" push origin team/main2
+"$PB" answer "$CS" team/main2 >/dev/null
+g -C "$CS" checkout develop; g -C "$CS" branch -D team/main2; g -C "$CS" push origin --delete team/main2; g -C "$CS" fetch --prune origin
+run "$CS"
+check ".central.source != \"answered\" and $(has_warning central-ambiguous)"
 
 # ---------------------------------------------------------------------------
 

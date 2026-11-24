@@ -8,7 +8,8 @@
 # outside a repo, or on any git error, it still prints valid JSON.
 #
 # Central-branch detection order (docs/vision.md):
-#   .platform-guardian.json "centralBranch" → origin/HEAD → develop → dev → main → master
+#   .platform-guardian.json "centralBranch" → the employee's answer on this computer → origin/HEAD
+#   (main/master with a develop/dev beside it: the history decides, see below) → develop → dev → main → master
 #   (origin/HEAD with an unusual name while a conventional branch exists, or a branch thousands of
 #   commits ahead of it, is suspect → confidence low + central-ambiguous: the opener asks once)
 #
@@ -172,6 +173,18 @@ if [ -f .platform-guardian.json ]; then
   fi
 fi
 
+# 1b. The employee's own answer on this computer (session opener, protected-branch.sh answer):
+# asked once per repo, not every session, even before the team's .platform-guardian.json is merged.
+if [ -z "$central" ] && [ -z "$override" ]; then
+  # read directly (a process start costs on Windows); the key is protected-branch.sh's cache_file
+  k="${root//_/__}"; k="${k// /+}"; answered=""
+  f="${PG_LOG_DIR:-$HOME/.claude/platform-guardian}/.state/answered-central${k//\//_}"
+  [ -f "$f" ] && IFS= read -r answered <"$f"
+  if [ -n "$answered" ] && r="$(ref_for "$answered")" && [ -n "$r" ]; then
+    central="$answered"; central_ref="$r"; source="answered"; confidence="high"
+  fi
+fi
+
 # Fallback candidates that exist (develop/dev/main/master).
 candidates=""
 for name in develop dev main master; do
@@ -194,10 +207,30 @@ if [ -z "$central" ] && [ -n "$remote" ]; then
       # e.g. a feature / staging branch set as the remote's default → don't trust it, ask
       confidence="low"; warn "central-ambiguous"
       printf ' %s ' "$candidates" | grep -q " $central " || candidates="$candidates $central"
-    # Default is main/master but a develop / dev branch also exists → ambiguous.
+    # Default is main/master but a develop / dev branch also exists. The history decides
+    # (git-flow — Guy's report, 2026-11-24): when master holds no commit of its own except merge
+    # commits (releases merged in from develop / release branches), and the two differ, work lands
+    # on develop → develop. A merge commit alone never counts as master's own work: right after a
+    # develop→master release, master is 1 merge ahead and develop must still win. Anything else
+    # (master has real commits of its own, or the two are identical) → ambiguous: the opener asks
+    # once and remembers. The rule never picks master with confidence: a fresh hotfix on master
+    # looks just like a stale develop.
     elif [ "$central" != "develop" ] && [ "$central" != "dev" ] &&
          printf ' %s ' "$candidates" | grep -Eq ' (develop|dev) '; then
-      confidence="medium"; warn "central-ambiguous"
+      case " $candidates " in *" develop "*) dname=develop ;; *) dname=dev ;; esac
+      dref="$(ref_for "$dname")"
+      split="$(git rev-list --left-right --count "$dref...$central_ref" 2>/dev/null)"
+      d_all="${split%%[[:space:]]*}"; m_all="${split##*[[:space:]]}"
+      m_real=""
+      case "$d_all:$m_all" in
+        *[!0-9:]*|:*|*:|0:0) ;;
+        *) m_real="$(git rev-list --count --no-merges "$dref..$central_ref" 2>/dev/null)" ;;
+      esac
+      if [ "$m_real" = 0 ]; then
+        central="$dname"; central_ref="$dref"; source="gitflow"; confidence="high"
+      else
+        confidence="medium"; warn "central-ambiguous"
+      fi
     else
       confidence="high"
     fi
@@ -231,7 +264,7 @@ if [ -n "$central_ref" ] && ! $unborn; then
   case "$behind" in ''|*[!0-9]*) ;; 0) ;; *) warn "behind-central" ;; esac
   # thousands of commits ahead of the "central" branch: almost surely the wrong central → ask
   case "$ahead" in ''|*[!0-9]*) ;; *)
-    if [ "$source" != "override" ] && [ "$ahead" -gt "${PG_SUSPECT_AHEAD:-1000}" ] && [ "$confidence" != "low" ]; then
+    if [ "$source" != "override" ] && [ "$source" != "answered" ] && [ "$ahead" -gt "${PG_SUSPECT_AHEAD:-1000}" ] && [ "$confidence" != "low" ]; then
       confidence="low"
       case "$WARNINGS" in *central-ambiguous*) ;; *) warn "central-ambiguous" ;; esac
     fi ;;

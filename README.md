@@ -59,7 +59,7 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 
 ## 🔐 Git rules Guardian follows
 
-- **Central branch per project** (usually `develop`): `.platform-guardian.json` override → `origin/HEAD` → `develop` → `main` → `master`. Unsure → it asks.
+- **Central branch per project** (usually `develop`): `.platform-guardian.json` override → the employee's own earlier answer (kept on their computer) → `origin/HEAD` (when that's `main`/`master` beside a `develop` and master has no commits of its own except release merges → `develop`) → `develop` → `main` → `master`. Unsure → it asks once per repo, remembers the answer on the employee's computer, and offers to save it for the team. When the first message is read-only (a PR review, a question), git questions wait until work that writes files starts.
 - **Never pushes to the central branch.** Everything goes back through a PR; it asks before every push or PR, and you pick the target and reviewers.
 - **Never updates your branch silently** and never uses force operations.
 - **Offline?** The server check gives up after 5 seconds, and Guardian tells you the numbers may be out of date instead of calling you "up to date".

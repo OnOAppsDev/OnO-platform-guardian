@@ -65,7 +65,7 @@ When someone asks you to review their PR, Guardian shows it when you start a ses
 ## Good to know
 
 - Want a document in the PR? Just say so — "put docs/login-notes.md in the PR". A project that always commits some paths lists them in `.platform-guardian.json`: `"commitPaths": ["docs/specs/**"]`.
-- Tired of the "which branch is the main one?" question in a project? Add `.platform-guardian.json` to that project with `{"centralBranch": "<its main branch>"}` and commit it — the whole team stops getting asked.
+- Asked "which branch is the main one?" — Guardian remembers your answer for that project on your computer, so you're asked once (wrong answer? just say "the central branch is …"). To spare your teammates too, add `.platform-guardian.json` to that project with `{"centralBranch": "<its main branch>"}` and commit it — the whole team stops getting asked.
 - 🎉 Your **first** session after installing opens with a welcome and a 3-minute tour — say yes.
 - 🎓 Type **onboarding** any time to see the tour again.
 - Guardian never pushes to the main branch, never updates your branch without asking, never commits secrets.

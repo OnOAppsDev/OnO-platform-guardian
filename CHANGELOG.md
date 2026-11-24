@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.7.2] — 2026-11-24
+
+**The central branch is no longer asked every session** (Guy, `yes_plus_mobile_android`: "develop or master?" at the start of every session, even before a read-only PR review).
+
+- **`develop` beside `master` decided from history.** When the remote's default is `main`/`master` and a `develop`/`dev` exists, `git-status.sh` checks whether master has any commit of its own **other than merge commits**:
+  - **No, and the two differ → `develop`**, confidence high, `source: gitflow`. Release merges (develop or a release branch merged into master) don't count as master's own work, so a release doesn't flip it.
+    - Guy's repo: 41 commits ahead, 0 behind.
+    - `yestvos`: 3588 ahead; master's last commit is from 2021.
+  - **Anything else → still unsure, the opener asks.** That covers master having real commits of its own (a stale develop, or a fresh hotfix, which look the same) and identical branches. The rule never picks master with confidence.
+- **Behavior change: in these repos `develop` is now protected.** Guardian used to guess `master`, so `develop` counted as a plain work branch. Now the write guard and commit guard block file changes and commits directly on `develop`, and the opener offers a work branch, as on any central branch.
+- **The employee's answer is remembered on their computer:**
+  - `protected-branch.sh answer` stores it outside the repo, per repo folder. It accepts `origin/develop` for `develop`, refuses a name that isn't a branch there (so the opener never says "saved" when it wasn't), and protects the branch right away.
+  - `git-status.sh` reads it right after the team's `.platform-guardian.json` (`source: answered`, high, never second-guessed as suspect).
+  - So it's asked once per employee per repo folder. A separate git worktree is asked once too.
+  - The employee can correct it any time ("the central branch is actually …").
+  - Offering to save it for the whole team in `.platform-guardian.json` is unchanged.
+- **No git questions before a read-only first task.** When the first message changes no files (reviewing a teammate's PR, a question, an explanation):
+  - Behind-central, central-unclear, on-central and uncommitted changes become ℹ️ lines, and the task starts right away.
+  - Before an intent that writes files, the router settles them in the opener's order.
+- Not done: reading the central branch from the project's `CLAUDE.md` (free text, fragile).
+- Independent review: 2 must-fix (a release merge flipped the verdict to master; a mistyped answer replaced a good one and was then ignored) + 6 should-fix, all fixed. Startup cost: the answer is read directly (no extra process); the history rule adds at most 2 `git` calls, only in a repo with both `develop` and `master`.
+- The same day's report on `/analyze-bug` asking for the platform on every bug is the dev plugin's design (`commands/analyze-bug.md` step 5). It went to its owner.
+
 ## [0.7.1] — 2026-11-24
 
 **Windows: the Bun warning was lost along with the whole opener** (ticket from Ekaterina, `YesPlusSmartTV`, Windows 11. The inspector stopped with `BUN NOT FOUND`, and Guardian had said nothing at session start).

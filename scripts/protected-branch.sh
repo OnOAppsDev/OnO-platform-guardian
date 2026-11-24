@@ -8,6 +8,10 @@
 #   protected-branch.sh remember [dir] <branch> → cache the detected central branch for this repo
 #                                               (SessionStart, only when detection is certain)
 #   protected-branch.sh forget [dir]          → drop the cache (detection uncertain)
+#   protected-branch.sh answer [dir] <branch> → remember the employee's own answer to "which branch
+#                                               is central?" on this computer (session opener);
+#                                               prints the name stored, exit 1 if it isn't a branch here
+#   protected-branch.sh answered [dir]        → print that answer (scripts/git-status.sh), or nothing
 #
 # Protected = main, master, and the project's central branch when it's known for sure:
 #   1. .platform-guardian.json "centralBranch" (committed, the team's choice)
@@ -22,7 +26,7 @@
 cmd="${1:-check}"
 case "$cmd" in
   is) name="${2:-}"; dir="${3:-${CLAUDE_PROJECT_DIR:-$PWD}}" ;;
-  remember) dir="${2:-}"; remember="${3:-}" ;;
+  remember|answer) dir="${2:-}"; remember="${3:-}" ;;
   *) dir="${2:-${CLAUDE_PROJECT_DIR:-$PWD}}" ;;
 esac
 [ -n "$dir" ] || dir="${CLAUDE_PROJECT_DIR:-$PWD}"
@@ -33,9 +37,9 @@ top="" gitdir=""
 { IFS= read -r top; IFS= read -r gitdir; } <<EOF
 $(git -C "$dir" rev-parse --show-toplevel --absolute-git-dir 2>/dev/null)
 EOF
-cache_file() { # per repo, outside the repo
+cache_file() { # cache_file [kind] — per repo, outside the repo
   local k="${top//_/__}"; k="${k// /+}"   # "_" doubled first, so no two paths share a file
-  printf '%s/.state/central%s' "${PG_LOG_DIR:-$HOME/.claude/platform-guardian}" "${k//\//_}"
+  printf '%s/.state/%s%s' "${PG_LOG_DIR:-$HOME/.claude/platform-guardian}" "${1:-central}" "${k//\//_}"
 }
 
 case "$cmd" in
@@ -45,6 +49,22 @@ case "$cmd" in
     exit 0 ;;
   forget)
     [ -n "$top" ] && rm -f "$(cache_file)" 2>/dev/null
+    exit 0 ;;
+  answer) # the employee's answer: an existing branch ("origin/develop" → "develop"). It also
+    # protects the branch right away (the guess cache), not only from the next session start.
+    # Prints the stored name; exit 1 (nothing stored) if no such branch → the opener must say so.
+    [ -n "$top" ] && [ -n "$remember" ] || exit 1
+    for r in $(git -C "$top" remote 2>/dev/null); do remember="${remember#"$r"/}"; done
+    git check-ref-format --branch "$remember" >/dev/null 2>&1 || exit 1
+    git -C "$top" show-ref -q --verify "refs/heads/$remember" 2>/dev/null ||
+      git -C "$top" for-each-ref --format='%(refname)' "refs/remotes/*/$remember" 2>/dev/null | grep -q . || exit 1
+    f="$(cache_file answered-central)"; mkdir -p "$(dirname "$f")" 2>/dev/null &&
+      printf '%s\n' "$remember" >"$f" 2>/dev/null && printf '%s\n' "$remember" >"$(cache_file)" 2>/dev/null || exit 1
+    printf '%s\n' "$remember"
+    exit 0 ;;
+  answered)
+    [ -n "$top" ] || exit 0
+    f="$(cache_file answered-central)"; [ -f "$f" ] && IFS= read -r a <"$f" && printf '%s\n' "$a"
     exit 0 ;;
 esac
 
