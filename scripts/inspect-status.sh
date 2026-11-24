@@ -2,7 +2,8 @@
 # Inspect gate status: has this project been through the Ono Project Inspector?
 # bash 3.2, no jq; always exits 0 and prints ONE line: "<status><TAB><detail>".
 #
-#   inspect-status.sh check [dir]     → status of the repo at dir
+#   inspect-status.sh check [dir] [central-ref] → status of the repo at dir (central ref: from a
+#                                       git report already in hand, saves running git-status.sh again)
 #   inspect-status.sh root [dir]      → the project folder the inspection lives in (see below)
 #   inspect-status.sh elsewhere [dir] → "<ref>" of the most recently updated remote branch that
 #                                       holds a complete, current-model inspection (or nothing)
@@ -66,14 +67,19 @@ override_file="$state_dir/inspect-override"
 if [ "$cmd" = "elsewhere" ]; then   # FYI only — merging another branch is a human decision
   remote="$(git -C "$top" remote 2>/dev/null | head -n 1)"
   [ -n "$remote" ] || exit 0
-  git -C "$top" for-each-ref --sort=-committerdate --count=200 --format='%(refname:short)' "refs/remotes/$remote" 2>/dev/null |
-  while IFS= read -r r; do
-    case "$r" in */HEAD) continue ;; esac
-    git -C "$top" cat-file -e "$r:${pp}AUDIT.md" 2>/dev/null &&
-      git -C "$top" cat-file -e "$r:${pp}docs/project/overview.md" 2>/dev/null &&
-      git -C "$top" cat-file -e "$r:${pp}docs/project/capabilities.md" 2>/dev/null &&
-      { printf '%s\n' "$r"; break; }
-  done
+  # One git process for all branches, not one per file per branch: process starts are slow in
+  # Git Bash on Windows, and a few hundred of them pushed the SessionStart hook past its timeout
+  # (Windows ticket, 2026-11-23 — the whole opener report was lost).
+  refs="$(git -C "$top" for-each-ref --sort=-committerdate --count=200 --format='%(refname:short)' "refs/remotes/$remote" 2>/dev/null |
+          grep -v '/HEAD$')"
+  [ -n "$refs" ] || exit 0
+  # cat-file prints one line per name, in order: "blob" when the file is there, "<name> missing" if not
+  found="$(printf '%s\n' "$refs" |
+    awk -v p="$pp" '{ print $0 ":" p "AUDIT.md"; print $0 ":" p "docs/project/overview.md"; print $0 ":" p "docs/project/capabilities.md" }' |
+    git -C "$top" cat-file --batch-check='%(objecttype)' 2>/dev/null | paste - - -)"
+  # line i of $found belongs to line i of $refs
+  printf '%s\n' "$found" | paste - <(printf '%s\n' "$refs") |
+    awk -F'\t' '$1 == "blob" && $2 == "blob" && $3 == "blob" { print $4; exit }'
   exit 0
 fi
 
@@ -192,7 +198,8 @@ if [ -f "$override_file" ] && tail -n 1 "$override_file" | grep -q "^$today	"; t
 if inspector_audit; then out partial "${missing# }"; fi
 
 # never inspected on this branch — does the central branch already have it?
-ref="$(PG_NO_FETCH=1 "$here/git-status.sh" "$top" 2>/dev/null | sed -n 's/.*"central":{[^}]*"ref":"\([^"]*\)".*/\1/p')"
+ref="${3:-}"
+[ -n "$ref" ] || ref="$(PG_NO_FETCH=1 "$here/git-status.sh" "$top" 2>/dev/null | sed -n 's/.*"central":{[^}]*"ref":"\([^"]*\)".*/\1/p')"
 if [ -n "$ref" ] && git -C "$top" cat-file -e "$ref:${pp}AUDIT.md" 2>/dev/null &&
    git -C "$top" cat-file -e "$ref:${pp}docs/project/overview.md" 2>/dev/null; then
   out on-central "$ref"
