@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.7.3] — 2026-11-24
+
+**Inspector 0.12.0 runs on Node.js, not Bun: Guardian follows** (Yagil's release for Ekaterina's `BUN NOT FOUND` ticket, YSV-404, and his five rules).
+
+- **No more Bun warnings for Inspector 0.12.0+.** Guardian reads the installed inspector from `installed_plugins.json` (new `scripts/ono-plugin.sh inspector-runtime`). Its own `scripts/node-preflight.mjs` is the proof of 0.12.0+.
+- **Older inspector without Bun → "update the inspector", never "install Bun".** This applies to the session-start TOOLS line, the first-time welcome (new item 3d) and the inspect gate's banner. All three give `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Update marketplace**, then a restart. They also mention that 0.12.0+ needs Node.js 22.18+ / 24+. The Bun install commands are gone. An old inspector with Bun present gets no line.
+- **Node.js is checked with the inspector's own preflight** when 0.12.0+ is installed (new `scripts/node-check.sh`):
+  - Exit 0 with JSON → supported.
+  - Exit 1 with JSON → unsupported, with its version and message.
+  - Anything else (crash, no JSON, exit 0 with `"supported":false`, a hang past 3 s) → never treated as supported.
+  - Without the inspector it's `node -v` against the same rule, as before (2 s watchdog).
+- **One Node.js line, not two.** The dev plugin and the inspector share the version rule, so there is one TOOLS line naming whichever of them is installed ("The Ono dev plugin (0.7.7+) and the Ono Project Inspector (0.12.0+) need …").
+- **No inspector runtime line when the inspector is not installed here**, at session start and in the gate. That covers:
+  - not installed at all;
+  - turned off in user / project / local settings;
+  - installed only for another project;
+  - version unknown (the inspector's own preflight explains when it runs).
+- **Gate banner with 0.12.0+ and a bad Node.js:** "First fix Node.js", with the preflight's own message verbatim, plus this OS's install command for Node.js 24 or later (LTS). No Node.js at all → "First install Node.js 24 or later".
+- **The refresh offer is held back only when the inspector itself can't run** (an update line, or a Node line that names the inspector). A Node line about the dev plugin alone no longer hides it.
+- `dev-plugin.sh` finds its plugin through the same `ono-plugin.sh`, with no behavior change. Both hooks now honor `CLAUDE_CONFIG_DIR` for the plugins list.
+- `routes.json` re-verified against inspector 0.12.0. No command or file format Guardian reads changed.
+- **Startup cost:** no extra node process.
+  - macOS: about +0.03 s (0.97 → 1.00 s with both plugins).
+  - Windows Git Bash: expect a few hundred ms more, from two short helper scripts. The git root is looked up only when the list has project-scoped entries.
+- **Independent review:** 0 must-fix, 6 should-fix and 9 nits.
+  - Fixed: all should-fix items and 8 of the 9 nits.
+  - Not changed: one nit asked whether the "Update marketplace" path really updates installed plugins. The Claude Code docs say it does.
+  - Also fixed: a bug found while fixing those, where the combined Node line named the dev plugin twice.
+  - Checks: 6 mutations, all caught.
+
 ## [0.7.2] — 2026-11-24
 
 **The central branch is no longer asked every session** (Guy, `yes_plus_mobile_android`: "develop or master?" at the start of every session, even before a read-only PR review).

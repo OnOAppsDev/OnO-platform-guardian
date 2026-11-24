@@ -17,36 +17,12 @@
 #         prints {"guardian":"pr-body","title":"<dir>/title.txt","body":"<dir>/body.md"};
 #         otherwise prints the check's own JSON unchanged.
 #
-# Which install: installed_plugins.json ($PG_PLUGINS_FILE, else $CLAUDE_CONFIG_DIR/plugins/…, default
-# ~/.claude) can hold several entries — per marketplace, and per project (scope "project" +
-# projectPath). The entry for this project wins, then a user-scope one, then the first. Always exits 0
-# for readiness / pr-body.
+# Which install: see ono-plugin.sh (the entry for this project, then user scope, then the first).
+# Always exits 0 for readiness / pr-body.
 
-plugins="${PG_PLUGINS_FILE:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/installed_plugins.json}"
-here_root="$(git rev-parse --show-toplevel 2>/dev/null)"
-
+here="$(cd "$(dirname "$0")" && pwd)"
 # pick_entry → "installPath<TAB>version" of the best ono-mobile-dev-plugin@… entry
-pick_entry() {
-  [ -f "$plugins" ] || return 1
-  tr -d '\n\r' <"$plugins" \
-    | grep -o '"ono-mobile-dev-plugin@[^"]*"[[:space:]]*:[[:space:]]*\[[^]]*\]' \
-    | sed 's/^[^[]*\[//; s/\]$//' | tr '}' '\n' \
-    | awk -v root="$here_root" -v pwd="$PWD" -v proj="${CLAUDE_PROJECT_DIR:-}" '
-        function field(k,   v) {
-          if (!match($0, "\"" k "\"[[:space:]]*:[[:space:]]*\"([^\"\\\\]|\\\\.)*\"")) return ""
-          v = substr($0, RSTART, RLENGTH); sub("^\"" k "\"[[:space:]]*:[[:space:]]*\"", "", v); sub(/"$/, "", v)
-          gsub(/\\\//, "/", v); gsub(/\\\\/, "\\", v)   # JSON escapes: \/ and \\ (Windows paths)
-          return v
-        }
-        /"installPath"/ {
-          p = field("installPath"); if (p == "") next
-          s = 1; pp = field("projectPath")
-          if (field("scope") == "user") s = 2
-          if (pp != "" && (pp == root || pp == pwd || pp == proj)) s = 3
-          if (s > best) { best = s; out = p "\t" field("version") }
-        }
-        END { if (out != "") print out; else exit 1 }'
-}
+pick_entry() { "$here/ono-plugin.sh" entry ono-mobile-dev-plugin; }
 
 guardian() { printf '{"guardian":"%s"%s}\n' "$1" "${2:+,$2}"; exit 0; }
 
@@ -61,6 +37,7 @@ readiness() { # readiness ARGS… → prints one JSON object; sets $node_bin
     pf="$("$node_bin" "$p/scripts/node-preflight.mjs" 2>/dev/null)" ||
       { case "$pf" in '{'*) guardian node-unsupported "\"preflight\":$pf" ;; *) guardian node-unsupported ;; esac; }
   fi
+  here_root="$(git rev-parse --show-toplevel 2>/dev/null)"
   [ -n "$here_root" ] || guardian not-a-repo
   out="$("$node_bin" --no-warnings "$p/scripts/pr-readiness.ts" check --root "$here_root" --contract 1 "$@" 2>/dev/null)"
   case "$out" in

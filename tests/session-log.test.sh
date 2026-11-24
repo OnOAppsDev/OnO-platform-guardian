@@ -161,7 +161,7 @@ mk_node() { printf '#!/bin/sh\necho %s\n' "$2" >"$WORK/$1"; chmod +x "$WORK/$1";
 for v in v20.19.4 v22.17.1 v23.11.0 v18.0.0 v8.17.0; do
   mk_node "node-$v" "$v"
   out="$(echo '{}' | PG_NODE="$WORK/node-$v" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
-  expect_contains "node $v + dev plugin → Node TOOLS line" "$out" "this computer's Node.js is $v (unsupported)"
+  expect_contains "node $v + dev plugin → Node TOOLS line" "$out" "this computer's Node.js $v is unsupported"
 done
 for v in v22.18.0 v22.20.1 v24.0.0 v24.18.0 v25.1.0 v100.0.0; do
   mk_node "node-$v" "$v"
@@ -192,7 +192,7 @@ expect_contains "first time + old node → item 3c in the welcome" "$out" "3c. T
 expect_absent "first time + old node, jq present → no item 3b" "$out" "3b."
 out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_NODE="$WORK/node-v20.19.4" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
 expect_contains "no jq + old node → jq line" "$out" "TOOLS: jq is not installed"
-expect_contains "no jq + old node → node line" "$out" "this computer's Node.js is v20.19.4 (unsupported)"
+expect_contains "no jq + old node → node line" "$out" "this computer's Node.js v20.19.4 is unsupported"
 
 # --- plugins removed from Guardian (0.5.0) still installed → one-time notice ---
 printf '{"plugins":{"matrix-qa-plugin@ono-plugin-marketplace":[{}],"ono-mobile-dev-plugin@ono-plugin-marketplace":[{}],"spec-team-toolkit@ono-plugin-marketplace":[{}]}}' >"$WORK/leftover.json"
@@ -236,15 +236,93 @@ expect_contains "macOS → OS: mac" "$out" "(OS: mac)"
 out="$(echo '{}' | PG_JQ=pg-no-such-jq PG_OS=Linux PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
 expect_contains "Linux → OS: linux" "$out" "(OS: linux)"
 
-# --- Bun missing → TOOLS line, only when the inspector has something to do here ---
-printf '{"plugins":{"ono-project-inspector@ono-plugin-marketplace":[{}]}}' >"$WORK/with-insp.json"
+# --- an inspector older than 0.12.0 without Bun → "update the inspector", only when it has something to do here ---
+mkdir -p "$WORK/insp-old"
+printf '{"plugins":{"ono-project-inspector@ono-plugin-marketplace":[{"scope":"user","installPath":"%s","version":"0.11.3"}]}}' "$WORK/insp-old" >"$WORK/with-insp.json"
+OLDLINE="TOOLS: the installed Ono Project Inspector is 0.11.3, which still runs on Bun, and Bun is not installed on this computer"
 out="$(echo '{}' | PG_BUN=pg-no-such-bun PG_OS=windows PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
-expect_contains "no Bun + not inspected → Bun TOOLS line" "$out" "TOOLS: Bun is not installed on this computer (OS: windows)"
+expect_contains "old inspector, no Bun + not inspected → update line" "$out" "$OLDLINE (OS: windows)"
+expect_contains "…the fix is the update, not Bun" "$out" "never suggest installing Bun"
+expect_absent "…no Bun install command anywhere" "$out" "bun.sh"
+out="$(echo '{}' | PG_NODE="$WORK/node-v20.19.4" PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "old inspector only + old node → no Node line (it runs on Bun)" "$out" "Node.js 22.18 or later"
 out="$(echo '{}' | PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
-expect_absent "no Bun, inspector not installed → no Bun line" "$out" "Bun is not installed"
+expect_absent "no Bun, inspector not installed → no Bun line" "$out" "still runs on Bun"
 printf '#!/bin/sh\necho 1.2.0\n' >"$WORK/bun"; chmod +x "$WORK/bun"
 out="$(echo '{}' | PG_BUN="$WORK/bun" PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
-expect_absent "Bun present → no Bun line" "$out" "Bun is not installed"
+expect_absent "Bun present → no Bun line" "$out" "still runs on Bun"
+
+# --- Inspector 0.12.0+: Node.js only — no Bun line ever; its own preflight decides the Node line ---
+mkdir -p "$WORK/insp-new/scripts"; : >"$WORK/insp-new/scripts/node-preflight.mjs"
+printf '{"plugins":{"ono-project-inspector@ono-plugin-marketplace":[{"scope":"user","installPath":"%s","version":"0.12.0"}]}}' "$WORK/insp-new" >"$WORK/with-insp-new.json"
+printf '{"plugins":{"ono-mobile-dev-plugin@ono-plugin-marketplace":[{}],"ono-project-inspector@ono-plugin-marketplace":[{"scope":"user","installPath":"%s","version":"0.12.0"}]}}' "$WORK/insp-new" >"$WORK/with-both.json"
+# fake node: `-v` answers $V; with a script it prints $PF and exits $RC (the preflight contract)
+mk_pf() { printf '#!/bin/sh\n[ "$1" = -v ] && { echo %s; exit 0; }\nprintf '"'"'%%s\\n'"'"' '"'"'%s'"'"'\nexit %s\n' "$2" "$3" "$4" >"$WORK/$1"; chmod +x "$WORK/$1"; }
+mk_pf pf-ok v20.0.0 '{"supported":true,"version":"24.1.0","execPath":"/n","required":"r","message":"ok"}' 0
+mk_pf pf-bad v24.0.0 '{"supported":false,"version":"20.19.4","execPath":"C:\\Program Files\\nodejs\\node.exe","required":"r","message":"Unsupported Node.js v20.19.4 (C:\\Program Files\\nodejs\\node.exe). Check it with `! node -v`."}' 1
+mk_pf pf-crash v24.0.0 '' 3
+mk_pf pf-nojson v24.0.0 'hello' 0
+mk_pf pf-lie v24.0.0 '{"supported":false,"version":"20.1.0","execPath":"/n","required":"r","message":"m"}' 0
+out="$(echo '{}' | PG_NODE="$WORK/pf-ok" PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/with-insp-new.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "0.12.0, no Bun, not inspected → no Bun line" "$out" "Bun"
+expect_absent "0.12.0 + preflight ok (node -v would say v20) → no Node line: the preflight decides" "$out" "TOOLS:"
+out="$(echo '{}' | PG_NODE="$WORK/pf-bad" PG_OS=windows PG_PLUGINS_FILE="$WORK/with-insp-new.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "0.12.0 + preflight unsupported (node -v would say v24) → Node line with its version" "$out" "TOOLS: this computer's Node.js v20.19.4 is unsupported (OS: windows). The Ono Project Inspector (0.12.0+) needs Node.js"
+expect_contains "…one plugin → its commands" "$out" "on anything else its commands stop"
+expect_absent "…inspector only → no dev-plugin clause" "$out" "Bug Fix Cycle"
+out="$(echo '{}' | PG_NODE="$WORK/pf-bad" PG_PLUGINS_FILE="$WORK/with-both.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "dev plugin + 0.12.0 → one line naming both" "$out" "The Ono dev plugin (0.7.7+) and the Ono Project Inspector (0.12.0+) need Node.js"
+expect_eq "…exactly one Node line (no duplicate)" "$(printf '%s\n' "$out" | grep -c 'Node.js 22.18 or later')" "1"
+expect_contains "…their commands" "$out" "on anything else their commands stop"
+for b in pf-crash pf-nojson pf-lie; do
+  out="$(echo '{}' | PG_NODE="$WORK/$b" PG_PLUGINS_FILE="$WORK/with-both.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+  expect_contains "preflight $b → never supported: gave-no-version line" "$out" "TOOLS: Node.js gave no version"
+done
+out="$(echo '{}' | PG_NODE=pg-no-such-node PG_PLUGINS_FILE="$WORK/with-insp-new.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "0.12.0 + no node → no-Node line" "$out" "TOOLS: no Node.js was found"
+out="$(echo '{}' | PG_NODE="$WORK/pf-bad" PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/no-such-list.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "no plugins list → no inspector line (version unknown)" "$out" "still runs on Bun"
+# node-check.sh on its own: the preflight's message comes back unescaped (a Windows path)
+nc="$(PG_NODE="$WORK/pf-bad" "$ROOT/scripts/node-check.sh" "$WORK/insp-new/scripts/node-preflight.mjs")"
+expect_eq "node-check: unsupported + version" "$(printf '%s' "$nc" | cut -f1-2)" "unsupported	v20.19.4"
+expect_eq "node-check: message unescaped" "$(printf '%s' "$nc" | cut -f3)" 'Unsupported Node.js v20.19.4 (C:\Program Files\nodejs\node.exe). Check it with `! node -v`.'
+expect_eq "node-check: ok" "$(PG_NODE="$WORK/pf-ok" "$ROOT/scripts/node-check.sh" x)" "ok	v24.1.0"
+expect_eq "node-check: no preflight → node -v" "$(PG_NODE="$WORK/pf-ok" "$ROOT/scripts/node-check.sh")" "unsupported	v20.0.0	"
+expect_eq "ono-plugin: 0.12.0 → node + preflight" "$(PG_PLUGINS_FILE="$WORK/with-insp-new.json" "$ROOT/scripts/ono-plugin.sh" inspector-runtime)" "node $WORK/insp-new/scripts/node-preflight.mjs"
+expect_eq "ono-plugin: 0.11.3 → bun" "$(PG_PLUGINS_FILE="$WORK/with-insp.json" "$ROOT/scripts/ono-plugin.sh" inspector-runtime)" "bun 0.11.3"
+PG_PLUGINS_FILE="$WORK/with-dev.json" "$ROOT/scripts/ono-plugin.sh" inspector-runtime >/dev/null; expect_eq "ono-plugin: not installed → exit 1" "$?" "1"
+# inspector-runtime: version strings when there's no preflight file
+for vv in "0.12:unknown" "0.12.0:unknown" "1.0.0:unknown" "unknown:unknown" "0.9.5:bun 0.9.5" "0.11.3:bun 0.11.3"; do
+  printf '{"plugins":{"ono-project-inspector@m":[{"scope":"user","installPath":"%s","version":"%s"}]}}' "$WORK/insp-old" "${vv%%:*}" >"$WORK/v.json"
+  expect_eq "ono-plugin: version ${vv%%:*} → ${vv#*:}" "$(PG_PLUGINS_FILE="$WORK/v.json" "$ROOT/scripts/ono-plugin.sh" inspector-runtime)" "${vv#*:}"
+done
+# another project's install doesn't count here; this project's beats the user one
+printf '{"plugins":{"ono-project-inspector@m":[{"scope":"project","projectPath":"/elsewhere","installPath":"%s","version":"0.11.3"}]}}' "$WORK/insp-old" >"$WORK/foreign.json"
+(cd "$R" && PG_PLUGINS_FILE="$WORK/foreign.json" "$ROOT/scripts/ono-plugin.sh" inspector-runtime >/dev/null); expect_eq "ono-plugin: only another project's install → not installed (exit 1)" "$?" "1"
+out="$(echo '{}' | PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/foreign.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "another project's old inspector → no update line here" "$out" "still runs on Bun"
+printf '{"plugins":{"ono-project-inspector@m":[{"scope":"user","installPath":"%s","version":"0.11.3"},{"scope":"project","projectPath":"%s","installPath":"%s","version":"0.12.0"}]}}' "$WORK/insp-old" "$R" "$WORK/insp-new" >"$WORK/mine.json"
+expect_eq "ono-plugin: this project's install beats the user one" "$(CLAUDE_PROJECT_DIR="$R" PG_PLUGINS_FILE="$WORK/mine.json" "$ROOT/scripts/ono-plugin.sh" inspector-runtime)" "node $WORK/insp-new/scripts/node-preflight.mjs"
+# a Windows installPath (JSON-escaped backslashes) comes back as a Windows path
+printf '{"plugins":{"ono-project-inspector@m":[{"scope":"user","installPath":"C:\\\\Users\\\\a b\\\\.claude\\\\insp","version":"0.11.3"}]}}' >"$WORK/win.json"
+expect_eq "ono-plugin: Windows installPath unescaped" "$(PG_PLUGINS_FILE="$WORK/win.json" "$ROOT/scripts/ono-plugin.sh" path ono-project-inspector)" 'C:\Users\a b\.claude\insp'
+# turned off in the user settings → no inspector line at all at session start
+mkdir -p "$WORK/cfg-off"; printf '{"enabledPlugins":{"ono-project-inspector@ono-plugin-marketplace":false}}' >"$WORK/cfg-off/settings.json"
+out="$(echo '{}' | PG_CLAUDE_DIR="$WORK/cfg-off" PG_NODE="$WORK/pf-bad" PG_PLUGINS_FILE="$WORK/with-insp-new.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "0.12.0 turned off + bad node → no Node line" "$out" "Ono Project Inspector (0.12.0+)"
+out="$(echo '{}' | PG_CLAUDE_DIR="$WORK/cfg-off" PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_absent "0.11.3 turned off, no Bun → no update line" "$out" "still runs on Bun"
+# a hanging preflight → stopped by the watchdog, never supported
+printf '#!/bin/sh\nexec sleep 30\n' >"$WORK/pf-hang"; chmod +x "$WORK/pf-hang"
+t0=$(date +%s); nc="$(PG_NODE="$WORK/pf-hang" PG_NODE_TIMEOUT=1 "$ROOT/scripts/node-check.sh" x)"; t1=$(date +%s)
+expect_eq "node-check: hanging preflight → unreadable" "${nc%%	*}" "unreadable"
+if [ $((t1 - t0)) -lt 10 ]; then ok; else fail "hanging preflight → watchdog" "$((t1 - t0)) s"; fi
+# first time on the computer: inspector-only Node line → item 3c; old inspector → item 3d
+out="$(echo '{}' | PG_NODE="$WORK/pf-bad" PG_PLUGINS_FILE="$WORK/with-insp-new.json" PG_LOG_DIR="$WORK/fresh-i" CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "first time + inspector-only Node line → item 3c" "$out" "3c. The TOOLS line below (Node.js)"
+out="$(echo '{}' | PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/with-insp.json" PG_LOG_DIR="$WORK/fresh-o" CLAUDE_PROJECT_DIR="$R" "$HOOK")"
+expect_contains "first time + old inspector → item 3d" "$out" "3d. If a TOOLS line below is about updating the Ono Project Inspector"
+expect_contains "…and the line itself" "$out" "still runs on Bun"
 
 # an inspected repo: no manifest → one line a day; with the manifest → nothing; no Bun line unless needed
 g init "$WORK/insp"; I="$WORK/insp"
@@ -254,14 +332,14 @@ for f in overview components patterns integrations capabilities; do echo x >"$I/
 echo '{}' >"$I/.ono/state.json"; g -C "$I" add -A; g -C "$I" commit -m inspected; g -C "$I" checkout -b work
 out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog" PG_BUN=pg-no-such-bun PG_OS=windows PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
 expect_contains "inspected, no manifest → INSPECT manifest line" "$out" ".ono/repo-knowledge.json is missing"
-expect_contains "no manifest + no Bun → Bun line too" "$out" "TOOLS: Bun is not installed"
+expect_contains "no manifest + old inspector, no Bun → update line too" "$out" "$OLDLINE"
 out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog" PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
 expect_absent "manifest line only once a day" "$out" "repo-knowledge.json is missing"
-expect_absent "…and then no Bun line either" "$out" "Bun is not installed"
+expect_absent "…and then no Bun line either" "$out" "still runs on Bun"
 echo '{}' >"$I/.ono/repo-knowledge.json"
 out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog2" PG_BUN=pg-no-such-bun PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
 expect_absent "manifest present → no line" "$out" "repo-knowledge.json is missing"
-expect_absent "fully inspected + no Bun → no Bun line (nothing to run)" "$out" "Bun is not installed"
+expect_absent "fully inspected + no Bun → no Bun line (nothing to run)" "$out" "still runs on Bun"
 
 # --- PRs waiting for review → REVIEWS block (fake gh; the real call is tested in review-requests.test.sh) ---
 g -C "$R" remote set-url origin "https://github.com/OnOAppsDev/My-App.git"
@@ -294,7 +372,7 @@ rm -f "$I/.ono/repo-knowledge.json"
 out="$(echo '{}' | PG_LOG_DIR="$WORK/mlog3" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
 expect_absent "no manifest, inspector not installed → no manifest line" "$out" "repo-knowledge.json is missing"
 out="$(echo '{}' | PG_OS=windows PG_NODE="$WORK/node-v20.19.4" PG_PLUGINS_FILE="$WORK/with-dev.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$R" "$HOOK")"
-expect_contains "Node line names the OS" "$out" "(unsupported) (OS: windows)"
+expect_contains "Node line names the OS" "$out" "is unsupported (OS: windows)"
 
 # project docs behind the code → INSPECT DOCS line, once a day, only with the inspector installed
 echo '{}' >"$I/.ono/repo-knowledge.json"
@@ -318,12 +396,12 @@ expect_absent "inspector not installed → no INSPECT DOCS line" "$out" "INSPECT
 g -C "$I" switch work; rm -f "$I/docs/project/capabilities.md"
 out="$(echo '{}' | PG_LOG_DIR="$WORK/rlog" PG_BUN=pg-no-such-bun PG_OS=MINGW64_NT-10.0-26100 PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
 expect_contains "older model → refresh line" "$out" "INSPECT: complete, but made with an older inspector knowledge model"
-expect_contains "older model + no Bun → Bun TOOLS line (OS: windows)" "$out" "TOOLS: Bun is not installed on this computer (OS: windows)"
+expect_contains "older model + old inspector, no Bun → update line (OS: windows)" "$out" "$OLDLINE (OS: windows)"
 
 # time budget: past it, the optional checks are skipped and named; the git report and TOOLS lines stay
 out="$(echo '{}' | PG_HOOK_BUDGET=0 PG_LOG_DIR="$WORK/blog" PG_BUN=pg-no-such-bun PG_OS=windows PG_PLUGINS_FILE="$WORK/with-insp.json" PG_ONBOARDING=off CLAUDE_PROJECT_DIR="$I" "$HOOK")"
 expect_contains "budget spent → git report still there" "$out" "Git report"
-expect_contains "budget spent → Bun TOOLS line still there" "$out" "TOOLS: Bun is not installed"
+expect_contains "budget spent → inspector update line still there" "$out" "$OLDLINE"
 expect_contains "budget spent → SKIPPED line" "$out" "SKIPPED (this computer is slow"
 expect_contains "…naming the branch search" "$out" "inspection on other branches"
 expect_contains "…and the resume list" "$out" "unfinished work in the Ono plugins' documents"

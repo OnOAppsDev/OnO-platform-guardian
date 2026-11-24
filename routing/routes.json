@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "verifiedAt": "2026-11-23",
+  "verifiedAt": "2026-11-24",
   "verifiedAgainst": {
     "ono-mobile-dev-plugin": "0.8.0",
     "ono-plugin-qa": "0.11.0",
-    "ono-project-inspector": "0.11.3"
+    "ono-project-inspector": "0.12.0"
   },
   "humanOnly": {
     "note": "Guardian never runs these and never auto-chains into them; it tells the employee exactly what to type. None of these plugins enforces it (no disable-model-invocation), so Guardian enforces it as a text-level rule.",
@@ -245,7 +245,7 @@
       "feature": "In the QA repo: no <slug>/test-plan.md → not started · status in the fenced ```yaml block at the top (draft|approved) · approved without coverage-report.md → waiting for dev handoff · then node \"<plugin>/scripts/qa-ledger.mjs\" view execution|bugs|regression|readiness --scope feature:<slug> --qa-repo <path> (read-only JSON). Never call readiness render/signoff."
     },
     "ono-project-inspector": {
-      "repo": "AUDIT.md topic statuses + CLAUDE.md / docs/project/ existence are the truth; .ono/state.json resume.nextAction is a hint (often stale — its agent can't run bun). Or route to /inspect-status."
+      "repo": "AUDIT.md topic statuses + CLAUDE.md / docs/project/ existence are the truth; .ono/state.json resume.nextAction is a hint (may be stale). Or route to /inspect-status."
     }
   },
   "gitGuards": {

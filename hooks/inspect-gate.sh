@@ -10,13 +10,13 @@
 #   - creating a work branch: exactly `git switch -c <name> [<start>]` / `git checkout -b …`
 #     (with or without a leading `!`), one command, <name> not a protected branch.
 # Protected branch (scripts/protected-branch.sh — main, master, the central branch when certain):
-# the inspector writes files (also through bun scripts, which no write hook sees), so its
+# the inspector writes files (also through its helper scripts, which no write hook sees), so its
 # commands are blocked there whatever the inspect status — first inspection and refresh alike —
 # except the read-only inspect-status. The banner then starts with "create a work branch".
 # Fails open: anything unexpected → exit 0 with no output. Never writes stderr.
 #
 # Env: PG_INSPECT_GATE=off disables it; PG_LOG_DIR (state dir); PG_PLUGINS_FILE / PG_CLAUDE_DIR
-# (installed-plugins list / user settings — tests); PG_BUN / PG_OS (Bun binary, OS — tests).
+# (installed-plugins list / user settings — tests); PG_BUN / PG_NODE / PG_OS (Bun, Node binary, OS — tests).
 
 [ "${PG_INSPECT_GATE:-}" = "off" ] && exit 0
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -116,12 +116,12 @@ fi
 # is the inspector there? A missing or disabled one would leave the employee with a command that
 # doesn't exist (and must not open the gate). Unknown (no plugins list) → assume it is.
 inspector=""
-plugins="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
+plugins="${PG_PLUGINS_FILE:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/installed_plugins.json}"
 if [ -f "$plugins" ] && ! grep -q '"ono-project-inspector@' "$plugins" 2>/dev/null; then inspector=missing
 else
   top="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)"
   # user → project → local: the last file that mentions it decides (Claude Code's precedence)
-  for f in "${PG_CLAUDE_DIR:-$HOME/.claude}/settings.json" "$top/.claude/settings.json" "$top/.claude/settings.local.json"; do
+  for f in "${PG_CLAUDE_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}/settings.json" "$top/.claude/settings.json" "$top/.claude/settings.local.json"; do
     [ -f "$f" ] || continue
     grep -Eq '"ono-project-inspector@[^"]*"[[:space:]]*:[[:space:]]*false' "$f" 2>/dev/null && inspector=disabled
     grep -Eq '"ono-project-inspector@[^"]*"[[:space:]]*:[[:space:]]*true' "$f" 2>/dev/null && inspector=""
@@ -172,19 +172,36 @@ $fix" ;;
   disabled) fix="👉 First turn the inspector on:  /plugin → Installed → ono-project-inspector → Enable  → then /reload-plugins
 $fix" ;;
 esac
-# the inspector runs on Bun and stops without it (its check-bun.sh) — say so before they try
-if [ "$status" != on-central ] && ! command -v "${PG_BUN:-bun}" >/dev/null 2>&1; then
+# the inspector stops at its runtime check before doing anything — say so before they try.
+# 0.12.0+ runs on Node.js: its own preflight decides. Older ones run on Bun: without Bun the fix is
+# updating the inspector, never installing Bun. Not installed / turned off → no runtime line.
+if [ "$status" != on-central ] && [ -z "$inspector" ] && rt="$("$scripts/ono-plugin.sh" inspector-runtime 2>/dev/null)"; then
   case "${PG_OS:-$(uname -s 2>/dev/null)}" in
     windows|MINGW*|MSYS*|CYGWIN*|Windows_NT)
-      bun='in PowerShell (not here):  powershell -c "irm bun.sh/install.ps1 | iex"' ;;
-    mac|Darwin)
-      bun="in the Terminal app (not here):  brew install oven-sh/bun/bun   (no Homebrew: curl -fsSL https://bun.sh/install | bash)" ;;
-    *) bun="in a terminal (not here):  curl -fsSL https://bun.sh/install | bash" ;;
+      nodefix='in PowerShell (not here):  winget install OpenJS.NodeJS.LTS   (or the installer from nodejs.org)' ;;
+    *) nodefix='the LTS installer from nodejs.org, or with nvm in the Terminal app (not here):  nvm install 24 && nvm alias default 24' ;;
   esac
-  fix="👉 First install Bun (the inspector runs on it) — $bun
-   then quit Claude Code and open it again from a new window.
-   (Not allowed to install software? Ask IT — or a teammate who has Bun can run the inspection.)
+  case "$rt" in
+    bun\ *)
+      if ! command -v "${PG_BUN:-bun}" >/dev/null 2>&1; then
+        fix="👉 First update the inspector — yours (${rt#bun }) still needs Bun; 0.12.0+ doesn't (it needs Node.js 22.18+ or 24+):
+   /plugin → Marketplaces → ono-plugin-marketplace → Update marketplace   then quit Claude Code and open it again.
 $fix"
+      fi ;;
+    node\ *)
+      nc="$("$scripts/node-check.sh" "${rt#node }" 2>/dev/null)"
+      case "$nc" in
+        ok*) ;;
+        none*) fix="👉 First install Node.js 24 or later (LTS) — the inspector runs on it: $nodefix
+   then quit Claude Code and open it again from a new window.
+$fix" ;;
+        *) msg="$(printf '%s' "$nc" | cut -f3)"
+           fix="👉 First fix Node.js — ${msg:-the inspector needs Node.js 22.18+ (Node 22) or 24+.}
+   Install Node.js 24 or later (LTS): $nodefix
+   then quit Claude Code and open it again from a new window.
+$fix" ;;
+      esac ;;
+  esac
 fi
 # the inspector writes files → a work branch first (it's blocked on a protected branch)
 if [ -n "$on_protected" ] && [ "$status" != on-central ]; then
