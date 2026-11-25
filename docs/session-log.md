@@ -2,6 +2,18 @@
 
 ---
 
+## Session 21 — 2026-11-25 — Ekaterina confirms 0.7.4 on Windows; same CRLF hook bug found in the dev + QA plugins
+
+- Ekaterina's reply: on 0.7.3 all 36 Guardian `.sh` files were CRLF (239 CRs in the start hook); on 0.7.4, 0 of 37 and the opener appears. Confirms the missing-opener cause on a real Windows machine; marketplace auto-update delivered 0.7.4 on its own (09:06).
+- The `grep -c $'\r'` check I sent her prints 0 in Git Bash; `tr -cd '\r' | wc -c` is right. Guardian's own scripts strip CR with awk / tr / bash and are unaffected (memory `windows-cr-count-command`).
+- `autocrlf=true` clones of Yagil's dev plugin (5 hook scripts) and ono-plugin-qa (git-write guard) get CRLF; both run hooks by shebang, so the guards may never start. Reproduced on macOS only; backlog A6.
+- No reply yet from Yagil (nothing new after PR #65) or Guy. Two emails written: `~/Downloads/2026-11-25-email-1-ekaterina-…` (thanks + CR count of her other plugins), `…-email-2-yagil-…` (`.gitattributes` for both plugins + version bump).
+- No Guardian code change this session.
+- **Process improvement:** messages for the user to send are finished emails (To / Subject / body, one file per recipient, also in chat), never "want me to draft…" (memory `ready-to-send-emails`).
+- **Next session:** Ekaterina's CR count → forward to Yagil; Yagil's `.gitattributes` + inspector CRLF fix + `freshness --ref`; Guy on 0.9.0 auto-routing.
+
+---
+
 ## Session 20 — 2026-11-25 — Windows line endings (0.7.4, released) + Yagil's 0.13.0 / 0.9.0 triaged
 
 - Inputs: Yagil's Inspector 0.13.0 (freshness contract, `/inspect-recheck`, doc headers) and Dev Plugin 0.9.0 (PR #65, single-target routing), Ekaterina's CRLF ticket, drift issue #47. Standing OK from the user: open and merge every Guardian PR myself once CI is green (memory updated).
