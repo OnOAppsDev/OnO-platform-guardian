@@ -2,6 +2,18 @@
 
 ---
 
+## Session 20 — 2026-11-25 — Windows line endings (0.7.4, released) + Yagil's 0.13.0 / 0.9.0 triaged
+
+- Inputs: Yagil's Inspector 0.13.0 (freshness contract, `/inspect-recheck`, doc headers) and Dev Plugin 0.9.0 (PR #65, single-target routing), Ekaterina's CRLF ticket, drift issue #47. Standing OK from the user: open and merge every Guardian PR myself once CI is green (memory updated).
+- Ekaterina's CRLF ticket led to two Guardian bugs. (1) No `.gitattributes`: an `autocrlf=true` install gives the hooks a `bash\r` shebang, so the session-start hook never runs. Reproduced on a clone; very likely the 0.7.1 "no opener" cause, not yet confirmed on Windows. (2) `resume-state.sh` was blind to CRLF documents (42 of 60 checks failed). Both fixed in 0.7.4, along with routes for inspector 0.13.0 (+ `/inspect-recheck`, closes #47) and dev plugin 0.9.0.
+- Decided not to adopt the inspector's `freshness` contract yet: it measures the checked-out HEAD (Guardian measures the central branch) and gives a false `REFRESH_RECOMMENDED` on CRLF (reproduced). Asked Yagil for `--ref <rev>` and the CRLF fix.
+- Reviews: PR #65 was already merged; independent review found 0 must-fix and 2 should-fix (step-5 reroute dead end, ticket `environment` blocks auto-select), both sent to Yagil. Guardian 0.7.4 review: 0 must-fix, 2 should-fix fixed (the test runs the hook through its shebang; CHANGELOG gives the real error and says a manual update is needed). 934 checks green. PR #48 merged, tag + release `v0.7.4`.
+- Sent (by the user): Yagil (CRLF, freshness `--ref`, `.gitattributes` for the dev + QA plugins, the 0.9.x patch), Ekaterina (manual update + CRLF `grep` check), Guy (validate 0.9.0 in `yestv_aos`). Yagil also owns `ono-plugin-qa` (memory).
+- **Process improvement:** when an employee reports a Windows bug in another plugin, test Guardian itself under the same conditions (here, an `autocrlf=true` clone). Ekaterina's inspector ticket uncovered Guardian's own missing-opener cause.
+- **Next session:** replies: Ekaterina (did the opener appear after the update? the `grep` count), Guy (0.9.0 auto-routing), Yagil (CRLF fix → re-test the Refresh; `freshness --ref` → switch `inspect-status.sh drift`).
+
+---
+
 ## Session 19c — 2026-11-24 — Inspector 0.12.0 on Node.js: Guardian follows (0.7.3, released)
 
 - Yagil shipped Inspector 0.12.0 (Bun removed, Node.js only, `scripts/node-preflight.mjs`) and gave five rules. Verified against its source, then 0.7.3: no Bun lines for 0.12.0+; an older inspector without Bun gets "update the inspector" (never "install Bun"); the inspector's preflight decides Node; one shared Node line for the inspector and the dev plugin; nothing when the inspector isn't installed here.
