@@ -97,6 +97,13 @@ if [ -f "$plugins" ]; then
   done
 fi
 
+# Another Ono plugin installed with Windows line endings: its hooks can't start, so its guards block
+# nothing (Guardian itself until 0.7.4). Fixed on the spot, before the session's first tool call — the
+# files become the plugin's own committed files — and said once, when it happens. PG_HOOK_EOL=off skips it.
+hook_eol=""
+[ "${PG_HOOK_EOL:-}" != off ] && in_budget "Windows line endings in the other Ono plugins' scripts" &&
+  hook_eol="$("$scripts/hook-eol.sh" fix 2>/dev/null)"
+
 last="$("$scripts/session-log.sh" last "$dir" 2>/dev/null)"
 others="$("$scripts/session-log.sh" others "$dir" 2>/dev/null | paste -sd, - | sed 's/,/, /g')"
 
@@ -126,6 +133,7 @@ Your reply to their first message is ONLY the welcome, so the tour offer can't g
 ${no_jq:+3b. The TOOLS line below (jq missing) → its one ⚠️ line here, before the tour offer.
 }${node_state:+3c. The TOOLS line below (Node.js) → its one ⚠️ line here, before the tour offer.
 }${old_inspector:+3d. If a TOOLS line below is about updating the Ono Project Inspector → its one ⚠️ line here, before the tour offer.
+}${hook_eol:+3e. Each HOOK FIX / HOOK PROBLEM line below → its one ℹ️ / ⚠️ line here, before the tour offer.
 }4. Last, on its own line, in bold: "Want a quick 3-minute tour of how to work with me? 👉 Type **yes** for the tour, or **later** to skip it for now."
 Then STOP and wait. No git summary, no git questions, no "what are we working on", nothing after the offer — a second question gets answered instead and the tour is missed.
 If yes → run the \`platform-guardian:onboarding\` skill. If later → tell them they can type **onboarding** any time, plus the one-time setup so they always get the latest version: \`/plugin\` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — then run the normal opener (session-opener steps 1–4) and get back to their first message.
@@ -209,6 +217,19 @@ if [ -n "$removed" ] && [ -z "$welcome" ] && [ ! -e "$removed_marker" ] &&
    mkdir -p "$state_dir" 2>/dev/null && date '+%Y-%m-%d %H:%M' >"$removed_marker" 2>/dev/null; then
   printf '\nREMOVED PLUGINS (shown once on this computer): %s %s still installed, but no longer part of the Ono process — Guardian stopped installing these in 0.5.0, and dropping a plugin from Guardian does not uninstall it. Add one ℹ️ line (information, not a question) with how to remove it — see session-opener step 1.\n' \
     "$removed" "$verb"
+fi
+
+if [ -n "$hook_eol" ]; then
+  while IFS="$(printf '\t')" read -r state name ver files; do
+    [ -n "$name" ] || continue
+    if [ "$state" = fixed ]; then
+      printf '\nHOOK FIX: %s %s had Windows line endings in its scripts on this computer (%s), so Claude Code could not start its hooks and its guards were blocking nothing. Guardian removed the Windows line endings just now — the files are now the plugin'"'"'s own, and its guards work from now on. Add one ℹ️ line (information, not a question) — see session-opener step 1.\n' "$name" "$ver" "$files"
+    else
+      printf '\nHOOK PROBLEM: %s %s has Windows line endings in its scripts on this computer (%s), so Claude Code cannot start its hooks and its guards block nothing. Guardian could not fix them (no write access to the plugin folder). Add one ⚠️ line (information, not a question) — see session-opener step 1.\n' "$name" "$ver" "$files"
+    fi
+  done <<EOF
+$hook_eol
+EOF
 fi
 
 if [ -n "${reviews_pid:-}" ]; then
