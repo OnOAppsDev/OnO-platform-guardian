@@ -331,6 +331,9 @@ mkdir -p "$N/other2"; echo p >"$N/other2/p"; echo q >"$N/other/o.txt"; ng add -A
 eq "drift nested: changes outside the project → current" "$("$ST" drift "$N/App" master | cut -f1)" current
 echo b >"$N/App/src/a.kt"; mkdir -p "$N/App/feat"; echo f >"$N/App/feat/f.kt"; ng add -A; ng commit -m inside
 case "$("$ST" drift "$N/App" master)" in stale*"top-level added: feat"*) ok ;; *) fail "drift nested: new folder inside the project → stale" "$("$ST" drift "$N/App" master)" ;; esac
+# a Hebrew name is the exact stored path (the inspector 0.13.0 fix), counted and named once
+mkdir -p "$N/App/מסכים"; echo h >"$N/App/מסכים/בית.kt"; ng add -A; ng commit -m hebrew
+case "$("$ST" drift "$N/App" master)" in stale*"files=3 "*"top-level added: feat, מסכים"*) ok ;; *) fail "drift: Hebrew folder named as stored" "$("$ST" drift "$N/App" master)" ;; esac
 
 echo
 echo "inspect-status.sh + inspect-gate.sh: $PASS passed, $FAIL failed"

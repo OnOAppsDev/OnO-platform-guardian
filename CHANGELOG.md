@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.4] — 2026-11-25
+
+**Windows line endings: Guardian installs and reads correctly with `core.autocrlf=true`, and routes match Inspector 0.13.0** (Ekaterina's CRLF ticket on the inspector led to two Guardian bugs).
+
+- **The plugin's files are always installed with LF** (new `.gitattributes`, the same rule the inspector has). Claude Code installs plugins with Git, and Git for Windows defaults to `core.autocrlf=true`. Until now an install on such a computer got CRLF hook scripts: the shebang reads `bash\r` (`env: bash\r: No such file or directory`), the hook never starts, and the session-start report never arrived. Reproduced with an `autocrlf=true` clone of 0.7.3; not yet confirmed on a Windows machine. This is a likely cause of the missing opener in Ekaterina's report (0.7.1), next to the hook timeout fixed there.
+  - **An already-broken install is fixed only by updating to 0.7.4** (each version is a fresh checkout, so the old CRLF files are not carried over). Its opener can't run, so Guardian can't ask for the update itself: tell Windows users directly (`/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Update marketplace**, then restart).
+  - New `tests/line-endings.test.sh`: every tracked text file resolves to `eol=lf`, and the start hook runs from an `autocrlf=true` clone.
+- **"Where you stopped" reads CRLF documents.** In a Windows checkout every dev-plugin planning doc, bug plan, QA test plan and `AUDIT.md` has CRLF endings, and `resume-state.sh` read none of them (42 of 60 checks failed on CRLF copies). Every file parser now drops the `\r` (four of them needed it; the other two are line-start or mid-row matches and got it for consistency). The resume suite runs a second time with CRLF documents.
+- **`routes.json` re-verified against Inspector 0.13.0** (closes the drift issue #47). New `/inspect-recheck <topic>` listed as an inspector alternative (re-verifies one approved topic's findings whose files changed; never approves). The new document header line sits below the H1, so Guardian's `AUDIT.md` detection is unchanged. A Hebrew folder name in the drift check is now tested.
+- **`routes.json` re-verified against dev plugin 0.9.0** (single-target bug routing, non-ASCII paths). `/analyze-bug`, `pr-readiness.ts` (`ono-pr-readiness` v1) and the bug work plan's frontmatter are unchanged, so Guardian's routing and resume lines stay as they are.
+- **Not adopted yet: the inspector's new `freshness` command.** It measures the checked-out branch, so on a feature branch any source change gives `REFRESH_RECOMMENDED`; Guardian measures the central branch on purpose (one refresh PR for the team, Session 17). On a CRLF checkout it also reports fresh knowledge as `REFRESH_RECOMMENDED` (its Markdown heading parser misses `\r` lines — reproduced). Guardian's git-only drift check is unaffected by line endings. Asked the inspector for a `--ref` option and the CRLF fix; Guardian switches once both ship.
+
 ## [0.7.3] — 2026-11-24
 
 **Inspector 0.12.0 runs on Node.js, not Bun: Guardian follows** (Yagil's release for Ekaterina's `BUN NOT FOUND` ticket, YSV-404, and his five rules).

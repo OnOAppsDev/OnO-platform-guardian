@@ -2,7 +2,7 @@
 
 G2.3. At session start (and when the router needs "where was I"), Guardian lists **unfinished work** from the documents the Ono plugins write — no node, no jq, under a second on a real repo. Finished work is not listed. Every stage is *apparent*: approvals with fingerprints and freshness are re-checked by the plugin's own command when it runs.
 
-Traced to plugin source on 2026-11-08 (latest `main`): ono-mobile-dev-plugin 0.7.0, ono-plugin-qa 0.11.0, ono-project-inspector 0.11.0 (formats re-checked unchanged in 0.12.0, 2026-11-24). (spec-team-toolkit and matrix-qa-plugin were dropped in Guardian 0.5.0.) When a plugin's version moves (CI `check-routes.sh --strict` flags it), re-check this page.
+Traced to plugin source on 2026-11-08 (latest `main`): ono-mobile-dev-plugin 0.7.0, ono-plugin-qa 0.11.0, ono-project-inspector 0.11.0 (formats re-checked unchanged in 0.12.0, 2026-11-24, and 0.13.0, 2026-11-25 — its header line sits below the H1). Every document parser drops `\r`, so a Windows CRLF checkout reads the same (tested). (spec-team-toolkit and matrix-qa-plugin were dropped in Guardian 0.5.0.) When a plugin's version moves (CI `check-routes.sh --strict` flags it), re-check this page.
 
 Output: one line per item, at most `PG_RESUME_MAX` (8); `PG_RESUME=off` disables.
 

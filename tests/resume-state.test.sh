@@ -21,7 +21,10 @@ expect_none() {
   if [ -n "${3:-}" ]; then case "$o" in *"$3"*) bad "$1" "$o" ;; *) ok ;; esac
   else [ -z "$o" ] && ok || bad "$1" "$o"; fi
 }
-w() { mkdir -p "$(dirname "$1")" && cat >"$1"; }   # w <path> <<EOF … EOF
+# w <path> <<EOF … EOF. PG_TEST_CRLF=1 writes CRLF, as a Windows checkout with
+# core.autocrlf=true has every document — the whole suite runs again that way below.
+if [ -n "${PG_TEST_CRLF:-}" ]; then w() { mkdir -p "$(dirname "$1")" && sed 's/$/\r/' >"$1"; }
+else w() { mkdir -p "$(dirname "$1")" && cat >"$1"; }; fi
 repo() { mkdir -p "$1" && git -C "$1" init -q; }
 
 # ---------- dev features ----------
@@ -411,5 +414,6 @@ if kill -0 "$pid" 2>/dev/null; then kill "$pid" 2>/dev/null; bad "relative path 
 else case "$(cat "$WORK/rel.out")" in *"feature f1"*) ok ;; *) bad "relative path → same result" "$(cat "$WORK/rel.out")" ;; esac; fi
 
 echo
-echo "resume-state.sh: $PASS passed, $FAIL failed"
-[ "$FAIL" -eq 0 ]
+echo "resume-state.sh${PG_TEST_CRLF:+ (CRLF documents)}: $PASS passed, $FAIL failed"
+[ "$FAIL" -eq 0 ] || exit 1
+[ -n "${PG_TEST_CRLF:-}" ] || PG_TEST_CRLF=1 "$0"
