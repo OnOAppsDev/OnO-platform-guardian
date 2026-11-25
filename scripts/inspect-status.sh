@@ -39,6 +39,32 @@ today="${PG_TODAY:-$(date '+%Y-%m-%d')}"
 
 out() { printf '%s\t%s\n' "$1" "${2:-}"; exit 0; }
 
+# node -e program for `drift`: runs the inspector's `freshness --ref <sha>` and prints one TSV line
+# status, changedSourceCount, the four analysis counts' (manifest, added, removed, surface evidence),
+# surfaces, missing model sections — only when the answer is the contract's (version 1, ref echoed,
+# resolved = checkedHead); anything else prints nothing.
+fresh_js='
+const [ist, proj, sha, ms] = process.argv.slice(1);
+const node = process.env.PG_FRESHNESS_NODE || process.execPath;   // the node already running: a .cmd shim on Windows cannot be run without a shell
+let o;
+try {
+  o = JSON.parse(require("child_process").execFileSync(node, ["--no-warnings", ist, "freshness", proj, "--ref", sha],
+    { encoding: "utf8", timeout: Number(ms) || 6000, stdio: ["ignore", "pipe", "ignore"] }));
+} catch { process.exit(0); }
+const hex = (v) => typeof v === "string" && /^([0-9a-f]{40}|[0-9a-f]{64})$/.test(v);
+const r = o && o.ref;
+if (!o || o.contractVersion !== 1 || !r || typeof r !== "object" || r.requested !== sha) process.exit(0);
+if (o.checkedHead !== null && o.checkedHead !== sha) process.exit(0);
+if (!((hex(r.resolved) && r.resolved === o.checkedHead) || (r.resolved === null && o.status === "BASELINE_UNKNOWN"))) process.exit(0);
+const known = ["COMPLETE", "REFRESH_RECOMMENDED", "BASELINE_UNKNOWN", "NOT_APPLICABLE"];
+if (!known.includes(o.status)) process.exit(0);
+const s = o.signals, a = (k) => { const e = s && Array.isArray(s.analysis) && s.analysis.find((x) => x && x.kind === k); return e && Number.isInteger(e.count) ? e : null; };
+if (o.status === "REFRESH_RECOMMENDED" && !(Number.isInteger(o.changedSourceCount) && a("build-manifest-changed") && a("top-level-entry-added") && a("top-level-entry-removed") && a("surface-evidence-changed") && Array.isArray(s.model))) process.exit(0);
+const c = (k) => (a(k) ? a(k).count : 0), se = a("surface-evidence-changed");
+const surf = (se && Array.isArray(se.surfaces) ? se.surfaces : []).filter((x) => typeof x === "string").map((x) => x.replace(/[\t\n\r]/g, " ")).join(", ");
+console.log([o.status, o.changedSourceCount ?? 0, c("build-manifest-changed"), c("top-level-entry-added"), c("top-level-entry-removed"), c("surface-evidence-changed"), surf || "-", s && Array.isArray(s.model) ? s.model.length : 0].join("\t"));
+'
+
 top="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)" || out skip
 top="$(cd "$top" 2>/dev/null && pwd -P)" || out skip
 
@@ -85,8 +111,8 @@ fi
 
 if [ "$cmd" = "drift" ]; then
   # How far the inspection's Project Knowledge on the CENTRAL branch is behind the central branch's
-  # code — the inspector's own freshness rule (inspection-state.ts computeKnowledgeFreshness), in
-  # git only: no Bun, no tokens. Measured on the central branch because that's where the refresh is
+  # code — asked of the inspector itself when it can answer (0.14.0+, below), else the same rule in
+  # git only (inspection-state.ts computeKnowledgeFreshness mirrored): no tokens either way. Measured on the central branch because that's where the refresh is
   # done (one chore PR for the team): a feature branch's own changes never trigger it, and once a
   # refresh is merged nobody is offered it again. Ref: 3rd argument, else the central branch from
   # git-status.sh, else HEAD.
@@ -126,6 +152,45 @@ if [ "$cmd" = "drift" ]; then
   when="$(git -C "$top" log -1 --format='%ct %ad' --date=short "$ref" -- "${pp}.ono/state.json" 2>/dev/null)"
   then_s="${when%% *}"; date="${when#* }"; now_s="${PG_NOW:-$(date +%s)}"
   days=$(( (now_s - ${then_s:-$now_s}) / 86400 ))
+  # The inspector's own check when it can answer (0.14.0+: `freshness --ref`, docs/freshness-contract.md):
+  # its source / manifest / model rules, no copy of them here. Guardian keeps the central branch, the
+  # thresholds, the once-a-day pacing and the pending-refresh check (the contract leaves those to it).
+  # Passed the resolved commit, so "requested" can be checked exactly. Any doubt — inspector older than
+  # 0.14.0 (it ignores --ref), no or unsupported Node, a crash, a timeout, a shape the contract doesn't
+  # promise — → the git-only check below. PG_FRESHNESS=off skips it (session-start: Node not supported).
+  fr=""
+  if [ "${PG_FRESHNESS:-}" != off ] && rt="$("$here/ono-plugin.sh" inspector-runtime 2>/dev/null)"; then
+    case "$rt" in node\ *)
+      pf="${rt#node }"; ist="${pf%node-preflight.mjs}inspection-state.ts"   # no dirname: keeps a Windows "\\" path as it is
+      sha="$(git -C "$top" rev-parse -q --verify "$ref^{commit}" 2>/dev/null)"
+      [ -f "$ist" ] && [ -n "$sha" ] &&
+        fr="$("${PG_NODE:-node}" -e "$fresh_js" "$ist" "$proj" "$sha" "${PG_FRESHNESS_TIMEOUT:-6000}" </dev/null 2>/dev/null)" ;;
+    esac
+  fi
+  if [ -n "$fr" ]; then
+    IFS="$(printf '\t')" read -r f_status f_n f_bm f_add f_rm f_se f_surf f_model <<FR
+$fr
+FR
+    case "$f_status" in
+      COMPLETE) out current "files=0 date=$date days=$days inspector=${ver:-?} ref=$ref source=inspector" ;;
+      BASELINE_UNKNOWN|NOT_APPLICABLE) out unknown "inspector freshness: $f_status (inspector ${ver:-?})" ;;
+      REFRESH_RECOMMENDED)
+        detail="files=$f_n date=$date days=$days inspector=${ver:-?} ref=$ref source=inspector"
+        sig=""
+        [ "$f_bm" -gt 0 ] 2>/dev/null && sig="build/dependency manifest changed: $f_bm file(s)"
+        [ "$f_add" -gt 0 ] 2>/dev/null && sig="$sig${sig:+; }top-level added: $f_add"
+        [ "$f_rm" -gt 0 ] 2>/dev/null && sig="$sig${sig:+; }top-level removed: $f_rm"
+        [ "$f_model" -gt 0 ] 2>/dev/null && sig="$sig${sig:+; }knowledge model: $f_model section(s) missing"
+        # platform files changed: named, but on its own never a reason — a surface's evidence can be
+        # a whole app folder, so it would come back every day
+        [ "$f_se" -gt 0 ] 2>/dev/null && [ -n "$sig" ] && [ "$f_surf" != - ] && sig="$sig; platform files changed: $f_surf"
+        detail="$detail${sig:+ signals=$sig}"
+        if [ -n "$sig" ] || [ "$f_n" -ge "${PG_DRIFT_FILES:-30}" ] 2>/dev/null || [ "$days" -ge "${PG_DRIFT_DAYS:-30}" ]; then
+          out stale "$detail"
+        fi
+        out behind "$detail" ;;
+    esac
+  fi
   changed="$(g diff --relative --name-only --no-renames "$kh" "$ref" |
     grep -Ev '^(CLAUDE\.md|AUDIT\.md|CLAUDE\.md\.bak|AUDIT\.md\.bak)$|^(\.ono|docs/project|audits)/')"
   n="$(printf '%s' "$changed" | grep -c .)"

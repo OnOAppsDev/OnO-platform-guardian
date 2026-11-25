@@ -177,12 +177,18 @@ case "${inspect%%	*}" in
         insp_needed=1
         printf '\nINSPECT: complete, but .ono/repo-knowledge.json is missing (inspected before the inspector wrote that file), so the Ono dev plugin re-reads the code on every analysis — slower, more tokens. Not a block — follow session-opener step 0b (the manifest line). Shown once today.\n'
       fi
-      # The project docs (CLAUDE.md, docs/project/*) behind the code: a git-only check, no tokens.
-      # The refresh itself costs tokens, so it's only offered when it matters, once a day per repo.
+      # The project docs (CLAUDE.md, docs/project/*) behind the code: no tokens (the inspector's own
+      # freshness check, else git only). Checked once a day per repo, whatever the answer — the inspector
+      # path costs a second or more on Windows — and the refresh is only offered when it matters.
       dmark="$mdir/drift-notice"
       if [ -n "$inspector_on" ] && [ "$mdir" != . ] && [ "$(cat "$dmark" 2>/dev/null)" != "$today" ] && in_budget "project-docs freshness"; then
-        drift="$("$scripts/inspect-status.sh" drift "$dir" "$cref" 2>/dev/null)"
-        if [ "${drift%%	*}" = stale ] && mkdir -p "$mdir" 2>/dev/null && echo "$today" >"$dmark" 2>/dev/null; then
+        # the inspector gets what's left of the budget, minus ~3 s for the git-only fallback, at most 6 s;
+        # under 1.5 s left, or a Node.js the plugins don't support → Guardian's git-only check
+        f_ms=$(( (budget - SECONDS - 3) * 1000 )); [ "$f_ms" -gt 6000 ] && f_ms=6000
+        f_off="${PG_FRESHNESS:-${node_state:+off}}"; [ "$f_ms" -lt 1500 ] && f_off=off
+        drift="$(PG_FRESHNESS="$f_off" PG_FRESHNESS_TIMEOUT="${PG_FRESHNESS_TIMEOUT:-$f_ms}" "$scripts/inspect-status.sh" drift "$dir" "$cref" 2>/dev/null)"
+        [ -n "$drift" ] && mkdir -p "$mdir" 2>/dev/null && echo "$today" >"$dmark" 2>/dev/null
+        if [ "${drift%%	*}" = stale ]; then
           insp_needed=1
           printf '\nINSPECT DOCS: the project docs (CLAUDE.md, docs/project/*) on the central branch are behind its code — %s. Not a block — follow session-opener step 0b (the docs-refresh offer). Shown once today.\n' "${drift#*	}"
         fi
