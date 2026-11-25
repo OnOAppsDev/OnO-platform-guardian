@@ -269,6 +269,7 @@ rm -rf "$R/.claude"
 rm -f "$WORK/claude/settings.json"
 
 # --- drift: how far the central branch's project docs are behind its code (git only) ---
+export PG_FRESHNESS=off   # the git-only check; the inspector's own (0.14.0+) is tested at the end
 D="$WORK/drift"; rm -rf "$D"; mkdir -p "$D"; git -C "$D" init -q -b master
 dg() { git -C "$D" -c user.name=t -c user.email=t@t "$@" >/dev/null 2>&1; }
 mkdir -p "$D/src" "$D/docs/project" "$D/.ono" "$D/My App" "$D/old"; echo a >"$D/src/a.kt"; echo '{}' >"$D/package.json"
@@ -334,6 +335,82 @@ case "$("$ST" drift "$N/App" master)" in stale*"top-level added: feat"*) ok ;; *
 # a Hebrew name is the exact stored path (the inspector 0.13.0 fix), counted and named once
 mkdir -p "$N/App/מסכים"; echo h >"$N/App/מסכים/בית.kt"; ng add -A; ng commit -m hebrew
 case "$("$ST" drift "$N/App" master)" in stale*"files=3 "*"top-level added: feat, מסכים"*) ok ;; *) fail "drift: Hebrew folder named as stored" "$("$ST" drift "$N/App" master)" ;; esac
+
+
+# --- drift through the inspector's own `freshness --ref` (0.14.0+), with a fake inspector + node ---
+unset PG_FRESHNESS
+REAL_NODE="$(command -v node 2>/dev/null)"
+if [ -z "$REAL_NODE" ]; then
+  echo "drift via the inspector: no node on this computer — skipped"
+else
+  export REAL_NODE
+  I="$WORK/insp"; mkdir -p "$I/scripts" "$WORK/cl"; : >"$I/scripts/node-preflight.mjs"; : >"$I/scripts/inspection-state.ts"
+  printf '{"version":2,"plugins":{"ono-project-inspector@ono-plugin-marketplace":[{"scope":"user","installPath":"%s","version":"0.14.0"}]}}' "$I" >"$WORK/insp.json"
+  # fake node: `-e` runs the real one (Guardian's parser); the inspector call prints $FAKE_FRESH with @SHA@ = the --ref value
+  cat >"$WORK/fnode" <<'EOF'
+#!/usr/bin/env bash
+[ "$1" = -e ] && exec "$REAL_NODE" "$@"
+case "$1" in *node-preflight.mjs)   # node-check.sh at session start
+  [ "${FAKE_PF:-ok}" = ok ] && { echo '{"supported":true,"version":"24.0.0"}'; exit 0; }
+  echo '{"supported":false,"version":"20.0.0","message":"too old"}'; exit 1 ;; esac
+[ "${FAKE_MODE:-}" = crash ] && { echo boom >&2; exit 1; }
+[ "${FAKE_MODE:-}" = hang ] && exec sleep 5
+printf '%s\n' "$FAKE_FRESH" | sed "s/@SHA@/$6/g"
+EOF
+  chmod +x "$WORK/fnode"
+  F="$WORK/fresh"; rm -rf "$F"; mkdir -p "$F/src" "$F/docs/project" "$F/.ono"; git -C "$F" init -q -b master
+  fg() { git -C "$F" -c user.name=t -c user.email=t@t "$@" >/dev/null 2>&1; }
+  printf '# AUDIT.md\n' >"$F/AUDIT.md"; echo x >"$F/CLAUDE.md"; echo a >"$F/src/a.kt"
+  for f in overview components patterns integrations capabilities; do echo x >"$F/docs/project/$f.md"; done
+  fg add -A; fg commit -m base; KH="$(git -C "$F" rev-parse HEAD)"
+  printf '{\n  "plugin": {\n    "version": "0.14.0"\n  },\n  "repository": {\n    "knowledgeHead": "%s"\n  },\n  "inspection": {\n    "stage3Complete": true\n  }\n}\n' "$KH" >"$F/.ono/state.json"
+  fg add -A; fg commit -m st; echo b >"$F/src/a.kt"; fg commit -am change
+  fr() { PG_NODE="$WORK/fnode" PG_FRESHNESS_NODE="$WORK/fnode" PG_PLUGINS_FILE="$WORK/insp.json" PG_CLAUDE_DIR="$WORK/cl" "$@" "$ST" drift "$F" master; }
+  sig() { printf '"signals":{"analysis":[{"kind":"build-manifest-changed","count":%s},{"kind":"top-level-entry-added","count":%s},{"kind":"top-level-entry-removed","count":0},{"kind":"surface-evidence-changed","count":%s,"surfaces":["tizen","web"]}],"model":[%s],"refreshStages":[],"affected":{}}' "$1" "$2" "$3" "$4"; }
+  head='"contractVersion":1,"checkedHead":"@SHA@","knowledgeHead":"'"$KH"'","reason":"x"'
+  okref='"ref":{"requested":"@SHA@","resolved":"@SHA@"}'
+  complete="{$head,\"status\":\"COMPLETE\",\"changedSourceCount\":0,$(sig 0 0 0 ''),$okref}"
+  rr() { printf '{%s,"status":"REFRESH_RECOMMENDED","changedSourceCount":%s,%s,%s}' "$head" "$1" "$2" "${3:-$okref}"; }
+  eq "freshness: COMPLETE → current, from the inspector" "$(fr env FAKE_FRESH="$complete")" "$(printf 'current\tfiles=0 date=%s days=0 inspector=0.14.0 ref=master source=inspector' "$(date +%Y-%m-%d)")"
+  case "$(fr env FAKE_FRESH="$(rr 4 "$(sig 2 1 0 '')")")" in
+    stale*"files=4 "*"source=inspector signals=build/dependency manifest changed: 2 file(s); top-level added: 1") ok ;; *) fail "freshness: manifest + folder → stale, counted" "$(fr env FAKE_FRESH="$(rr 4 "$(sig 2 1 0 '')")")" ;; esac
+  eq "freshness: platform files only, few files → behind (never stale on its own)" "$(fr env FAKE_FRESH="$(rr 2 "$(sig 0 0 2 '')")" | cut -f1)" behind
+  case "$(fr env FAKE_FRESH="$(rr 2 "$(sig 1 0 2 '')")")" in *"; platform files changed: tizen, web") ok ;; *) fail "freshness: platform files named next to a real signal" "$(fr env FAKE_FRESH="$(rr 2 "$(sig 1 0 2 '')")")" ;; esac
+  case "$(fr env FAKE_FRESH="$(rr 0 "$(sig 0 0 0 '{"stage":"project-docs","requirement":"docs/project/patterns.md#a"}')")")" in stale*"knowledge model: 1 section(s) missing") ok ;; *) fail "freshness: model gap → stale" "$(fr env FAKE_FRESH="$(rr 0 "$(sig 0 0 0 '{"stage":"s","requirement":"r"}')")")" ;; esac
+  eq "freshness: 40 files → stale (Guardian's threshold)" "$(fr env FAKE_FRESH="$(rr 40 "$(sig 0 0 0 '')")" | cut -f1)" stale
+  eq "freshness: BASELINE_UNKNOWN → unknown" "$(fr env FAKE_FRESH="{$head,\"status\":\"BASELINE_UNKNOWN\",\"changedSourceCount\":null,\"signals\":null,$okref}" | cut -f1)" unknown
+  eq "freshness: NOT_APPLICABLE → unknown" "$(fr env FAKE_FRESH="{$head,\"status\":\"NOT_APPLICABLE\",\"changedSourceCount\":null,\"signals\":null,$okref}" | cut -f1)" unknown
+  # anything the contract doesn't promise → Guardian's git-only answer (behind: one source file, no signal)
+  git_only="$(PG_FRESHNESS=off "$ST" drift "$F" master)"
+  eq "fallback baseline: git-only says behind" "$(printf '%s' "$git_only" | cut -f1)" behind
+  eq "fallback: ref not echoed (0.13.0 ignores --ref)" "$(fr env FAKE_FRESH="{$head,\"status\":\"COMPLETE\",\"changedSourceCount\":0,$(sig 0 0 0 '')}")" "$git_only"
+  eq "fallback: requested ≠ the commit passed" "$(fr env FAKE_FRESH="$(printf '%s' "$complete" | sed 's/"requested":"@SHA@"/"requested":"master"/')")" "$git_only"
+  eq "fallback: resolved ≠ checkedHead" "$(fr env FAKE_FRESH="$(printf '%s' "$complete" | sed 's/"checkedHead":"@SHA@"/"checkedHead":"'"$KH"'"/')")" "$git_only"
+  eq "fallback: contractVersion 2" "$(fr env FAKE_FRESH="$(printf '%s' "$complete" | sed 's/"contractVersion":1/"contractVersion":2/')")" "$git_only"
+  eq "fallback: unknown status" "$(fr env FAKE_FRESH="$(printf '%s' "$complete" | sed 's/"COMPLETE"/"FRESH"/')")" "$git_only"
+  eq "fallback: REFRESH_RECOMMENDED without signals" "$(fr env FAKE_FRESH="{$head,\"status\":\"REFRESH_RECOMMENDED\",\"changedSourceCount\":3,\"signals\":null,$okref}")" "$git_only"
+  eq "fallback: not JSON" "$(fr env FAKE_FRESH="Warning: something")" "$git_only"
+  eq "fallback: the inspector crashes" "$(fr env FAKE_MODE=crash FAKE_FRESH=x)" "$git_only"
+  t0=$SECONDS; out="$(fr env FAKE_MODE=hang FAKE_FRESH=x PG_FRESHNESS_TIMEOUT=500)"
+  eq "fallback: the inspector hangs (timeout)" "$out" "$git_only"
+  [ $((SECONDS - t0)) -le 3 ] && ok || fail "freshness: a hang is cut at the timeout" "$((SECONDS - t0)) s"
+  eq "fallback: PG_FRESHNESS=off" "$(fr env PG_FRESHNESS=off FAKE_FRESH="$complete")" "$git_only"
+  printf '{"version":2,"plugins":{"ono-project-inspector@ono-plugin-marketplace":[{"scope":"user","installPath":"%s","version":"0.11.3"}]}}' "$WORK/old-insp" >"$WORK/old.json"; mkdir -p "$WORK/old-insp/scripts"
+  eq "fallback: inspector without Node (older than 0.12.0)" "$(PG_NODE="$WORK/fnode" PG_PLUGINS_FILE="$WORK/old.json" PG_CLAUDE_DIR="$WORK/cl" FAKE_FRESH="$complete" "$ST" drift "$F" master)" "$git_only"
+  # session start: the inspector check only with a supported Node.js and enough budget left; once a day
+  HK="$HERE/../hooks/session-start.sh"
+  hk() { (cd "$F" && echo '{}' | PG_NO_FETCH=1 PG_ONBOARDING=off PG_REVIEWS=off PG_NODE="$WORK/fnode" PG_FRESHNESS_NODE="$WORK/fnode" \
+          PG_PLUGINS_FILE="$WORK/insp.json" PG_CLAUDE_DIR="$WORK/cl" CLAUDE_PROJECT_DIR="$F" PG_DRIFT_FILES=1 \
+          FAKE_FRESH="$(rr 4 "$(sig 2 0 0 '')")" "$@" "$HK" 2>/dev/null | grep '^INSPECT DOCS'); }
+  out="$(hk env PG_LOG_DIR="$WORK/hk1")"
+  case "$out" in *"source=inspector"*) ok ;; *) fail "session start: supported Node → the inspector's check" "$out" ;; esac
+  eq "session start: checked once a day, whatever the answer" "$(hk env PG_LOG_DIR="$WORK/hk1")" ""
+  out="$(hk env PG_LOG_DIR="$WORK/hk2" FAKE_PF=old)"
+  case "$out" in "INSPECT DOCS"*) case "$out" in *"source=inspector"*) fail "session start: unsupported Node → git-only" "$out" ;; *) ok ;; esac ;; *) fail "session start: unsupported Node → git-only line" "$out" ;; esac
+  out="$(hk env PG_LOG_DIR="$WORK/hk3" PG_HOOK_BUDGET=4)"
+  case "$out" in "INSPECT DOCS"*) case "$out" in *"source=inspector"*) fail "session start: little budget left → git-only" "$out" ;; *) ok ;; esac ;; *) fail "session start: little budget left → git-only line" "$out" ;; esac
+  eq "fallback: inspector not installed" "$(PG_NODE="$WORK/fnode" PG_PLUGINS_FILE="$WORK/none.json" FAKE_FRESH="$complete" "$ST" drift "$F" master)" "$git_only"
+fi
 
 echo
 echo "inspect-status.sh + inspect-gate.sh: $PASS passed, $FAIL failed"

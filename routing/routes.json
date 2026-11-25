@@ -2,9 +2,9 @@
   "schema": 1,
   "verifiedAt": "2026-11-25",
   "verifiedAgainst": {
-    "ono-mobile-dev-plugin": "0.9.0",
+    "ono-mobile-dev-plugin": "0.9.1",
     "ono-plugin-qa": "0.11.0",
-    "ono-project-inspector": "0.13.0"
+    "ono-project-inspector": "0.14.0"
   },
   "humanOnly": {
     "note": "Guardian never runs these and never auto-chains into them; it tells the employee exactly what to type. None of these plugins enforces it (no disable-model-invocation), so Guardian enforces it as a text-level rule.",
