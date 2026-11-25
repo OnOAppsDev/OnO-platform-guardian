@@ -1,0 +1,13 @@
+# Every text file of the plugin is checked out with LF line endings on every platform.
+# Git for Windows defaults to core.autocrlf=true, which would otherwise give the hook and
+# helper scripts CRLF endings (bash then fails on `$'\r'`) and the skills, routes and
+# allowlist CRLF endings the parsers do not expect. Claude Code installs plugins with Git,
+# so this also applies to every employee's installed copy.
+* text=auto eol=lf
+
+# Run under bash on every platform, including Windows Git Bash.
+*.sh text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+*.gif binary

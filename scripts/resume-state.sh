@@ -43,6 +43,7 @@ emit() { # emit <plugin> <what> <stage> <next> <path>
 # the first ```yaml / ```yml fence before the first "## " heading outside an HTML comment.
 fm() {
   awk '
+    { sub(/\r$/, "") }
     NR == 1 && /^---[ \t]*$/ { mode = "dash"; next }
     mode == "dash" { if (/^---[ \t]*$/) exit; print; next }
     /<!--/ { incomment = 1 }
@@ -70,6 +71,7 @@ get() {
 task_ids() {
   awk -v cyc="${2:-}" '
     function cell1(line,   a) { split(line, a, "|"); gsub(/^[ \t]+|[ \t]+$/, "", a[2]); return a[2] }
+    { sub(/\r$/, "") }
     cyc != "" {
       if (cyc == 1) { if (/^## /) { on = ($0 ~ /^## Tasks[ \t]*$/) } }
       else if (/^##+ /) { on = ($0 ~ ("^### Cycle " cyc "[ \t]*$")) }
@@ -83,6 +85,7 @@ task_ids() {
 task_states() {
   [ -f "$1" ] || return 0
   awk '
+    { sub(/\r$/, "") }
     /^  "tasks": \{/ { intasks = 1; next }
     intasks && /^  [}"]/ { intasks = 0 }
     intasks && /^    "[^"]+": \{/ { id = $0; sub(/^    "/, "", id); sub(/".*/, "", id); next }
@@ -129,6 +132,7 @@ dev_features() {
         } else return
         printf "%s\t%s\t%s\t%d\t%s\n", k["feature"], kind, k["status"], length(FILENAME), FILENAME
       }
+      { sub(/\r$/, "") }
       FNR == 1 { split("", k); mode = ""; incomment = 0
                  if (/^---[ \t]*$/) { mode = "dash"; next } }
       mode == "dash" || mode == "fence" {
@@ -287,6 +291,7 @@ inspector_here() {
     return 0
   fi
   local counts; counts="$(awk -F'|' '
+    { sub(/\r$/, "") }
     tolower($0) ~ /^\|[ \t]*#[ \t]*\|[ \t]*status[ \t]*\|[ \t]*topic[ \t]*\|/ { t = 1; next }
     t && !/^\|/ { t = 0 }
     t && /^\|[ \t]*-+[ \t]*\|/ { next }
@@ -374,7 +379,7 @@ ono_qa() {
 
 # The ono-plugin-qa test-plan header: the first ```yaml block anywhere in the file.
 fm_fence_anywhere() {
-  awk '/^```ya?ml[ \t]*$/ { on = 1; next } on { if (/^```/) exit; print }' "$1" 2>/dev/null
+  awk '{ sub(/\r$/, "") } /^```ya?ml[ \t]*$/ { on = 1; next } on { if (/^```/) exit; print }' "$1" 2>/dev/null
 }
 
 dev_features
