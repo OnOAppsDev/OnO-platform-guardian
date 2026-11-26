@@ -54,6 +54,78 @@ has "branch line" "$out" "Branch: bugfix/x"
 has "uncommitted count" "$out" "Uncommitted files: 1"
 lacks "no file contents" "$out" "b.txt"
 
+# --- a plugin installed more than once (user + project scope), pretty-printed like Claude Code writes it ---
+cat >"$WORK/multi.json" <<JSON
+{
+  "version": 2,
+  "plugins": {
+    "platform-guardian@ono-plugin-marketplace": [
+      {
+        "scope": "user",
+        "installPath": "/c/ono-plugin-marketplace/platform-guardian/0.5.1",
+        "version": "0.5.1",
+        "gitCommitSha": "dbede1d000000000"
+      },
+      {
+        "scope": "project",
+        "projectPath": "$R",
+        "installPath": "/c/ono-plugin-marketplace/platform-guardian/0.7.2",
+        "version": "0.7.2",
+        "gitCommitSha": "7272727000000000"
+      },
+      {
+        "scope": "local",
+        "projectPath": "/somewhere/other-app",
+        "installPath": "/c/ono-plugin-marketplace/platform-guardian/0.6.0",
+        "version": "0.6.0"
+      }
+    ],
+    "ono-mobile-dev-plugin@ono-plugin-marketplace": [
+      {
+        "scope": "user",
+        "installPath": "/c/ono-plugin-marketplace/ono-mobile-dev-plugin/0.8.0/",
+        "version": "0.7.7",
+        "gitCommitSha": "6ce121c000000000"
+      }
+    ],
+    "other@elsewhere": [
+      { "scope": "user", "version": "1.0.0" }
+    ]
+  }
+}
+JSON
+out="$(PG_PLUGINS_FILE="$WORK/multi.json" CLAUDE_PLUGIN_ROOT=/c/ono-plugin-marketplace/platform-guardian/0.7.2 "$BR" env "$R")"
+has "every install entry listed: user"           "$out" "- platform-guardian · 0.5.1 · dbede1d · user scope"
+has "project entry of this repo + running copy"  "$out" "- platform-guardian · 0.7.2 · 7272727 · project scope: this repo · running"
+has "local entry of another folder"              "$out" "- platform-guardian · 0.6.0 · local scope: other-app (not this repo)"
+has "cache folder differs from recorded version" "$out" "- ono-mobile-dev-plugin · 0.7.7 · 6ce121c · files 0.8.0"
+lacks "single entry gets no scope"               "$out" "0.7.7 · 6ce121c · files 0.8.0 · user"
+lacks "non-Ono plugin left out"                  "$out" "- other ·"
+mkdir -p "$R/sub"; out="$(PG_PLUGINS_FILE="$WORK/multi.json" "$BR" env "$R/sub")"
+has "project entry matched from a subfolder"     "$out" "0.7.2 · 7272727 · project scope: this repo"
+lacks "no running mark without CLAUDE_PLUGIN_ROOT" "$out" "running"
+
+# --- Windows: Claude Code writes C:\\… paths; Git Bash sees /c/…; case may differ ---
+cat >"$WORK/win.json" <<'JSON'
+{"version":2,"plugins":{"platform-guardian@ono-plugin-marketplace":[
+ {"scope":"user","installPath":"C:\\Users\\Eka\\.claude\\plugins\\cache\\ono-plugin-marketplace\\platform-guardian\\0.8.1","version":"0.8.1"},
+ {"scope":"project","projectPath":"C:\\Work\\YesTV","installPath":"C:\\Users\\Eka\\.claude\\plugins\\cache\\ono-plugin-marketplace\\platform-guardian\\0.8.0","version":"0.8.1"}]}}
+JSON
+WR="$WORK/c/work/yestv"; mkdir -p "$WR"; git -C "$WR" init -q
+out="$(cd "$WORK" && PG_PLUGINS_FILE="$WORK/win.json" CLAUDE_PLUGIN_ROOT='C:\Users\Eka\.claude\plugins\cache\ono-plugin-marketplace\platform-guardian\0.8.1' "$BR" env "$WR")"
+has "windows: running copy matched across \\ and \\\\" "$out" "- platform-guardian · 0.8.1 · user scope · running"
+has "windows: cache folder from a backslash path"     "$out" "- platform-guardian · 0.8.1 · files 0.8.0 · project scope: yestv (not this repo)"
+# --- a "{" or "," in a folder name keeps the plugin (and the value) whole ---
+cat >"$WORK/odd.json" <<'JSON'
+{"version":2,"plugins":{"platform-guardian@ono-plugin-marketplace":[
+ {"scope":"project","projectPath":"/w/re,po","installPath":"/x/{we}ird/0.8.0","version":"0.8.1"}]}}
+JSON
+out="$(PG_PLUGINS_FILE="$WORK/odd.json" "$BR" env "$R")"
+has "brace + comma inside strings" "$out" "- platform-guardian · 0.8.1 · files 0.8.0 · project scope: re,po (not this repo)"
+# --- a relative folder (env .) still matches the project entry ---
+out="$(cd "$R/sub" && PG_PLUGINS_FILE="$WORK/multi.json" "$BR" env .)"
+has "relative folder: this repo" "$out" "0.7.2 · 7272727 · project scope: this repo"
+
 # --- env outside git / missing plugins list ---
 mkdir -p "$WORK/plain"
 out="$(PG_PLUGINS_FILE="$WORK/nope.json" "$BR" env "$WORK/plain")"; rc=$?
