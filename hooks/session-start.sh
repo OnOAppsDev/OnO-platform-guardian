@@ -216,6 +216,14 @@ if [ -n "$node_state" ]; then
     "$node_found" "$os" "$node_for" "$need" "$their" "$extra"
 fi
 
+# ono-plugin-qa left over from Guardian < 0.8.0 (it was a dependency): now the QA team's plugin, not
+# part of the developer setup. Once per computer, never with the welcome; QA people keep it.
+qa_marker="$state_dir/qa-plugin-notice"
+if [ -z "$welcome" ] && [ -f "$plugins" ] && grep -q '"ono-plugin-qa@' "$plugins" 2>/dev/null && [ ! -e "$qa_marker" ] &&
+   mkdir -p "$state_dir" 2>/dev/null && date '+%Y-%m-%d %H:%M' >"$qa_marker" 2>/dev/null; then
+  printf '\nQA PLUGIN (shown once on this computer): ono-plugin-qa is installed. Since Guardian 0.8.0 it is the QA team'"'"'s plugin, not part of the developer setup, and Guardian no longer installs it. Add one ℹ️ line (information, not a question) — see session-opener step 1.\n'
+fi
+
 # Once per computer, and not in the same reply as the first-time welcome (it waits a session).
 removed_marker="$state_dir/removed-plugins-notice"
 verb=is; case "$removed" in *,*) verb=are ;; esac

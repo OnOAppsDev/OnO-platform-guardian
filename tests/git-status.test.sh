@@ -301,14 +301,23 @@ run "$C"
 check '.guards.onoQaCommitBlocked == false'
 QW="$WORK/ws"; mkdir -p "$QW"
 g clone "$R" "$QW/app-ios"; g clone "$R" "$QW/App-QA"
-run "$QW/App-QA"
+PG_PLUGINS_FILE="$WORK/mqa-removed.json" run "$QW/App-QA"
 check ".guards.onoQaCommitBlocked == true and $(has_warning ono-qa-commit-blocked)"
+PG_PLUGINS_FILE="$WORK/no-such-list.json" run "$QW/App-QA"
+check '.guards.onoQaCommitBlocked == true'   # unknown plugin list → assume installed
+
+case_ "ono-plugin-qa not installed or turned off → a …qa… folder blocks nothing (0.8.0: not in the dev setup)"
+PG_PLUGINS_FILE="$WORK/mqa-installed.json" run "$QW/App-QA"
+check '.guards.onoQaCommitBlocked == false' "QA plugin not installed"
+mkdir -p "$WORK/qa-off"; echo '{"enabledPlugins":{"ono-plugin-qa@ono-plugin-marketplace":false}}' >"$WORK/qa-off/settings.json"
+PG_CLAUDE_DIR="$WORK/qa-off" PG_PLUGINS_FILE="$WORK/mqa-removed.json" run "$QW/App-QA"
+check '.guards.onoQaCommitBlocked == false' "QA plugin turned off"
 
 case_ "ono-plugin-qa: qa-workspace.json is authoritative"
 mkdir -p "$QW/.claude"; echo '{"qaRepoPath": "app-ios", "codeRepoPath": "x"}' >"$QW/.claude/qa-workspace.json"
-run "$QW/App-QA"
+PG_PLUGINS_FILE="$WORK/mqa-removed.json" run "$QW/App-QA"
 check '.guards.onoQaCommitBlocked == false' "named repo is app-ios, so App-QA is not blocked"
-run "$QW/app-ios"
+PG_PLUGINS_FILE="$WORK/mqa-removed.json" run "$QW/app-ios"
 check '.guards.onoQaCommitBlocked == true'
 
 case_ "awkward paths stay valid JSON"

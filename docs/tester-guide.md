@@ -23,7 +23,7 @@ Open Claude Code anywhere and type these two lines (one at a time):
 
 Turn on automatic updates (once): in the same `/plugin` screen go to **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update**.
 
-Then type `/plugin` and look at the installed list: you should see **platform-guardian and three more Ono plugins** (dev, QA, inspector) that came with it. Write down whether that worked — it goes into §0 of the checklist (rows 0.1–0.3).
+Then type `/plugin` and look at the installed list: you should see **platform-guardian and two more Ono plugins** (dev, inspector) that came with it. (Since 0.8.0 the QA plugin is the QA team's and no longer comes with Guardian.) Write down whether that worked — it goes into §0 of the checklist (rows 0.1–0.3).
 
 Quit Claude Code.
 

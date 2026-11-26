@@ -4,6 +4,9 @@
 #   ono-plugin.sh entry   <plugin> → "installPath<TAB>version" (exit 1 when not installed here)
 #   ono-plugin.sh path    <plugin> → its installPath
 #   ono-plugin.sh version <plugin> → its installed version (exit 1 when unknown)
+#   ono-plugin.sh active  <plugin> → exit 0 when installed for this project (user scope, this project's
+#                                     entry, or no list to tell from) and not turned off in user / project /
+#                                     local settings; exit 1 otherwise (0.8.0)
 #   ono-plugin.sh inspector-runtime → how the installed ono-project-inspector runs (0.7.3):
 #       node <preflight.mjs>  0.12.0+ — Node.js only; the path is its own preflight script
 #       bun <version>         older — still runs on Bun (the fix is updating it, not installing Bun)
@@ -61,6 +64,11 @@ case "${1:-}" in
   entry) pick_entry "${2:?plugin}" ;;
   path) e="$(pick_entry "${2:?plugin}")" && printf '%s\n' "${e%%	*}" ;;
   version) e="$(pick_entry "${2:?plugin}")" && [ -n "${e#*	}" ] && printf '%s\n' "${e#*	}" ;;
+  active)
+    [ ! -f "$plugins" ] || grep -q "\"${2:?plugin}@" "$plugins" 2>/dev/null || exit 1
+    pick_entry "$2" strict >/dev/null; [ $? -eq 2 ] && exit 1   # installed only for other projects
+    turned_off "$2" && exit 1
+    exit 0 ;;
   inspector-runtime)
     # installed at all? (an entry without installPath — or no list — still counts as installed)
     [ ! -f "$plugins" ] || grep -q '"ono-project-inspector@' "$plugins" 2>/dev/null || exit 1
@@ -75,5 +83,5 @@ case "${1:-}" in
       0.[0-9]*) printf 'bun %s\n' "$v" ;;
       *) echo unknown ;;
     esac ;;
-  *) echo "usage: ono-plugin.sh entry|path|version <plugin> | inspector-runtime" >&2; exit 2 ;;
+  *) echo "usage: ono-plugin.sh entry|path|version|active <plugin> | inspector-runtime" >&2; exit 2 ;;
 esac

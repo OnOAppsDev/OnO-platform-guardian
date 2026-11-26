@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.8.0] — 2026-11-26
+
+**Developer and QA environments are independent: the developer setup is Guardian + Inspector + dev plugin** (Yagil's request, a permanent arrangement and not only for Sunday's workshop). The QA plugin is the QA team's.
+
+- **`ono-plugin-qa` is no longer a Guardian dependency** (`.claude-plugin/plugin.json`), so new installs don't get it. The QA team installs it themselves (`docs/org-setup.md`). Removing a dependency doesn't uninstall it, so on a computer that still has it, the opener says once that developers can remove it and the QA team keeps it (new `QA PLUGIN` line; never at the same time as the first-time welcome).
+- **A "…qa…" folder no longer blocks a developer's commits.** Guardian's report used to set `guards.onoQaCommitBlocked` for any repo whose folder name contains "qa", whether or not the QA plugin was installed, and the closer then handed the developer git commands instead of committing. Now this only applies while `ono-plugin-qa` is installed and not turned off (unknown plugin list → assumed installed, as for Matrix QA). New `ono-plugin.sh active <plugin>`.
+- **The write guard's QA exemptions follow the QA plugins.** On a protected branch, the guard let writes through in a "…qa…" repo that has sibling repos (ono-plugin-qa's auto-detect) and in `qa/` next to `matrix-qa.config.json`, even with no QA plugin installed. A developer's own "…qa…" repo on `main` was not protected. These exemptions now apply only while that plugin is installed and on.
+- **Write guard: Windows native paths.** Claude Code on Windows sends `C:\repo\a.ts` (also `C:/…`, `\\?\C:\…`). The guard read them as relative and joined them onto the session folder, so with the session outside the repo a write on a protected branch went through. Dev plugin 0.9.2 fixed the same bug in its own guard (independent review of PR #67). They're now converted to Git Bash's `/c/repo/a.ts` first; only when such a path is present, so other writes start no extra process. Upper / lower case was already handled: the guard asks git about the folder, and git resolves it whatever the case.
+- **0.7.5's line-ending fix skips `ono-plugin-qa`.** On Windows it's a leftover of Guardian < 0.8.0 on a developer's computer (the QA team works on Macs). Switching its guard on there could block that developer's commits through the same folder-name rule. Yagil also flagged that rule, and its `jq` use without a Node fallback, in his source review.
+- **Router:** for a QA intent without the QA plugin, it says that's the QA team's plugin, and that a developer hands work to QA with the dev plugin's `/create-dev-qa-notes`. Onboarding no longer mentions a web QA plugin (dropped in 0.5.0).
+- **Unchanged, and checked for this release** (Yagil's list):
+  - routing of developer intents uses only dev plugin and inspector commands (`routing/routes.json`);
+  - the closer's PR path needs only the dev plugin's `ono-pr-readiness` contract (`scripts/dev-plugin.sh`, `skills/session-closer`), and Guardian runs no pre-PR or review of its own (its pre-PR skill was removed in 0.7.0);
+  - no hook or PR script refers to the QA plugin;
+  - QA-sourced bugs, handoffs and results are still read from the documents (`scripts/resume-state.sh`, `docs/resume-state.md`) without the plugin.
+- **`routes.json` re-verified against dev plugin 0.9.2** (routing freshness, environment words, step-5 correction, Windows main-branch paths, Inspector 0.14.0 hashes). No command, document or PR-readiness change Guardian depends on.
+- Docs: README (routing table, git rules, install), org setup, rollout, tester guide, vision (the decision).
+- Independent review: the owner's six questions all YES (with file:line evidence), no must-fix. Two should-fixes, both fixed: `ono-plugin.sh active` no longer counts a QA plugin installed only for another project; the Windows path conversion is plain bash (no process; on Windows the session folder is always `C:\…`, so it runs on every write). Also fixed: `git-status.sh` honours `CLAUDE_CONFIG_DIR` for the plugin list. Left as is: UNC paths (`\\server\share`) aren't converted, as before.
+- Tests: `git-status.test.sh` (+3: QA plugin installed / not installed / turned off / unknown list), `write-guard.test.sh` (+12: QA plugin only for another project; QA exemptions with and without the QA plugins; Windows `C:\`, `c:/`, `\\?\`, notebook, relative-from-Windows-session, work branch, outside any repo), `session-log.test.sh` (+6: the one-time QA PLUGIN line), `hook-eol.test.sh` (QA plugin never touched; read-only case moved to the dev plugin).
+
 ## [0.7.6] — 2026-11-25
 
 **The project-docs freshness check asks the inspector itself (Inspector 0.14.0 `freshness --ref`)** — backlog A4, done now that the inspector measures one exact commit and reads CRLF correctly.

@@ -6,7 +6,7 @@ Verified against the official docs on 2026-11-08: [Manage plugins for your organ
 
 1. ✅ **PR #3 merged** into `master` (2026-11-09) — the marketplace entry tracks `master`.
 2. ✅ **G4.1 — marketplace entry** (merged 2026-11-09, marketplace 1.6.0). Ready on a local branch `add-platform-guardian` in the `ono-plugin-marketplace` clone (not pushed): manifest entry (`ref: master`), version 1.5.0 → 1.6.0, README + CHANGELOG in the marketplace's own style; `claude plugin validate .` passes. All six dependencies are already listed in that marketplace, so they resolve.
-3. **Pilot install by hand** (one team) — `/plugin install platform-guardian@ono-plugin-marketplace`, confirm the three plugins come with it (dev, QA, inspector).
+3. **Pilot install by hand** (one team) — `/plugin install platform-guardian@ono-plugin-marketplace`, confirm the two plugins come with it (dev, inspector; the QA team installs `ono-plugin-qa` itself since 0.8.0).
 4. **G4.2 — managed settings** (org Owner), below.
 
 ## Repo visibility — ✅ public (2026-11-09)
@@ -51,7 +51,7 @@ Who: an **Owner** of the Claude organization — **Magen and Yagil** (confirmed 
 }
 ```
 
-Enabling Guardian alone is enough — its `dependencies` install and enable the three Ono plugins (bundle pattern).
+Enabling Guardian alone is enough — its `dependencies` install and enable the dev plugin and the inspector (bundle pattern). The QA team adds `ono-plugin-qa` (see `docs/org-setup.md`).
 
 Notes for the Owner:
 

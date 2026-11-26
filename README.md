@@ -49,7 +49,7 @@ Long session? Once the context passes ~120k tokens, Guardian suggests closing at
 | continue a task | `ono-mobile-dev-plugin` | `/implement-task` |
 | review my code | `ono-mobile-dev-plugin` | `/review-code`, `/review-security` |
 | hand off to QA · release | `ono-mobile-dev-plugin` | `/create-dev-qa-notes` · `/prepare-mobile-release` |
-| QA — mobile / TV | `ono-plugin-qa` | `/create-qa-test-plan` |
+| QA — mobile / TV (QA team) | `ono-plugin-qa` — not installed with Guardian since 0.8.0 | `/create-qa-test-plan` |
 | sync the app theme from Figma | `ono-mobile-dev-plugin` | `/rn-sync-figma-theme <figma-url>` |
 | onboard me to this repo | `ono-project-inspector` | `/inspect` |
 
@@ -71,7 +71,8 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 - **Project docs freshness:** a free git check at session start (`inspect-status.sh drift`) — when `CLAUDE.md` / `docs/project/` are meaningfully behind the code, one line a day offers the inspector's **Refresh Project Knowledge** as a separate `chore/` branch + PR. Never automatic (it costs tokens).
 - **Per-OS tool lines:** an unsupported or missing Node.js (one line for the dev plugin and the inspector together; with Inspector 0.12.0+ its own Node.js preflight decides) or a missing `jq` (only for a dev plugin older than 0.8.0) → one ⚠️ line with this computer's install command (Windows: `winget`). An inspector older than 0.12.0 without Bun → "update the inspector" (0.12.0+ runs on Node.js), never "install Bun". No inspector installed → no inspector line. If the start-up check runs long (a slow Windows computer), it skips the optional checks and says so, so the git report and the warnings aren't lost with them.
 - **PR-readiness before every PR:** before pushing finished Ono work, the closer asks the dev plugin (`scripts/dev-plugin.sh readiness` → its `ono-pr-readiness` contract v1) whether the internal review and the pre-PR check (`/ono-mobile-dev-plugin:pre-pr`, a one-page PDF of what to test) are done and the required documents committed. Not ready → it shows why and offers the next command; ready → the PR gets the plugin's generated description. Guardian runs no pre-PR of its own. Repos without the dev plugin aren't blocked.
-- **QA repos:** both QA plugins block Claude's own commits there by design — Guardian hands you the commands to run instead.
+- **QA repos:** where the QA plugin is installed, it blocks Claude's own commits in the QA repo by design — Guardian hands you the commands to run instead. Without the QA plugin (the developer setup), nothing is blocked.
+- **Developer setup = Guardian + Inspector + dev plugin (0.8.0).** The QA plugin is the QA team's: Guardian doesn't install it, routing, closing, commits, pushes and PRs don't need it, and QA work reaches developers through shared documents (QA bugs, handoffs, results, release readiness), which Guardian still reads.
 
 ## 🚀 Install
 
@@ -80,9 +81,9 @@ The full map — pipelines, prerequisites, resume probes — is data: [`routing/
 /plugin install platform-guardian@ono-plugin-marketplace
 ```
 
-Then, once: `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — so Guardian and the three plugins update by themselves (auto-update is off by default for org marketplaces). Org-wide, the Owners turn it on for everyone: [`docs/org-setup.md`](docs/org-setup.md).
+Then, once: `/plugin` → **Marketplaces** → **ono-plugin-marketplace** → **Enable auto-update** — so Guardian and its two plugins update by themselves (auto-update is off by default for org marketplaces). Org-wide, the Owners turn it on for everyone: [`docs/org-setup.md`](docs/org-setup.md).
 
-Installing Guardian installs the three org plugins it depends on. Needs Claude Code **2.1.140 or newer** (`claude --version`; `claude update`). For org-wide rollout, admins enable it through Claude for Organizations managed settings — exact JSON and steps in [`docs/rollout.md`](docs/rollout.md).
+Installing Guardian installs the two org plugins it depends on: the dev plugin and the inspector (the QA team installs `ono-plugin-qa` itself, since 0.8.0). Needs Claude Code **2.1.140 or newer** (`claude --version`; `claude update`). For org-wide rollout, admins enable it through Claude for Organizations managed settings — exact JSON and steps in [`docs/rollout.md`](docs/rollout.md).
 
 **New here?** The one-page employee guide — install + everyday use: [`docs/employee-guide.md`](docs/employee-guide.md).
 
@@ -93,7 +94,7 @@ Optional per-project config: [`docs/project-config.md`](docs/project-config.md).
 ## 🗂️ Repository
 
 ```
-.claude-plugin/plugin.json      manifest + dependencies on the three org plugins
+.claude-plugin/plugin.json      manifest + dependencies on the dev plugin and the inspector
 hooks/                          SessionStart (open) · UserPromptSubmit + UserPromptExpansion (inspect gate, routing reminder, session length) · PreToolUse (commit guard)
 skills/                         session-opener · work-router · session-closer · onboarding · report-bug
 scripts/git-status.sh           JSON git report (bash 3.2, no jq, fails open)

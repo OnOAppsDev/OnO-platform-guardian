@@ -59,6 +59,21 @@ deny() {
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$(json_esc "$1")"
   exit 0
 }
+# Windows: Claude Code sends native paths (C:\repo\a.ts, C:/repo/a.ts, \\?\C:\…). Read as relative,
+# they were joined onto the session folder, and with the session outside the repo the write on a
+# protected branch went through (the dev plugin had the same bug until 0.9.2). Git Bash's own
+# form is /c/repo/a.ts. PG_WIN_ROOT (tests only) puts the drive letters under a test folder.
+winpath() {   # → $WP; plain bash, no process: on Windows the session folder makes this run on every write
+  local p="$1" d i up=ABCDEFGHIJKLMNOPQRSTUVWXYZ lo=abcdefghijklmnopqrstuvwxyz
+  case "$p" in '\\?\'[A-Za-z]:[\\/]*|'//?/'[A-Za-z]:[\\/]*) p="${p#????}" ;; esac
+  case "$p" in
+    [A-Za-z]:[\\/]*) d="${p%%:*}"; i="${up%%"$d"*}"; [ "${#i}" -lt 26 ] && d="${lo:${#i}:1}"
+                     p="${p#?:}"; WP="${PG_WIN_ROOT:-}/$d${p//\\//}" ;;
+    *) WP="$p" ;;
+  esac
+}
+case "$file$nb$cwd" in *[A-Za-z]:[\\/]*)
+  winpath "$file"; file="$WP"; winpath "$nb"; nb="$WP"; winpath "$cwd"; cwd="$WP" ;; esac
 [ -d "$cwd" ] || cwd="${CLAUDE_PROJECT_DIR:-$PWD}"
 
 case "$tool" in
@@ -87,11 +102,14 @@ line="$("$scripts/protected-branch.sh" check "$d")"
 git -C "$d" check-ignore -q -- "$file" && exit 0   # ignored files can't reach the branch
 rest="${line#*	}"; branch="${rest%%	*}"
 
-# the Ono QA plugins' own repos / folders (see the header) — rare path, only on a protected branch
+# the Ono QA plugins' own repos / folders (see the header) — rare path, only on a protected branch,
+# and only while that QA plugin is installed and on (0.8.0: the developer setup has no QA plugin,
+# so a developer's "…qa…" repo on main is protected like any other)
 top="$(git -C "$d" rev-parse --show-toplevel)"
 dp="$(cd "$d" && pwd -P)"; real="$dp${file#"$d"}"        # the file, with the repo's spelling
 parent="${top%/*}"; name="${top##*/}"
-if [ -f "$parent/.claude/qa-workspace.json" ]; then
+if ! "$scripts/ono-plugin.sh" active ono-plugin-qa; then :
+elif [ -f "$parent/.claude/qa-workspace.json" ]; then
   grep -Eq "\"qaRepoPath\"[[:space:]]*:[[:space:]]*\"([^\"]*/)?$name/?\"" "$parent/.claude/qa-workspace.json" && exit 0
 else
   case "$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]')" in
@@ -101,7 +119,8 @@ else
   esac
 fi
 q="$(dirname "$real")"
-while :; do   # the qa/ folder next to the nearest matrix-qa.config.json
+"$scripts/ono-plugin.sh" active matrix-qa-plugin || q=""
+while [ -n "$q" ]; do   # the qa/ folder next to the nearest matrix-qa.config.json
   [ -f "$q/matrix-qa.config.json" ] && { case "$real" in "$q"/qa/*) exit 0 ;; esac; break; }
   [ "$q" = "$top" ] || [ "$q" = / ] && break
   q="$(dirname "$q")"
