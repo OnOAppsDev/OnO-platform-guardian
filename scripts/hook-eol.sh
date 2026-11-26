@@ -13,7 +13,8 @@
 # Removing the CRs gives back the plugin's own committed files; the next plugin version is a
 # fresh copy (fixed again, until the plugin ships its own .gitattributes).
 #
-# Scope: every ono-plugin-marketplace install in installed_plugins.json except Guardian itself,
+# Scope: every ono-plugin-marketplace install in installed_plugins.json except Guardian itself and
+# ono-plugin-qa (0.8.0, see the awk below),
 # only inside Claude Code's plugin cache (…/plugins/cache/…), its hooks/*.sh, hooks/*/*.sh and
 # scripts/*.sh — never *.test.sh, never a symlink. A script counts when it has any CR (the shebang
 # breaks first, but `then\r` breaks too). Counted with tr (Git Bash's grep can't see CR). The fixed
@@ -30,7 +31,10 @@ case "$mode" in check|fix) ;; *) echo "usage: hook-eol.sh check|fix" >&2; exit 2
 installs="$(tr -d '\n\r' <"$plugins" | grep -o '"[^"@]*@ono-plugin-marketplace"[[:space:]]*:[[:space:]]*\[[^]]*\]' |
   awk '{
     match($0, /^"[^"@]*@/); name = substr($0, 2, RLENGTH - 2)
-    if (name == "platform-guardian") next
+    # never Guardian itself; never ono-plugin-qa (0.8.0): the QA team works on Macs, so on Windows it is a
+    # leftover of Guardian <0.8.0 on a developer computer, and its guard treats any "…qa…" folder as the
+    # QA repo — switching it on could block commits of the developer
+    if (name == "platform-guardian" || name == "ono-plugin-qa") next
     sub(/^[^[]*\[/, ""); n = split($0, e, "}")
     for (i = 1; i <= n; i++) {
       p = e[i]; v = e[i]

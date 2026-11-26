@@ -98,6 +98,10 @@ wg Write "$N/README.md" "$N";           eq "…after the first commit → deny" 
 H="$WORK/home"; mkdir -p "$H/.claude/projects"; git -c init.defaultBranch=main init -q "$H"; git -C "$H" commit -q --allow-empty -m i
 OUT="$(jq -cn --arg p "$H/.claude/projects/m.md" '{tool_name:"Write",tool_input:{file_path:$p}}' | HOME="$H" "$WG")"
 eq "home folder is a repo on main: ~/.claude/… → none" "${OUT:-none}" none
+# the QA exemptions hold only while that QA plugin is installed and on (0.8.0)
+printf '{"plugins":{"ono-plugin-qa@ono-plugin-marketplace":[{}],"matrix-qa-plugin@ono-plugin-marketplace":[{}]}}' >"$WORK/qa-plugins.json"
+printf '{"plugins":{"ono-mobile-dev-plugin@ono-plugin-marketplace":[{}]}}' >"$WORK/dev-only.json"
+export PG_PLUGINS_FILE="$WORK/qa-plugins.json" PG_CLAUDE_DIR="$WORK/no-settings"
 QW="$WORK/qaws"; mkdir -p "$QW/.claude"
 for r in yes-app yes-app-qa; do git -c init.defaultBranch=main init -q "$QW/$r"; git -C "$QW/$r" commit -q --allow-empty -m i; done
 wg Write "$QW/yes-app-qa/login/test-plan.md" "$QW"; eq "ono-plugin-qa: QA repo (auto-detect) on main → none" "$DEC" none
@@ -109,7 +113,29 @@ wg Write "$QW/yes-app-qa/login/test-plan.md" "$QW"; eq "qa-workspace.json names 
 git -C "$R" switch -q main; echo '{}' >"$R/matrix-qa.config.json"
 wg Write "$R/qa/lld/login.md";          eq "matrix-qa: qa/ next to matrix-qa.config.json → none" "$DEC" none
 wg Write "$R/src/login.ts";             eq "…the web app's own code → deny" "$DEC" deny
+PG_PLUGINS_FILE="$WORK/dev-only.json" wg Write "$R/qa/lld/login.md"; eq "matrix-qa plugin not installed → qa/ protected too" "$DEC" deny
 rm -f "$R/matrix-qa.config.json"
+rm -f "$QW/.claude/qa-workspace.json"
+PG_PLUGINS_FILE="$WORK/dev-only.json" wg Write "$QW/yes-app-qa/login/test-plan.md" "$QW"; eq "developer setup (no QA plugin): a …qa… repo on main → deny" "$DEC" deny
+mkdir -p "$WORK/qa-off"; echo '{"enabledPlugins":{"ono-plugin-qa@ono-plugin-marketplace":false}}' >"$WORK/qa-off/settings.json"
+PG_CLAUDE_DIR="$WORK/qa-off" wg Write "$QW/yes-app-qa/login/test-plan.md" "$QW"; eq "QA plugin turned off → deny" "$DEC" deny
+wg Write "$QW/yes-app-qa/login/test-plan.md" "$QW"; eq "QA plugin installed and on → still none" "$DEC" none
+printf '{"plugins":{"ono-plugin-qa@ono-plugin-marketplace":[{"scope":"project","projectPath":"/somewhere/qa-ws","installPath":"/x","version":"0.11.0"}]}}' >"$WORK/qa-other-project.json"
+PG_PLUGINS_FILE="$WORK/qa-other-project.json" wg Write "$QW/yes-app-qa/login/test-plan.md" "$QW"; eq "QA plugin installed only for another project → deny" "$DEC" deny
+unset PG_PLUGINS_FILE PG_CLAUDE_DIR
+# Windows native paths (Claude Code on Windows): converted to Git Bash's /c/… form before deciding
+WR="$WORK/win"; mkdir -p "$WR/c"; git -c init.defaultBranch=main init -q "$WR/c/repo"; git -C "$WR/c/repo" commit -q --allow-empty -m i
+mkdir -p "$WR/c/repo/src"; "$PB" forget "$WR/c/repo"
+export PG_WIN_ROOT="$WR"
+wg Write 'C:\repo\src\a.ts' "$WORK";        eq "Windows C:\\ path, session outside the repo, main → deny" "$DEC" deny
+wg Write 'c:/repo/src/a.ts' "$WORK";           eq "Windows c:/ path → deny" "$DEC" deny
+wg Write '\\?\C:\repo\src\a.ts' "$WORK"; eq "Windows \\\\?\\ long path → deny" "$DEC" deny
+wg NotebookEdit 'C:\repo\n.ipynb' "$WORK";   eq "Windows notebook path → deny" "$DEC" deny
+wg Write 'src\b.ts' 'C:\repo';               eq "relative path, Windows session folder → deny" "$DEC" deny
+git -C "$WR/c/repo" switch -q -c feature/x
+wg Write 'C:\repo\src\a.ts' "$WORK";        eq "Windows path on a work branch → none" "$DEC" none
+wg Write 'D:\elsewhere\a.ts' "$WORK";        eq "Windows path outside any repo → none" "$DEC" none
+unset PG_WIN_ROOT
 # Claude starting the inspector through a tool
 st() { # st TOOL KEY VALUE
   OUT="$(jq -cn --arg t "$1" --arg k "$2" --arg v "$3" --arg d "$R" '{tool_name:$t, cwd:$d, tool_input:{($k):$v}}' | "$WG")"

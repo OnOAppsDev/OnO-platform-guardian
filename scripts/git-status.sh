@@ -70,6 +70,7 @@ warn() {
 
 target="${1:-${CLAUDE_PROJECT_DIR:-$PWD}}"
 
+gs_scripts="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"   # before the cd below
 if ! cd "$target" 2>/dev/null; then
   printf '{"schema":%s,"repo":false,"cwd":%s,"warnings":["dir-not-found"]}\n' \
     "$SCHEMA" "$(json_str "$target")"
@@ -330,7 +331,7 @@ fi
 # Guardian no longer brings that plugin (0.5.0): report it only while it's
 # installed (unknown plugin list → assume it is).
 matrix_qa=false
-plugins_file="${PG_PLUGINS_FILE:-$HOME/.claude/plugins/installed_plugins.json}"
+plugins_file="${PG_PLUGINS_FILE:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/installed_plugins.json}"
 d="$start_dir"
 [ -f "$plugins_file" ] && ! grep -q '"matrix-qa-plugin@' "$plugins_file" 2>/dev/null && d=""
 while [ -n "$d" ]; do
@@ -343,8 +344,12 @@ $matrix_qa && warn "matrix-qa-git-blocked"
 # ono-plugin-qa's hook blocks `git commit` / `git push` from Claude in the QA
 # repo: the one named by .claude/qa-workspace.json (qaRepoPath), else any repo
 # whose folder name contains "qa". Mirrors hooks/block-qa-repo-git-writes.sh.
+# Only while the QA plugin is installed and on (0.8.0): it's the QA team's plugin,
+# not part of the developer setup — without it a "…qa…" folder blocks nothing.
 ono_qa=false
-if ! grep -q '"name"[[:space:]]*:[[:space:]]*"ono-plugin-qa"' .claude-plugin/plugin.json 2>/dev/null; then
+if ! grep -q '"name"[[:space:]]*:[[:space:]]*"ono-plugin-qa"' .claude-plugin/plugin.json 2>/dev/null &&
+   { [ ! -f "$plugins_file" ] || { grep -q '"ono-plugin-qa@' "$plugins_file" 2>/dev/null &&
+     PG_PLUGINS_FILE="$plugins_file" "$gs_scripts/ono-plugin.sh" active ono-plugin-qa; }; }; then
   ws=""
   for cand in "$(dirname "$PWD")" "$start_dir"; do
     [ -f "$cand/.claude/qa-workspace.json" ] && { ws="$cand"; break; }

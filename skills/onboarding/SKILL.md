@@ -44,7 +44,7 @@ No commands to memorize. Say it in your own words — I pick the right Ono plugi
 
 Then one line: ❓ "Where was I?" works any time — I read the plugins' documents and tell you the next step (if the session start found unfinished work, use it as the example).
 
-Facts if they ask: the dev plugin covers mobile (iOS, Android, React Native), TV and React web; QA has one plugin for mobile / TV and one for web. Don't claim more.
+Facts if they ask: the dev plugin covers mobile (iOS, Android, React Native), TV and React web; QA has its own plugin for mobile / TV (`ono-plugin-qa`) — the QA team installs it; it isn't part of the developer setup. Don't claim more.
 
 ### 3. ✋🛡️ What I'll never do for you
 

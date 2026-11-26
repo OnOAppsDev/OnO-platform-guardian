@@ -15,10 +15,12 @@ Guardian is a **coordinator, not a re-implementation.** The org plugins own thei
 | Owned by the org plugins (Guardian reads / invokes) | Owned by Guardian |
 |---|---|
 | Dev pipeline + approval gates — `ono-mobile-dev-plugin` | Session opener: git hygiene, central-branch sync warning |
-| QA ledger, readiness, sign-off — `ono-plugin-qa` | Intent intake + routing to the right plugin command |
+| QA ledger, readiness, sign-off — `ono-plugin-qa` (the QA team's; not a Guardian dependency since 0.8.0) | Intent intake + routing to the right plugin command |
 | — | Resume: "you're at stage X of feature Y" across plugins |
 | Repo knowledge, per-repo `CLAUDE.md` — `ono-project-inspector` | Session closer: commit / PR / `/clear` with handoff note |
 | Platform standards — `ono-mobile-dev-plugin/standards/` | Install surface: one plugin that brings the rest |
+
+**Developer and QA environments are independent (decided 2026-11-26, with Yagil; Guardian 0.8.0).** The standard developer setup is Guardian + Inspector + dev plugin. The QA plugin is the QA team's (they work on Macs) and Guardian does not install it. The two sides meet only through shared data contracts: bug ledgers, QA handoffs, QA results and release readiness. Guardian keeps reading those documents (resume lines) and keeps routing QA intents for whoever has the QA plugin. Nothing in a developer's routing, close-out, commit, push or PR needs the QA plugin or a QA-specific state: PR readiness is the dev plugin's `ono-pr-readiness` contract, and its pre-PR / review are the dev plugin's.
 
 ---
 

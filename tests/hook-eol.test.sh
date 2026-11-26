@@ -48,18 +48,19 @@ out="$("$C/dev/hooks/scan-for-secrets.sh" 2>&1)"; rc=$?
 
 for list in oneline pretty; do
   out="$(PG_PLUGINS_FILE="$WORK/$list.json" "$EOL" check)"
-  eq "check ($list): the CRLF installs, their scripts" "$out" "$(printf 'ono-mobile-dev-plugin\t0.9.0\thooks/block-main-branch-changes.sh, hooks/review-pr-guard.sh, hooks/scan-for-secrets.sh, hooks/lib/hook-json.sh\nono-plugin-qa\t0.11.0\thooks/block-qa-repo-git-writes.sh')"
+  eq "check ($list): the CRLF installs, their scripts" "$out" "$(printf 'ono-mobile-dev-plugin\t0.9.0\thooks/block-main-branch-changes.sh, hooks/review-pr-guard.sh, hooks/scan-for-secrets.sh, hooks/lib/hook-json.sh')"
 done
 eq "check changes nothing" "$(crs "$C/dev/hooks/scan-for-secrets.sh")" 4
 
 out="$(PG_PLUGINS_FILE="$WORK/pretty.json" "$EOL" fix)"
-eq "fix: one line per fixed install" "$out" "$(printf 'fixed\tono-mobile-dev-plugin\t0.9.0\thooks/block-main-branch-changes.sh, hooks/review-pr-guard.sh, hooks/scan-for-secrets.sh, hooks/lib/hook-json.sh\nfixed\tono-plugin-qa\t0.11.0\thooks/block-qa-repo-git-writes.sh')"
-for f in dev/hooks/block-main-branch-changes.sh dev/hooks/scan-for-secrets.sh dev/hooks/lib/hook-json.sh qa/hooks/block-qa-repo-git-writes.sh; do
+eq "fix: one line per fixed install" "$out" "$(printf 'fixed\tono-mobile-dev-plugin\t0.9.0\thooks/block-main-branch-changes.sh, hooks/review-pr-guard.sh, hooks/scan-for-secrets.sh, hooks/lib/hook-json.sh')"
+for f in dev/hooks/block-main-branch-changes.sh dev/hooks/scan-for-secrets.sh dev/hooks/lib/hook-json.sh; do
   eq "fix: $f has no CR" "$(crs "$C/$f")" 0
   [ -x "$C/$f" ] && PASS=$((PASS + 1)) || { FAIL=$((FAIL + 1)); echo "FAIL fix keeps $f executable"; }
   eq "fix: $f is byte-for-byte the LF original" "$(cmp -s "$C/$f" <(hook_body) && echo same)" same
 done
 eq "never a *.test.sh" "$(crs "$C/qa/hooks/block-qa-repo-git-writes.test.sh")" 4
+eq "never ono-plugin-qa (0.8.0: not in the dev setup; its folder-name rule could block a developer)" "$(crs "$C/qa/hooks/block-qa-repo-git-writes.sh")" 4
 eq "never Guardian itself" "$(crs "$C/pg/hooks/session-start.sh")" 4
 eq "never another marketplace" "$(crs "$C/other/hooks/x.sh")" 4
 eq "never a non-script file" "$(crs "$C/dev/hooks/README.md")" 1
@@ -72,13 +73,13 @@ eq "the fixed hook starts and blocks (exit 2)" "$rc:$out" "2:guard ran"
 eq "second run: nothing to fix" "$(PG_PLUGINS_FILE="$WORK/pretty.json" "$EOL" fix)" ""
 
 # no write access → failed, the file untouched (root can write anyway: skipped there)
-crlf "$C/qa/hooks/block-qa-repo-git-writes.sh"; chmod 555 "$C/qa/hooks/block-qa-repo-git-writes.sh" "$C/qa/hooks"
+crlf "$C/dev/hooks/lib/hook-json.sh"; chmod 555 "$C/dev/hooks/lib/hook-json.sh" "$C/dev/hooks/lib"
 if [ "$(id -u)" != 0 ]; then
   out="$(PG_PLUGINS_FILE="$WORK/pretty.json" "$EOL" fix)"
-  eq "read-only: failed" "$out" "$(printf 'failed\tono-plugin-qa\t0.11.0\thooks/block-qa-repo-git-writes.sh')"
-  eq "read-only: untouched" "$(crs "$C/qa/hooks/block-qa-repo-git-writes.sh")" 4
+  eq "read-only: failed" "$out" "$(printf 'failed\tono-mobile-dev-plugin\t0.9.0\thooks/lib/hook-json.sh')"
+  eq "read-only: untouched" "$(crs "$C/dev/hooks/lib/hook-json.sh")" 4
 fi
-chmod 755 "$C/qa/hooks" "$C/qa/hooks/block-qa-repo-git-writes.sh"
+chmod 755 "$C/dev/hooks/lib" "$C/dev/hooks/lib/hook-json.sh"
 PG_PLUGINS_FILE="$WORK/pretty.json" "$EOL" fix >/dev/null   # back to a clean cache
 
 # part fixed, part not: two lines, each naming only its own files
