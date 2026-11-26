@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1] — 2026-11-26
+
+**Bug reports show the plugin versions that are really installed.**
+
+- **A plugin installed more than once was reported with the wrong version.** Claude Code records an install for the user and, separately, for a project folder (project / local scope). `bug-report.sh env` printed only the first entry, so a report from yestv_aos (Raz, 2026-11-26) said Guardian 0.5.1 and dev plugin 0.7.7 while the session ran 0.7.2 and 0.8.0. Now every entry gets its own line with its scope, a project entry says whether it is this repo's (also from a subfolder, a relative folder or a symlinked path), `· running` marks the copy the report runs from, and `· files <version>` shows when the cache folder holds another version than the list records. Windows paths (`C:\\…` in the list, `/c/…` in Git Bash, any case) compare equal, and a `{` or `,` in a folder name no longer drops the plugin from the list.
+- Tests: `bug-report.test.sh` (+12: user + project + local entries in Claude Code's pretty-printed format, this repo vs. another folder, subfolder through a symlinked path, relative folder, running copy, cache folder mismatch, Windows backslash paths, braces and commas in folder names; mutation-checked). Independent review before merge.
+
 ## [0.8.0] — 2026-11-26
 
 **Developer and QA environments are independent: the developer setup is Guardian + Inspector + dev plugin** (Yagil's request, a permanent arrangement and not only for Sunday's workshop). The QA plugin is the QA team's.

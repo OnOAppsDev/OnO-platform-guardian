@@ -20,21 +20,70 @@ json_val() {
   printf '%s' "$2" | tr ',' '\n' | sed -n "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"\{0,1\}\([^\"}]*\)\"\{0,1\}.*/\1/p" | head -n 1
 }
 
+# one line per install entry of every Ono plugin. A plugin can be installed more than once
+# (user scope + project/local scope for one folder); then each line names its scope, and a
+# project entry says whether it is this repo's. "files <dir>" = the cache folder holds another
+# version than the list records; "running" = the copy this script runs from.
 ono_plugins() {
+  local dir="$1" top="" prefix
   [ -f "$plugins_file" ] || { echo "- (installed-plugins list not found)"; return; }
-  awk '
-    /"[^"]+@ono-plugin-marketplace"[[:space:]]*:/ {
-      if (name != "") print "- " name " · " (ver == "" ? "?" : ver) (sha == "" ? "" : " · " substr(sha, 1, 7))
-      match($0, /"[^"@]+@/); name = substr($0, RSTART + 1, RLENGTH - 2); ver = ""; sha = ""; next
+  dir="$(cd "$dir" 2>/dev/null && pwd)" || dir="$1"   # absolute, symlinks kept (projectPath is absolute)
+  dir="${dir%/}"
+  # repo root as the folder was named (show-toplevel resolves symlinks: /var → /private/var)
+  if prefix="$(git -C "$dir" rev-parse --show-prefix 2>/dev/null)"; then
+    prefix="${prefix%/}"; top="$dir"; [ -n "$prefix" ] && top="${dir%/"$prefix"}"
+  fi
+  # 1st awk: JSON punctuation onto its own line, outside strings only (a "{" or "," in a folder
+  # name stays in its value); 2nd awk: one record per install entry
+  awk '{ s = $0; out = ""
+         for (i = 1; i <= length(s); i++) { c = substr(s, i, 1)
+           if (esc) { esc = 0; out = out c; continue }
+           if (ins) { if (c == "\\") esc = 1; else if (c == "\"") ins = 0; out = out c; continue }
+           if (c == "\"") { ins = 1; out = out c; continue }
+           if (c ~ /[][{},]/) { out = out "\n" c "\n"; continue }
+           out = out c }
+         print out }' "$plugins_file" |
+  # values via the environment: awk -v would eat the backslashes of a Windows path
+  PG_DIR="$dir" PG_TOP="$top" PG_SELF="${CLAUDE_PLUGIN_ROOT:-}" awk '
+    BEGIN { dir = ENVIRON["PG_DIR"]; top = ENVIRON["PG_TOP"]; self = ENVIRON["PG_SELF"] }
+    function val(line,   v) { v = line; sub(/^[^:]*:[[:space:]]*"/, "", v); sub(/"[[:space:]]*$/, "", v); return v }
+    # Windows: JSON "C:\\Users\\x" and Git Bash /c/Users/x compare equal, case-insensitively
+    function norm(p) {
+      gsub(/\\/, "/", p); gsub(/\/+/, "/", p)
+      if (p ~ /^[A-Za-z]:\//) p = "/" substr(p, 1, 1) substr(p, 3)
+      sub(/\/+$/, "", p)
+      if (p ~ /^\/[A-Za-z]\//) p = tolower(p)
+      return p
     }
-    /"[^"]+@[^"]+"[[:space:]]*:[[:space:]]*\[/ {
-      if (name != "") print "- " name " · " (ver == "" ? "?" : ver) (sha == "" ? "" : " · " substr(sha, 1, 7))
-      name = ""; next
+    function base(p) { p = norm(p); sub(/.*\//, "", p); return p }
+    function flush(   i, line, b, s, pp) {
+      for (i = 1; i <= n; i++) {
+        line = "- " name " · " (ver[i] == "" ? "?" : ver[i]) (sha[i] == "" ? "" : " · " substr(sha[i], 1, 7))
+        b = base(path[i])
+        if (b ~ /^[0-9]+\.[0-9]+/ && ver[i] != "" && b != ver[i]) line = line " · files " b
+        s = scope[i]; pp = norm(proj[i])
+        if (s == "project" || s == "local") {
+          if (pp != "" && (pp == norm(dir) || pp == norm(top))) line = line " · " s " scope: this repo"
+          else line = line " · " s " scope: " (pp == "" ? "?" : base(pp)) " (not this repo)"
+        } else if (n > 1 && s != "") line = line " · " s " scope"
+        if (self != "" && path[i] != "" && norm(path[i]) == norm(self)) line = line " · running"
+        print line
+      }
+      name = ""; n = 0
     }
-    name != "" && ver == "" && /"version"[[:space:]]*:/ { v = $0; sub(/.*"version"[[:space:]]*:[[:space:]]*"/, "", v); sub(/".*/, "", v); ver = v }
-    name != "" && sha == "" && /"gitCommitSha"[[:space:]]*:/ { v = $0; sub(/.*"gitCommitSha"[[:space:]]*:[[:space:]]*"/, "", v); sub(/".*/, "", v); sha = v }
-    END { if (name != "") print "- " name " · " (ver == "" ? "?" : ver) (sha == "" ? "" : " · " substr(sha, 1, 7)) }
-  ' "$plugins_file" | sort -u | grep . || echo "- (no Ono plugins installed)"
+    { sub(/^[[:space:]]+/, ""); sub(/[[:space:]]+$/, "") }
+    $0 == "" { next }
+    /^"[^"]+@ono-plugin-marketplace"[[:space:]]*:/ { name = $0; sub(/^"/, "", name); sub(/@.*/, "", name); n = 0; depth = 0; next }
+    name == "" { next }
+    $0 == "{" { depth++; if (depth == 1) { n++; ver[n] = sha[n] = scope[n] = proj[n] = path[n] = "" } next }
+    $0 == "}" { depth--; next }
+    $0 == "]" && depth == 0 { flush(); next }
+    depth == 1 && /^"version"[[:space:]]*:/      { ver[n] = val($0) }
+    depth == 1 && /^"gitCommitSha"[[:space:]]*:/ { sha[n] = val($0) }
+    depth == 1 && /^"scope"[[:space:]]*:/        { scope[n] = val($0) }
+    depth == 1 && /^"projectPath"[[:space:]]*:/  { proj[n] = val($0) }
+    depth == 1 && /^"installPath"[[:space:]]*:/  { path[n] = val($0) }
+  ' | sort -u | grep . || echo "- (no Ono plugins installed)"
 }
 
 cmd_env() {
@@ -52,7 +101,7 @@ cmd_env() {
   echo "- OS: ${os:-unknown}"
   echo
   echo "Ono plugins installed:"
-  ono_plugins
+  ono_plugins "$dir"
   echo
   report="$("$here/git-status.sh" "$dir" 2>/dev/null)"
   if [ -z "$report" ] || [ "$(json_val repo "$report")" = "false" ]; then
