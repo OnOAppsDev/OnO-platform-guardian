@@ -2,6 +2,18 @@
 
 ---
 
+## Session 22 — 2026-11-25/26 — Three releases: CRLF hook fix (0.7.5), inspector freshness (0.7.6), developer setup without QA (0.8.0)
+
+- 0.7.5: Ekaterina confirmed CRLF in every hook of dev 0.9.0 + QA 0.11.0 (guards blocked nothing) → `scripts/hook-eol.sh` fixes installed copies at session start (cache only, atomic rename). Dev 0.9.1 then shipped `.gitattributes` (verified LF).
+- 0.7.6: `inspect-status.sh drift` asks Inspector 0.14.0 `freshness --ref <central sha>` (contract v1 checked every call; git-only fallback), once a day per repo, within the time budget. Run against the real inspector (Node 24 via nvm; system node is v20).
+- 0.8.0 (Yagil's request, permanent): developer setup = Guardian + Inspector + dev plugin; `ono-plugin-qa` (Magen's, QA team on Macs) dropped from deps. Fixed QA assumptions (`onoQaCommitBlocked`, write-guard exemptions only while the QA plugin is active), write-guard Windows paths, one-time QA PLUGIN notice. His six questions all YES. 1023 checks; PRs #51–#53, tags v0.7.5 / v0.7.6 / v0.8.0.
+- Guy's 0.9.0 routing report → dev 0.9.2 (routing freshness, environment words). My `/inspect-sync` advice was wrong (sync never moves `knowledgeHead`); corrected. PR #67 post-merge review: must-fix case-insensitive path bypass in `block-main-branch-changes.sh` → emailed Yagil for 0.9.3.
+- Open: marketplace PR #6 (Guardian description: "six plugins" → dev setup) needs the user's merge; Ekaterina (Windows) + Guy (Mac) are validating the dev workflow without the QA plugin on 0.8.0 + dev 0.9.2 + inspector 0.14.0, ahead of Sunday's workshop.
+- **Process improvement:** merge approval covers Guardian's repo only; other repos (marketplace) → ask in the PR message (memory `run-git-myself`). Advice to testers about another plugin's command → read its `.md` first (memory `verify-other-plugin-claims`).
+- **Next session:** Ekaterina's + Guy's validation results → fix or confirm for the workshop; Yagil's 0.9.3 (case-sensitive path fix) → re-verify routes.
+
+---
+
 ## Session 21 — 2026-11-25 — Ekaterina confirms 0.7.4 on Windows; same CRLF hook bug found in the dev + QA plugins
 
 - Ekaterina's reply: on 0.7.3 all 36 Guardian `.sh` files were CRLF (239 CRs in the start hook); on 0.7.4, 0 of 37 and the opener appears. Confirms the missing-opener cause on a real Windows machine; marketplace auto-update delivered 0.7.4 on its own (09:06).
